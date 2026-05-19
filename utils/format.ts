@@ -8,9 +8,13 @@ export const formatInt = (input: string) => {
 
   return Number(stringInput).toLocaleString();
 };
+export const convertRialToToman = (rialString: string | number): number => {
+  const rial = typeof rialString === 'string' ? parseFloat(rialString) : rialString;
+  return Math.round(rial / 10);
+};
 
 export const formatFloat = (input: string, precision?: number) => {
-  let stringInput = String(input || '');
+  const stringInput = String(input || '');
 
   const dotIndex = stringInput.indexOf('.');
   if (dotIndex === -1) return formatInt(stringInput);

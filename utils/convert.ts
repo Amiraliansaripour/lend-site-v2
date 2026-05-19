@@ -17,3 +17,7 @@ export const convertImageToBase64 = (image: File): Promise<string> => {
     reader.readAsDataURL(image);
   });
 };
+
+export const base64ToDataUrl = (base64Str: string, mimeType: string = 'image/png'): string => {
+  return `data:${mimeType};base64,${base64Str}`;
+};

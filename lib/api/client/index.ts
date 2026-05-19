@@ -1,9 +1,12 @@
 import { resolveURL } from '@/utils/url';
 import { accessToken } from '@/lib/auth/client/cookies';
 import { isMappedBaseURL, BASE_URLS, type BaseURL } from '@/lib/api/constants';
+import { toast } from 'sonner';
+import { clearUserInfo } from '@/lib/auth/client/user-info';
 
 import type { OverrideExtend, StrictOmit } from '@/types/utils';
 import type { RequestInit } from 'next/dist/server/web/spec-extension/request';
+import { APIResult } from '@/types/api';
 
 type $FetchOptions<P = never> = OverrideExtend<
   RequestInit,
@@ -41,7 +44,15 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     headers: { ...opts.headers, ...headers },
   });
 
+  if (resp.status === 401) {
+    clearUserInfo();
+    accessToken.delete();
+    window.location.href = '/';
+    return { data: undefined as unknown as D, resp };
+  }
   const data: D = await resp.json();
+
+  if (!resp.ok) toast.error((data as APIResult<D>).message);
 
   return { data, resp };
 };

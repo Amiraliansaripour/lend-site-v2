@@ -10,6 +10,7 @@ import { QueryClientProvider } from '@/lib/query-client/provider';
 
 import '@/lib/env';
 import '@/app/globals.css';
+import { Toaster } from '@/components/ui/sonner';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,6 +33,8 @@ export default async function RootLayout({ params, children }: LayoutProps<'/[lo
   return (
     <html lang={locale} dir={dirFor(locale)}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Toaster toastOptions={{ className: 'IranYekan !important' }} />
+
         <NextIntlClientProvider>
           <NuqsProvider>
             <AuthListener />

@@ -11,3 +11,5 @@ export type PaginatedAPIData<T> = APIData<{
 export type FlatPaginatedAPIData<T> = PaginatedAPIData<T>['data'];
 
 export type Params = Record<string, string>;
+
+export type APIResult<T> = { message: string; isSuccess: boolean; data: T; statusCode: number };

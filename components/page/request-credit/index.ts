@@ -1,0 +1,11 @@
+export { LoanCalc } from './steps/loan-calc';
+export { OtpVerification } from './otp-verification';
+export { Validation } from './steps/validation';
+export { UserInformation } from './steps/user-information';
+export { PayValidation } from './steps/pay-validation';
+export { SalaryInfo } from './steps/salary-info';
+export { IncomeInformation } from './steps/income-information';
+export { Collateral } from './steps/collateral';
+export { ChequeRegistration } from './steps/cheque-registration';
+export { ProformaInvoice } from './steps/proforma-invoice';
+export { AcceptByUser } from './steps/accept-by-user';

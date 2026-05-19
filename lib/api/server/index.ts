@@ -4,6 +4,7 @@ import { isMappedBaseURL, BASE_URLS, type BaseURL } from '@/lib/api/constants';
 
 import type { OverrideExtend, StrictOmit } from '@/types/utils';
 import type { RequestInit } from 'next/dist/server/web/spec-extension/request';
+import { clearUserInfo } from '@/lib/auth/client/user-info';
 
 type $FetchOptions<P = never> = OverrideExtend<
   RequestInit,
@@ -43,6 +44,10 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
 
   const data: D = await resp.json();
 
+  if (resp.status === 401) {
+    clearUserInfo();
+    return { data, resp };
+  }
   return { data, resp };
 };
 

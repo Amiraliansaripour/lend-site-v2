@@ -1,36 +1,27 @@
-import { createParser } from "nuqs/server";
-import { z } from "zod";
+import { createParser } from 'nuqs/server';
+import { z } from 'zod';
 
-import { dataTableConfig } from "@/components/data-table/data-table";
+import { dataTableConfig } from '@/config/data-table';
 
-import type {
-  ExtendedColumnFilter,
-  ExtendedColumnSort,
-} from "@/components/data-table/data-table";
+import type { ExtendedColumnFilter, ExtendedColumnSort } from '@/components/data-table/data-table';
 
 const sortingItemSchema = z.object({
   id: z.string(),
   desc: z.boolean(),
 });
 
-export const getSortingStateParser = <TData>(
-  columnIds?: string[] | Set<string>,
-) => {
-  const validKeys = columnIds
-    ? columnIds instanceof Set
-      ? columnIds
-      : new Set(columnIds)
-    : null;
+export const getSortingStateParser = <TData>(columnIds?: string[] | Set<string>) => {
+  const validKeys = columnIds ? (columnIds instanceof Set ? columnIds : new Set(columnIds)) : null;
 
   return createParser({
-    parse: (value) => {
+    parse: value => {
       try {
         const parsed = JSON.parse(value);
         const result = z.array(sortingItemSchema).safeParse(parsed);
 
         if (!result.success) return null;
 
-        if (validKeys && result.data.some((item) => !validKeys.has(item.id))) {
+        if (validKeys && result.data.some(item => !validKeys.has(item.id))) {
           return null;
         }
 
@@ -39,13 +30,10 @@ export const getSortingStateParser = <TData>(
         return null;
       }
     },
-    serialize: (value) => JSON.stringify(value),
+    serialize: value => JSON.stringify(value),
     eq: (a, b) =>
       a.length === b.length &&
-      a.every(
-        (item, index) =>
-          item.id === b[index]?.id && item.desc === b[index]?.desc,
-      ),
+      a.every((item, index) => item.id === b[index]?.id && item.desc === b[index]?.desc),
   });
 };
 
@@ -59,24 +47,18 @@ const filterItemSchema = z.object({
 
 export type FilterItemSchema = z.infer<typeof filterItemSchema>;
 
-export const getFiltersStateParser = <TData>(
-  columnIds?: string[] | Set<string>,
-) => {
-  const validKeys = columnIds
-    ? columnIds instanceof Set
-      ? columnIds
-      : new Set(columnIds)
-    : null;
+export const getFiltersStateParser = <TData>(columnIds?: string[] | Set<string>) => {
+  const validKeys = columnIds ? (columnIds instanceof Set ? columnIds : new Set(columnIds)) : null;
 
   return createParser({
-    parse: (value) => {
+    parse: value => {
       try {
         const parsed = JSON.parse(value);
         const result = z.array(filterItemSchema).safeParse(parsed);
 
         if (!result.success) return null;
 
-        if (validKeys && result.data.some((item) => !validKeys.has(item.id))) {
+        if (validKeys && result.data.some(item => !validKeys.has(item.id))) {
           return null;
         }
 
@@ -85,7 +67,7 @@ export const getFiltersStateParser = <TData>(
         return null;
       }
     },
-    serialize: (value) => JSON.stringify(value),
+    serialize: value => JSON.stringify(value),
     eq: (a, b) =>
       a.length === b.length &&
       a.every(

@@ -1,9 +1,40 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(.light *));
+
+@font-face {
+  font-family: 'IranYekan';
+  src: url('./fonts/IRANYekanXFaNum-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IranYekan';
+  src: url('./fonts/IRANYekanXFaNum-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IranYekan';
+  src: url('./fonts/IRANYekanXFaNum-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+html body {
+  font-family: 'IranYekan';
+  direction: rtl;
+}
 
 @theme inline {
+  --breakpoint-xs: 460px;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -115,11 +146,91 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* * customization */
+@theme inline {
+  --color-brand: var(--brand);
+  --color-success: var(--color-green-500);
+  --color-success-dark: var(--color-green-600);
+}
+
+:root {
+  --brand: oklch(36.8%, 25.5%, 260.458%);
+}
+
+.dark {
+  --brand: oklch(36.8%, 25.5%, 260.458%);
+}
+/* * customization */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  button {
+    @apply cursor-pointer;
+  }
+  .stack {
+    @apply isolate grid [grid-template-areas:'stack'] *:[grid-area:stack];
+  }
+}
+
+@layer components {
+  .faq [data-slot='accordion-item'] {
+    @apply ring-1 ring-brand;
+
+    [data-slot='icon'] {
+      @apply bg-transparent shrink-0 rounded-sm;
+
+      svg {
+        @apply size-4 shrink-0;
+      }
+    }
+
+    [data-slot='accordion-trigger'] svg {
+      @apply size-8! p-2 rounded-sm;
+    }
+
+    &[data-state='open'] {
+      background: linear-gradient(243.48deg, #f1f0fb 33.93%, #eae8ff 85.45%);
+
+      [data-slot='accordion-trigger'] {
+        @apply text-brand;
+
+        & svg:is(:nth-child(2), :nth-child(3)) {
+          @apply stroke-white;
+          background: linear-gradient(193.06deg, #6a5dff 5.92%, #a33aff 89.21%);
+        }
+      }
+
+      [data-slot='icon'] {
+        @apply bg-white;
+      }
+    }
+  }
+
+  .marquee > * {
+    animation: marquee 7s linear infinite;
+  }
+
+  .marquee:hover > * {
+    animation-play-state: paused;
+  }
+
+  @keyframes marquee {
+    from {
+      translate: 0 0;
+    }
+    to {
+      translate: calc(100% + var(--spacing) * 12) 0;
+    }
+  }
+}
+
+@layer utilities {
+  .container {
+    @apply h-full mx-auto px-4 xl:max-w-7xl;
   }
 }

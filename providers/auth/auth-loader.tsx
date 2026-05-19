@@ -3,6 +3,7 @@ import type { JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { getUserQueryOptions } from '@/queries';
+import { getUserId } from '@/lib/auth/client/user-info';
 
 export function AuthLoader({
   children,
@@ -15,7 +16,8 @@ export function AuthLoader({
   renderUnauthenticated?: () => JSX.Element;
   renderError?: (error: Error) => JSX.Element;
 }) {
-  const { isSuccess, isFetched, status, data, error } = useQuery(getUserQueryOptions(true));
+  const userId = getUserId() ?? '';
+  const { isSuccess, isFetched, status, data, error } = useQuery(getUserQueryOptions(userId));
 
   if (isSuccess) {
     if (renderUnauthenticated && !data) return renderUnauthenticated();

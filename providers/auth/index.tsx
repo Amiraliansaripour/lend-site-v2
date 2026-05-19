@@ -12,6 +12,7 @@ import { abilities } from '@/providers/auth/abilities';
 import { appStore } from '@/stores';
 
 import { getUserQueryOptions } from '@/queries';
+import { getUserId } from '@/lib/auth/client/user-info';
 
 // * types
 type CanProps = Casl.BoundCanProps<AnyAbility>;
@@ -28,12 +29,13 @@ export const Can = ({ children, ...props }: CanProps) => {
 
 export function AuthProvider() {
   const pathname = usePathname();
+  const userId = getUserId() ?? '';
 
   const {
     data: maybeUser,
     isError,
     isLoading,
-  } = useQuery({ ...getUserQueryOptions(true), enabled: pathname !== '/login' });
+  } = useQuery({ ...getUserQueryOptions(userId), enabled: pathname !== '/login' });
 
   const setUser = appStore.useSetUser();
   const setAbility = appStore.useSetAbility();
