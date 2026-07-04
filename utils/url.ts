@@ -1,4 +1,5 @@
 export const resolveURL = (pathname: string, baseURL: string) => {
   const base = baseURL.endsWith('/') ? baseURL : `${baseURL}/`;
-  return new URL(pathname, base).href;
+  const path = pathname.startsWith('/') ? pathname.slice(1) : pathname;
+  return new URL(path, base).href;
 };
