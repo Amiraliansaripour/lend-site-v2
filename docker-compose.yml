@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_QUERY_GC_TIME: ${NEXT_PUBLIC_QUERY_GC_TIME:-0}
+        NEXT_PUBLIC_QUERY_STALE_TIME: ${NEXT_PUBLIC_QUERY_STALE_TIME:-0}
+        NEXT_PUBLIC_QUERY_RETRY: ${NEXT_PUBLIC_QUERY_RETRY:-false}
+    image: lend-site-v2:latest
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    restart: unless-stopped
