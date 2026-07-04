@@ -5,6 +5,7 @@ import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 
 import { log } from '@/lib/log';
+import { env } from '@/lib/env';
 
 declare module '@tanstack/react-query' {
   interface Register {
@@ -19,9 +20,9 @@ declare module '@tanstack/react-query' {
   }
 }
 
-const retry = Number(process.env.NEXT_PUBLIC_QUERY_RETRY);
-const gcTime = Number(process.env.NEXT_PUBLIC_QUERY_GC_TIME);
-const staleTime = Number(process.env.NEXT_PUBLIC_QUERY_STALE_TIME);
+const retry = env.NEXT_PUBLIC_QUERY_RETRY;
+const gcTime = env.NEXT_PUBLIC_QUERY_GC_TIME;
+const staleTime = env.NEXT_PUBLIC_QUERY_STALE_TIME;
 
 export const queryClient = new QueryClient({
   defaultOptions: {
