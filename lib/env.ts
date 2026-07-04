@@ -20,14 +20,18 @@ const envSchema = z.object({
 
 export type RuntimeEnv = z.infer<typeof envSchema>;
 
+type RawEnv = {
+  [K in keyof RuntimeEnv]: string | undefined;
+};
+
 // Next.js only inlines NEXT_PUBLIC_* when each var is accessed statically.
 // Passing `process.env` as a whole object prevents client-side inlining.
-const runtimeEnv = {
+const runtimeEnv: RawEnv = {
   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   NEXT_PUBLIC_QUERY_GC_TIME: process.env.NEXT_PUBLIC_QUERY_GC_TIME,
   NEXT_PUBLIC_QUERY_STALE_TIME: process.env.NEXT_PUBLIC_QUERY_STALE_TIME,
   NEXT_PUBLIC_QUERY_RETRY: process.env.NEXT_PUBLIC_QUERY_RETRY,
-} satisfies Record<keyof RuntimeEnv, string | undefined>;
+};
 
 const parseEnv = () => {
   const result = envSchema.safeParse(runtimeEnv);
