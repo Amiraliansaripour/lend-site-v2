@@ -1,5 +1,5 @@
-const REGEX_DOUBLE_SLASH = /\/\//g;
-
 export const resolveURL = (pathname: string, baseURL: string) => {
-  return `${baseURL}${pathname}`.replace(REGEX_DOUBLE_SLASH, '/');
+  const base = baseURL.replace(/\/+$/, '');
+  const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  return `${base}${path}`;
 };
