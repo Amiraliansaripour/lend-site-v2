@@ -19,7 +19,7 @@ COPY --from=deps /app/package-lock.json ./package-lock.json
 COPY . .
 RUN mkdir -p public
 
-ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_API_BASE_URL=https://lendapitest.persiansys.ir/api/v1
 ARG NEXT_PUBLIC_QUERY_GC_TIME=0
 ARG NEXT_PUBLIC_QUERY_STALE_TIME=0
 ARG NEXT_PUBLIC_QUERY_RETRY=1
