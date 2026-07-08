@@ -23,7 +23,7 @@ if (!apiBaseURL) {
 }
 
 export const BASE_URLS = {
-  DEFAULT: apiBaseURL,
+  DEFAULT: process.env.NEXT_PUBLIC_API_BASE_URL ?? '',
 } as const;
 
 export const isMappedBaseURL = (baseURL: BaseURL): baseURL is MappedBaseURL => {
