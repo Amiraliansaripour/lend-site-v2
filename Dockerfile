@@ -12,8 +12,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts \
  && npm install --no-save --ignore-scripts \
       @parcel/watcher-linux-x64-musl@2.5.1 \
-      @next/swc-linux-x64-musl@16.1.1 \
-      @next/swc-linux-x64-gnu@16.1.1
+      @next/swc-linux-x64-musl@16.1.1
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
