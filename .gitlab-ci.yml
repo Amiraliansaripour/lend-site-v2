@@ -60,4 +60,4 @@ deploy:prod:
     name: production
     url: https://lend.persiansys.ir
   rules:
-    - if: $CI_COMMIT_BRANCH == "nekoozad-dev"
+    - if: $CI_COMMIT_BRANCH == "main"
