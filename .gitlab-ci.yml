@@ -1,0 +1,63 @@
+# GitLab CI for lend-site-v2 (Next.js customer site)
+#
+# Runner: self-hosted SHELL executor — builds images locally on the server.
+# No GitLab Container Registry required.
+#
+# Host prerequisites:
+#   - Docker Engine (gitlab-runner user in the `docker` group)
+#
+# CI/CD variables (Settings → CI/CD → Variables):
+#   NEXT_PUBLIC_API_BASE_URL
+#   Optional: DEPLOY_HOST_PORT (default 3000)
+
+stages:
+  - deploy
+
+variables:
+  IMAGE_NAME: lend-site-v2
+  CONTAINER_NAME: lend-site-v2
+  DEPLOY_HOST_PORT: "3000"
+  CONTAINER_PORT: "3000"
+  NEXT_PUBLIC_API_BASE_URL: "https://lendapitest.persiansys.ir/api/v1"
+  NEXT_PUBLIC_QUERY_GC_TIME: "0"
+  NEXT_PUBLIC_QUERY_STALE_TIME: "0"
+  NEXT_PUBLIC_QUERY_RETRY: "false"
+
+default:
+  interruptible: true
+  tags:
+    - shell
+
+deploy:prod:
+  stage: deploy
+  script:
+    - docker version
+    - |
+      docker build \
+        --build-arg NEXT_PUBLIC_API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL" \
+        --build-arg NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
+        --build-arg NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
+        --build-arg NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
+        -t "$IMAGE_NAME:latest" \
+        .
+    - docker stop "$CONTAINER_NAME" || true
+    - docker rm "$CONTAINER_NAME" || true
+    - |
+      docker run -d \
+        --name "$CONTAINER_NAME" \
+        --restart always \
+        -p "${DEPLOY_HOST_PORT}:${CONTAINER_PORT}" \
+        -e NODE_ENV=production \
+        -e PORT=3000 \
+        -e HOSTNAME=0.0.0.0 \
+        -e NEXT_PUBLIC_API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL" \
+        -e NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
+        -e NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
+        -e NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
+        "$IMAGE_NAME:latest"
+    - docker image prune -f
+  environment:
+    name: production
+    url: https://lend.persiansys.ir
+  rules:
+    - if: $CI_COMMIT_BRANCH == "nekoozad-dev"
