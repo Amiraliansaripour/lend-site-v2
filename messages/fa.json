@@ -1,14 +1,11 @@
 {
   "Index": {
     "brand": "لند"
-<<<<<<< HEAD
-=======
   },
   "PWA": {
     "installTitle": "نصب اپلیکیشن لند",
     "installDescription": "برای دسترسی سریع‌تر، لند را به صفحه اصلی اضافه کنید.",
     "install": "نصب",
     "dismiss": "بعداً"
->>>>>>> a47b58a (pwa)
   }
 }

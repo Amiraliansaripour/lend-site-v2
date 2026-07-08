@@ -1,14 +1,11 @@
 {
   "Index": {
     "brand": "Lend"
-<<<<<<< HEAD
-=======
   },
   "PWA": {
     "installTitle": "Install Lend App",
     "installDescription": "Add Lend to your home screen for faster access.",
     "install": "Install",
     "dismiss": "Later"
->>>>>>> a47b58a (pwa)
   }
 }
