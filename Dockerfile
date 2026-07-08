@@ -10,7 +10,7 @@ COPY package.json package-lock.json ./
 # Lockfile is generated on Windows and only contains Windows optional natives.
 # Refresh it on Alpine so musl packages (lightningcss, @swc/core, …) are locked,
 # then do a clean install from that refreshed lockfile.
-RUN npm install --package-lock-only \
+RUN npm install --package-lock-only --ignore-scripts \
  && npm ci --ignore-scripts
 
 FROM base AS builder
