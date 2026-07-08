@@ -6,15 +6,16 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
-COPY package.json package-lock.json ./
-# Lockfile is generated on Windows and only contains Windows optional natives.
-# Refresh it on Alpine so musl packages (lightningcss, @swc/core, …) are locked,
-# then do a clean install from that refreshed lockfile.
-RUN npm install --package-lock-only --ignore-scripts \
- && npm ci --ignore-scripts
+COPY package.json ./
+# package-lock.json is generated on Windows and only records Windows optional
+# natives. Installing from package.json on Alpine so Linux/musl packages
+# (lightningcss, @parcel/watcher, @swc/core, @next/swc, …) are resolved here.
+RUN npm install --ignore-scripts \
+ && node -e "require('@parcel/watcher'); require('lightningcss')"
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package-lock.json ./package-lock.json
 COPY . .
 RUN mkdir -p public
 
