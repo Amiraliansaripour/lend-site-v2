@@ -7,12 +7,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
-# Lockfile is often generated on Windows and omits Linux optional natives
-# (@parcel/watcher-*, @next/swc-*). Install those explicitly for Alpine.
+# Lockfile is generated on Windows and omits Linux optional natives.
+# next-intl loads @swc/core while evaluating next.config.ts.
 RUN npm ci --ignore-scripts \
  && npm install --no-save --ignore-scripts \
       @parcel/watcher-linux-x64-musl@2.5.1 \
-      @next/swc-linux-x64-musl@16.1.1
+      @swc/core-linux-x64-musl@1.15.7 \
+      @next/swc-linux-x64-musl@16.1.1 \
+ && node -e "require('./node_modules/next-intl/node_modules/@swc/core'); require('@parcel/watcher')"
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
