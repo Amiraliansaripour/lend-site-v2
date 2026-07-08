@@ -8,7 +8,7 @@ const envSchema = z.looseObject({
   // * react query
   NEXT_PUBLIC_QUERY_GC_TIME: z.coerce.number().default(0),
   NEXT_PUBLIC_QUERY_STALE_TIME: z.coerce.number().default(0),
-  NEXT_PUBLIC_QUERY_RETRY: z.union([z.boolean(), z.coerce.number()]).default(false),
+  NEXT_PUBLIC_QUERY_RETRY: z.coerce.number().default(1),
 });
 
 const validateEnv = () => {

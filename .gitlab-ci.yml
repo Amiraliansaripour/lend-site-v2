@@ -21,7 +21,7 @@ variables:
   NEXT_PUBLIC_API_BASE_URL: "https://lendapitest.persiansys.ir/api/v1"
   NEXT_PUBLIC_QUERY_GC_TIME: "0"
   NEXT_PUBLIC_QUERY_STALE_TIME: "0"
-  NEXT_PUBLIC_QUERY_RETRY: "false"
+  NEXT_PUBLIC_QUERY_RETRY: "1"
 
 default:
   interruptible: true
