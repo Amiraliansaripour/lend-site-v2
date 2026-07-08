@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import {
   MerchantSignupBanner,
   MerchantSignupForm,
@@ -13,3 +14,20 @@ export default function MerchantSignupPage() {
     </>
   );
 }
+=======
+import {
+  MerchantSignupBanner,
+  MerchantSignupForm,
+  MerchantSignupProcess,
+} from '@/components/page/merchant-signup';
+
+export default function MerchantSignupPage() {
+  return (
+    <>
+      <MerchantSignupBanner />
+      <MerchantSignupProcess />
+      <MerchantSignupForm />
+    </>
+  );
+}
+>>>>>>> a47b58a (pwa)
