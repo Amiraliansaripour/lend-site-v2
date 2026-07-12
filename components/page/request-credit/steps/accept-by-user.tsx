@@ -68,6 +68,7 @@ export function AcceptByUser({ requestId, userId, ruleText }: AcceptByUserProps)
 
     confirmRequestMutation.mutate(requestId, {
       onSuccess: result => {
+        console.log(result);
         if (result.isSuccess) {
           toast.success('درخواست شما با موفقیت تایید شد');
           router.push('/requests');

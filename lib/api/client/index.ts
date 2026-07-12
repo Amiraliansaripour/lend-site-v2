@@ -50,9 +50,24 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     window.location.href = '/';
     return { data: undefined as unknown as D, resp };
   }
-  const data: D = await resp.json();
 
-  if (!resp.ok) toast.error((data as APIResult<D>).message);
+  const text = await resp.text();
+  let data: D = {} as D;
+
+  if (text) {
+    try {
+      data = JSON.parse(text) as D;
+    } catch {
+      if (!resp.ok) {
+        toast.error(`Request failed with status ${resp.status}`);
+      }
+      return { data, resp };
+    }
+  }
+
+  if (!resp.ok) {
+    toast.error((data as APIResult<D>)?.message ?? `Request failed with status ${resp.status}`);
+  }
 
   return { data, resp };
 };

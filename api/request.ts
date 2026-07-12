@@ -236,7 +236,14 @@ export const getRequestPreview = async (requestId: string) => {
 };
 
 // * Confirm request by user
-export const confirmRequestByUser = async (requestId: string) => {
+export const confirmRequestByUser = async (requestId: string): Promise<APIResult<unknown>> => {
   const resp = await api.get<APIResult<unknown>>(`/Request/UserConfirm/${requestId}`);
+
+  // The UserConfirm endpoint returns HTTP 200 with an empty body on success.
+  // If the response is ok and data is empty/incomplete, treat it as success.
+  if (resp.resp.ok && (!resp.data || Object.keys(resp.data as object).length === 0)) {
+    return { isSuccess: true, data: null, message: '', statusCode: 0 } as APIResult<unknown>;
+  }
+
   return resp.data;
 };
