@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 export function Footer() {
   return (
     <footer>
-      <section className='bg-muted py-12'>
+      <section className='bg-muted pb-12 pt-6'>
         <div className='container flex flex-col md:flex-row justify-between gap-x-6 gap-y-10'>
           <section className='basis-1/3 min-w-67.5 grid gap-4'>
             <Link href='/'>

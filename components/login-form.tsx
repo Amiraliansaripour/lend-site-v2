@@ -123,6 +123,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
   return (
     <Card className='lg:w-100'>
       <CardHeader>
+        <div className='text-center mb-4'>
+          <span className='text-2xl font-bold text-brand'>Nikaland</span>
+        </div>
         <CardTitle>ورود به حساب کاربری</CardTitle>
         <CardDescription className='mt-2'>
           {isOtpStep

@@ -26,7 +26,7 @@ const NAVBAR: NavItem[] = [
   { title: 'ثبت نام فروشگاه‌ها', href: '/merchant-signup' },
 ];
 
-const WITH_INVERTED_HEADERS = new Set<Href>([]);
+const WITH_INVERTED_HEADERS = new Set<Href>(['/login']);
 
 export function Header() {
   const pathname = usePathname() as Href;
@@ -119,7 +119,7 @@ export function Header() {
           <Link href='/' className='h-6 flex-shrink-0 lg:order-first'>
             {inverted ? (
               <Image
-                src='/logos/logo-white.png'
+                src='/logos/black-logo.png'
                 alt='logo'
                 width={120}
                 height={24}
@@ -163,7 +163,9 @@ export function Header() {
                 href='/dashboard'
                 className={cn(
                   'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
-                  'text-white border-white hover:bg-white/10',
+                  inverted
+                    ? 'text-black border-black hover:bg-white/10'
+                    : 'text-white border-white hover:bg-white/10',
                 )}
               >
                 <User size={18} />

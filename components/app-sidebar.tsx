@@ -6,6 +6,7 @@ import {
   FileText,
   CalendarClock,
   CircleQuestionMark,
+  LogOut,
 } from 'lucide-react';
 
 import {
@@ -13,11 +14,13 @@ import {
   SidebarMenu,
   SidebarGroup,
   SidebarContent,
+  SidebarFooter,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarGroupContent,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
+import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
 
 const items = [
   { title: 'داشبورد', url: '/dashboard', icon: Home },
@@ -56,6 +59,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => dispatchEvent(AUTH_LOGOUT_EVENT)}
+              className='text-red-500 hover:text-red-600 data-[active=true]:bg-red-50 data-[active=true]:text-red-600'
+            >
+              <LogOut />
+              <span>خروج</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
