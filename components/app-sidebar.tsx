@@ -41,7 +41,7 @@ export function AppSidebar() {
             href='/'
             className='flex justify-center items-center mb-3 border-b border-gray-200 w-full py-4'
           >
-            <img src='/logos/black-logo.png' className='w-44  mx-auto' />
+            <img src='/logos/logo.png' className='w-44  mx-auto' />
           </Link>
           <SidebarGroupContent>
             <SidebarMenu>
