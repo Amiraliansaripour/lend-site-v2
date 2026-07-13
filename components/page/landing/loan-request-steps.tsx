@@ -40,7 +40,7 @@ export function LoanRequestSteps() {
   return (
     <section className='container'>
       <hgroup className='flex flex-col items-center gap-y-4 mb-10'>
-        <h3 className='text-lg text-center font-semibold'>مراحل دریافت وام از نیکالند</h3>
+        <h3 className='text-lg text-center font-semibold'>مراحل دریافت وام از کارالند</h3>
         <p className='max-w-md text-center leading-7 text-pretty'>
           با طی کردن چند مرحله ساده، می‌توانید وام مورد نیاز خود را به‌سرعت دریافت کنید و از مزایای
           خرید اعتباری بهره‌مند شوید.

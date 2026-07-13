@@ -1,6 +1,6 @@
 import Image, { StaticImageData } from 'next/image';
-import LandingBannerMobile from '@/assets/images/banners/landing-mobile.png';
-import LandingBanner from '@/assets/images/banners/landing.png';
+import LandingBannerMobile from '@/assets/images/banners/mobile-landing.webp';
+import LandingBanner from '@/assets/images/banners/landing.webp';
 
 interface BannerProps {
   src?: StaticImageData;
@@ -18,11 +18,7 @@ export function Banner({ src, children }: BannerProps) {
         src={desktopSrc}
         alt='Desktop Banner'
       />
-      <Image
-        className='w-full h-auto block md:hidden'
-        src={mobileSrc}
-        alt='Mobile Banner'
-      />
+      <Image className='w-full h-auto block md:hidden' src={mobileSrc} alt='Mobile Banner' />
       {children}
     </div>
   );

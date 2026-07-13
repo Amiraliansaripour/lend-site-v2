@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import type { Shop } from './shop-types';
 import { getShopImageUrl } from '@/lib/shop-utils';
-import ShopsBannerDesktop from '@/assets/images/banners/store.png';
+import ShopsBannerDesktop from '@/assets/images/banners/store.webp';
 import ShopsBannerMobile from '@/assets/images/banners/store-res.png';
 type ShopBannerProps = {
   shop: Shop;

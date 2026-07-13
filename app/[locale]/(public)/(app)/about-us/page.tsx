@@ -46,7 +46,7 @@ export default async function IndexPage() {
         <section className='container relative text-white'>
           <div className='absolute inset-x-4 bottom-82'>
             <hgroup className='space-y-4'>
-              <h1 className='text-2xl font-bold'>خریدهای سریع و آســـــــان زندگی با نیکالند</h1>
+              <h1 className='text-2xl font-bold'>خریدهای سریع و آســـــــان زندگی با کارالند</h1>
               <p className='text-sm lg:text-base max-w-lg text-balance leading-7'>
                 با ارائه تسهیلات خرید به‌ صورت شفاف، سریع و بدون نیاز به ضامن، کمک می‌کنیم تا با
                 سرعت و سهولت، کالاهای ضروری و مورد علاقه خود را تهیه کنید.
@@ -61,7 +61,7 @@ export default async function IndexPage() {
         <hgroup className='flex flex-col items-center gap-y-4 mb-10'>
           <h3 className='text-lg text-center font-semibold'>ماموریت ما</h3>
           <p className='max-w-3xl text-center leading-7 text-pretty'>
-            نیکاپی با هدف توانمندسازی افراد و کسب‌وکارها، نوآوری‌های مالی را به شکلی شفاف، ساده و
+            کارا با هدف توانمندسازی افراد و کسب‌وکارها، نوآوری‌های مالی را به شکلی شفاف، ساده و
             قابل‌دسترس ارائه می‌دهد. ما با تکیه بر دانش روز، امکان رفع نیازهای مالی را در کوتاه‌ترین
             زمان فراهم کرده‌ایم. هدف ما ارائه تجربه‌ای متفاوت و کارآمد در خدمات مالی آنلاین برای
             مدیریت آسان امور شخصی و تجاری است.
@@ -87,16 +87,16 @@ export default async function IndexPage() {
       <section className='container grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] items-center justify-items-center gap-x-20 gap-y-8'>
         <div className='lg:col-span-2 leading-8 text-pretty'>
           <p>
-            نیکاپی یک شرکت فعال در حوزه فناوری مالی (Fintech) و از زیرمجموعه‌های هلدینگ نیکا است.
+            کاراپی یک شرکت فعال در حوزه فناوری مالی (Fintech) و از زیرمجموعه‌های هلدینگ کارا است.
             این شرکت با هدف ایجاد تحول در خدمات مالی، به‌ویژه در بخش‌های لندتک و پرداخت الکترونیک
-            تأسیس شده است. تیم نیکاپی متشکل از متخصصان حوزه مالی، فناوری اطلاعات و هوش مصنوعی است که
+            تأسیس شده است. تیم کارا متشکل از متخصصان حوزه مالی، فناوری اطلاعات و هوش مصنوعی است که
             تلاش می‌کنند فرآیندهای سنتی مالی را به تجربه‌ای ساده، سریع و امن برای کاربران تبدیل
             کنند.
           </p>
           <p>
-            با نیکاپی، افراد حقیقی می‌توانند به‌راحتی به تسهیلات خرد دسترسی پیدا کنند و کسب‌وکارها
-            نیز از راهکارهای نوآورانه ما برای رشد فعالیت‌های تجاری خود و مدیریت بهتر پرداخت‌ها
-            بهره‌مند شوند.
+            با کارا افراد حقیقی می‌توانند به‌راحتی به تسهیلات خرد دسترسی پیدا کنند و کسب‌وکارها نیز
+            از راهکارهای نوآورانه ما برای رشد فعالیت‌های تجاری خود و مدیریت بهتر پرداخت‌ها بهره‌مند
+            شوند.
           </p>
         </div>
         <Image
@@ -109,7 +109,7 @@ export default async function IndexPage() {
       </section>
 
       <section className='container overflow-x-hidden pb-2'>
-        <h3 className='text-lg text-center font-semibold mb-8 lg:mb-10'>شرکای تجاری نیکالند</h3>
+        <h3 className='text-lg text-center font-semibold mb-8 lg:mb-10'>شرکای تجاری کارالند</h3>
 
         <Marquee>
           <Image

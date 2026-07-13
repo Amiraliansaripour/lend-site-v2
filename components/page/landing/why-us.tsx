@@ -143,9 +143,9 @@ export function WhyUs() {
   return (
     <section className='container overflow-hidden'>
       <hgroup className='flex flex-col items-center gap-y-4 mb-10'>
-        <h3 className='text-lg text-center font-semibold'>چرا نیکالِند؟</h3>
+        <h3 className='text-lg text-center font-semibold'>چرا کارالند؟</h3>
         <p className='max-w-xl text-center leading-7 text-pretty'>
-          در نیکالند مسیر دریافت اعتبار بانکی به شکلی ساده، سریع و شفاف طراحی شده تا همه بتوانند
+          در کارالند مسیر دریافت اعتبار بانکی به شکلی ساده، سریع و شفاف طراحی شده تا همه بتوانند
           بدون پیچیدگی‌های رایج بانکی از آن استفاده کنند. از لحظه ثبت درخواست تا خرید از فروشگاه‌های
           طرف قرارداد، تمام مراحل به ‌صورت آنلاین، در هر نقطه از ایران و بدون نیاز به مراجعه حضوری
           انجام می‌شود.

@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import ShopsBannerDesktop from '@/assets/images/banners/store.png';
+import ShopsBannerDesktop from '@/assets/images/banners/store.webp';
 import ShopsBannerMobile from '@/assets/images/banners/store-res.png';
 export function ShopsBanner() {
   return (

@@ -119,7 +119,7 @@ export function Header() {
           <Link href='/' className='h-6 flex-shrink-0 lg:order-first'>
             {inverted ? (
               <Image
-                src='/logos/black-logo.png'
+                src='/logos/logo.png'
                 alt='logo'
                 width={120}
                 height={24}
@@ -127,7 +127,7 @@ export function Header() {
               />
             ) : (
               <Image
-                src='/logos/logo-white.png'
+                src='/logos/white-logo.png'
                 alt='logo'
                 width={120}
                 height={24}

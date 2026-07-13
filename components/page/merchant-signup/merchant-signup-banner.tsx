@@ -16,7 +16,7 @@ export function MerchantSignupBanner() {
       <div className='absolute text-white right-5 lg:right-24 bottom-1/3 z-10'>
         <div className='text-sm lg:text-2xl font-bold pb-3'>به جمع فروشگاه‌های ما بپیوندید.</div>
         <div className='text-xs lg:text-lg'>
-          با ثبت نام در نوالند، فروشگاه خود را به هزاران مشتری معرفی کنید.
+          با ثبت نام در کارالند، فروشگاه خود را به هزاران مشتری معرفی کنید.
         </div>
         <button
           onClick={scrollToForm}

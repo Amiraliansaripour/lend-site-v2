@@ -16,7 +16,7 @@ export function Footer() {
             </Link>
 
             <p className='leading-7 text-balance'>
-              نیکالِند به دنبال آن است تا با بهره‌گیری از روندهای نوظهور در حوزه فناوری مالی و با
+              کارالند به دنبال آن است تا با بهره‌گیری از روندهای نوظهور در حوزه فناوری مالی و با
               اتکاء به تیمی مجرب، تجربه‌ای متفاوت از ارائه خدمات مالی برخط را برای کاربران خود رقم
               بزند. رسالت ما توانمندسازی افراد و کسب‌وکارها از طریق ارائه راه‌حل‌های وام‌دهی شفاف،
               سریع و امن، با تمرکز بر تسهیل دسترسی همگانی به خدمات مالی است.
@@ -26,14 +26,14 @@ export function Footer() {
           <section className='basis-7/12'>
             <div className='grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-x-6 gap-y-8'>
               <section>
-                <h5 className='font-bold'>نیکالند</h5>
+                <h5 className='font-bold'>کارالند</h5>
                 <nav className='text-sm'>
                   <ul className='space-y-2 mt-3'>
                     <li>
                       <Link href='#about-us'>درباره ما</Link>
                     </li>
                     <li>
-                      <Link href='#blog'>مجله نیکا</Link>
+                      <Link href='#blog'>مجله کارا</Link>
                     </li>
                   </ul>
                 </nav>
@@ -59,7 +59,7 @@ export function Footer() {
                       <a href='tel:#'>تلفن: 91200528-021</a>
                     </li>
                     <li>
-                      <a href='mailto:#'>ایمیل: info@nikalend.ir</a>
+                      <a href='mailto:#'>ایمیل: info@karalend.ir</a>
                     </li>
                   </ul>
                 </nav>
@@ -81,11 +81,11 @@ export function Footer() {
           <div className='flex items-center gap-x-2'>
             <span className='text-lg -mb-1'>&copy;</span>
             <span>{new Date().getFullYear()}</span>
-            <p className='text-left rtl:text-right'>کلیه حقوق این سایت متعلق به نیکالند می باشد.</p>
+            <p className='text-left rtl:text-right'>کلیه حقوق این سایت متعلق به کارالند می باشد.</p>
           </div>
 
           <a href='mailto:#' className='-mb-1'>
-            mail@nikalend.ir
+            mail@karalend.ir
           </a>
         </div>
       </section>
