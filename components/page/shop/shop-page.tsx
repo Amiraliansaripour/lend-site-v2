@@ -37,7 +37,7 @@ export function ShopPage({ shop }: ShopPageProps) {
               {shop.url && (
                 <div className='flex items-center justify-end gap-2'>
                   <a
-                    href={shop.url}
+                    href={shop.url.startsWith('https://') ? shop.url : `https://${shop.url}`}
                     target='_blank'
                     rel='noopener noreferrer'
                     className='text-blue-600 hover:underline'
