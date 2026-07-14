@@ -7,4 +7,8 @@ export { ShopCard, ShopCardSkeleton, ShopListSkeleton } from './shop-card';
 export { ShopsList } from './shops-list';
 export { ShopPage } from './shop-page';
 export { ShopsPage } from './shops-page';
+export { ShopCatalog } from './shop-catalog';
+export { ShopCategoryTree } from './shop-category-tree';
+export { ShopProductList } from './shop-product-list';
+export { ShopProductCard } from './shop-product-card';
 export * from './shop-types';

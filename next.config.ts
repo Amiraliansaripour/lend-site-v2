@@ -25,6 +25,11 @@ const nextConfig: NextConfig = {
         hostname: 'lendapi.persiansys.ir',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lendapitest.persiansys.ir',
+        pathname: '/uploads/**',
+      },
     ],
   },
 };

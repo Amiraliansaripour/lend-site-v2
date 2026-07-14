@@ -14,7 +14,6 @@ function ShopsPageContent() {
 
   const page = parseInt(searchParams.get('page') || '1', 10);
   const type = (searchParams.get('type') as ShopType) || '2';
-  const categories = searchParams.getAll('category');
 
   const { data: allShops, isLoading } = useShops();
 
@@ -22,12 +21,6 @@ function ShopsPageContent() {
     if (!allShops) return { filteredShops: [], totalPages: 1 };
 
     let filtered = allShops.filter((shop: Shop) => shop.isActive);
-
-    if (categories.length > 0 && filtered.length > 0) {
-      filtered = filtered.filter((shop: Shop) =>
-        shop.categoryIds?.some(catId => categories.includes(catId)),
-      );
-    }
 
     if (type !== '2') {
       filtered = filtered.filter((shop: Shop) => {
@@ -42,7 +35,7 @@ function ShopsPageContent() {
     const paginatedShops = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
     return { filteredShops: paginatedShops, totalPages: total };
-  }, [allShops, categories, type, page]);
+  }, [allShops, type, page]);
 
   return <ShopsPage shops={filteredShops} totalPages={totalPages} isLoading={isLoading} />;
 }

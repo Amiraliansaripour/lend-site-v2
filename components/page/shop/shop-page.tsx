@@ -1,6 +1,7 @@
 import { Calculator } from '@/components/page/landing';
 import { ShopBanner } from './shop-banner';
 import { ShopSteps } from './shop-steps';
+import { ShopCatalog } from './shop-catalog';
 import type { Shop } from './shop-types';
 
 type ShopPageProps = {
@@ -50,6 +51,8 @@ export function ShopPage({ shop }: ShopPageProps) {
             </div>
           </div>
         </div>
+
+        <ShopCatalog merchantId={shop.id} />
 
         <ShopSteps />
         <Calculator />
