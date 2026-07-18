@@ -147,7 +147,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                     type='tel'
                     label='کد اعتبار سنجی'
                     inputMode='tel'
-                    placeholder='1234'
+                    placeholder='####'
                     autoComplete='tel'
                     maxLength={4}
                   />

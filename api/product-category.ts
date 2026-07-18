@@ -11,7 +11,7 @@ export const getCategoryTree = async (merchantId: string): Promise<ProductCatego
 
   try {
     const resp = await api.get<APIResult<ProductCategory[] | null>>(
-      `/ProductCategory/GetCategoryTree/tree/${merchantId}`,
+      `/ProductCategory/GetCategoryTree/tree?merchantid=${merchantId}`,
     );
     return asArray(resp.data?.data);
   } catch {
