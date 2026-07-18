@@ -30,6 +30,27 @@ export type Shop = {
   url?: string;
 };
 
+export type HomeCategory = {
+  id: string;
+  name: string;
+  merchantId?: string;
+  isActive?: boolean;
+};
+
+export type MerchantPaginationResult = {
+  items: Shop[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+};
+
+export type MerchantPaginationParams = {
+  pageNumber?: number;
+  pageSize?: number;
+  status?: ShopType;
+  filter?: string[];
+};
+
 export type ProductCategoryField = {
   id: string;
   categoryId: string;
