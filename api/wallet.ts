@@ -56,7 +56,9 @@ export const getWalletInfo = async (): Promise<WalletInfo | null> => {
 };
 
 export const getUserTransactions = async (): Promise<WalletTransaction[]> => {
-  const { data } = await api.get<WalletTransaction[]>('/WalletReport/UserTransaction');
+  const { data } = await api.get<WalletTransaction[]>('/WalletReport/UserTransaction', {
+    baseURL: 'REPORT',
+  });
 
   if (data && Array.isArray(data)) {
     // Sort by orderId descending (newest first)
@@ -78,7 +80,9 @@ export type PaymentTokenResponse = {
 };
 
 export const getWalletUser = async (): Promise<WalletUser[]> => {
-  const { data } = await api.get<WalletUser[]>('/WalletReport/GetWalletUser');
+  const { data } = await api.get<WalletUser[]>('/WalletReport/GetWalletUser', {
+    baseURL: 'REPORT',
+  });
 
   if (data && Array.isArray(data)) {
     return data;
