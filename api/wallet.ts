@@ -46,7 +46,9 @@ export type WalletTransaction = {
 };
 
 export const getWalletInfo = async (): Promise<WalletInfo | null> => {
-  const { data } = await api.get<WalletInfo[]>('/WalletReport/GetWallets');
+  const { data } = await api.get<WalletInfo[]>('/WalletReport/GetWallets', {
+    baseURL: 'REPORT',
+  });
 
   if (data && Array.isArray(data) && data.length > 0) {
     return data[0];
@@ -92,7 +94,7 @@ export const getWalletUser = async (): Promise<WalletUser[]> => {
 };
 
 export const createCashWallet = async (): Promise<void> => {
-  await api.post('/WalletReport/CachRequest', {});
+  await api.post('/WalletReport/CachRequest', {}, { baseURL: 'REPORT' });
 };
 
 export type PaymentTokenPayload = {
