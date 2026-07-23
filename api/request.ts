@@ -51,7 +51,7 @@ export const createRequest = async (data: Request) => {
 
 export const getUserRequests = async (userId: string): Promise<Request[]> => {
   const { data } = await api.get<{ isSuccess: boolean; data: Request[] }>(
-    `/Request/GetUserRequest/${userId}`,
+    `/Request/GetUserRequest/`,
   );
 
   if (data.isSuccess && data.data && Array.isArray(data.data)) {

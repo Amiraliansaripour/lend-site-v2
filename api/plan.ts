@@ -43,7 +43,7 @@ export const getPlan = async (id: string, params: Params = {}) => {
 };
 
 export const getPlanWithoutAuth = async (id: string, params: Params = {}) => {
-  const resp = await api.get<APIResult<Plan>>(`/Plan/GetAll/${id}`, params);
+  const resp = await api.get<APIResult<Plan>>(`/Plan/Get/${id}`, params);
   return resp.data.data as Plan;
 };
 

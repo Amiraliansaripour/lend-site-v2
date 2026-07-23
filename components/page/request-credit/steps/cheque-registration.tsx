@@ -333,30 +333,57 @@ export function ChequeRegistration({
     const ctx = canvas?.getContext('2d');
     const img = imgRef.current;
 
-    if (canvas && ctx && img) {
-      const drawCanvas = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#000';
+    if (!canvas || !ctx || !img) return;
 
-        // Draw sayadId at specific position
-        if (formData.sayadId) {
-          ctx.fillText(formData.sayadId, 220, 74);
-        }
+    const drawFallbackBackground = () => {
+      ctx.fillStyle = '#f3eef7';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#c4b5d4';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '12px Arial';
+      ctx.fillText('شناسه صیادی:', 220, 56);
+      ctx.fillText('مبلغ:', 193, 172);
+    };
 
-        // Draw guaranteed amount at specific position
-        if (guaranteedAmount) {
-          ctx.fillText(guaranteedAmount.toString(), 193, 190);
-        }
-      };
+    const drawOverlay = () => {
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#000';
 
-      if (img.complete) {
-        drawCanvas();
-      } else {
-        img.onload = drawCanvas;
+      if (formData.sayadId) {
+        ctx.fillText(formData.sayadId, 220, 74);
       }
+
+      if (guaranteedAmount) {
+        ctx.fillText(guaranteedAmount.toString(), 193, 190);
+      }
+    };
+
+    const drawCanvas = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // img.complete is true for broken images too — only draw when decode succeeded
+      if (img.naturalWidth > 0) {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      } else {
+        drawFallbackBackground();
+      }
+
+      drawOverlay();
+    };
+
+    img.onload = drawCanvas;
+    img.onerror = drawCanvas;
+
+    if (img.complete) {
+      drawCanvas();
     }
+
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
   }, [formData.sayadId, guaranteedAmount]);
 
   const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
