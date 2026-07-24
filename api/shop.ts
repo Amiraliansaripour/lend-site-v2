@@ -37,15 +37,28 @@ const buildMerchantPaginationQuery = (params: MerchantPaginationParams = {}) => 
   return query ? `?${query}` : '';
 };
 
+const unwrapMerchantPagination = (
+  payload: MerchantPaginationResult | APIResult<MerchantPaginationResult | null> | null | undefined,
+): MerchantPaginationResult | null => {
+  if (!payload || typeof payload !== 'object') return null;
+  // GetFullPagination returns the page object at the top level (not APIResult-wrapped).
+  if ('items' in payload) return payload as MerchantPaginationResult;
+  if ('data' in payload) {
+    const nested = (payload as APIResult<MerchantPaginationResult | null>).data;
+    return nested && typeof nested === 'object' && 'items' in nested ? nested : null;
+  }
+  return null;
+};
+
 export const getMerchantsFullPagination = async (
   params: MerchantPaginationParams = {},
 ): Promise<MerchantPaginationResult> => {
   const query = buildMerchantPaginationQuery(params);
-  const resp = await api.get<APIResult<MerchantPaginationResult | null>>(
+  const resp = await api.get<MerchantPaginationResult | APIResult<MerchantPaginationResult | null>>(
     `/Merchant/GetFullPagination${query}`,
   );
 
-  const data = resp.data?.data;
+  const data = unwrapMerchantPagination(resp.data);
   return {
     items: Array.isArray(data?.items) ? data.items : [],
     totalCount: data?.totalCount ?? 0,
