@@ -20,9 +20,16 @@ interface AcceptByUserProps {
   ruleText?: string | null;
   onConfirm?: () => void;
   onCancel?: () => void;
+  isReadOnly?: boolean;
 }
 
-export function AcceptByUser({ requestId, userId, ruleText }: AcceptByUserProps) {
+export function AcceptByUser({
+  requestId,
+  userId,
+  ruleText,
+  onCancel,
+  isReadOnly = false,
+}: AcceptByUserProps) {
   const router = useRouter();
   const { data: requestData, isLoading: isLoadingRequest } = useRequestPreview(requestId);
   const { data: userData, isLoading: isLoadingUser } = useUser(userId);
@@ -56,6 +63,8 @@ export function AcceptByUser({ requestId, userId, ruleText }: AcceptByUserProps)
   };
 
   const handleConfirm = async () => {
+    if (isReadOnly) return;
+
     if (!isChecked) {
       toast.error('لطفا شرایط را مطالعه و تایید کنید');
       return;
@@ -83,6 +92,11 @@ export function AcceptByUser({ requestId, userId, ruleText }: AcceptByUserProps)
   };
 
   const handleCancellation = async () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
+
     setIsCancelling(true);
     try {
       await optOutRequest(requestId);
@@ -433,6 +447,7 @@ export function AcceptByUser({ requestId, userId, ruleText }: AcceptByUserProps)
                 <Checkbox
                   id='terms-checkbox'
                   checked={isChecked}
+                  disabled={isReadOnly}
                   onCheckedChange={checked => setIsChecked(checked === true)}
                 />
                 <label
@@ -455,36 +470,40 @@ export function AcceptByUser({ requestId, userId, ruleText }: AcceptByUserProps)
             </div>
 
             <div className='flex justify-center gap-4'>
-              <Button
-                onClick={handleConfirm}
-                disabled={!isChecked || confirmRequestMutation.isPending}
-                size='lg'
-              >
-                {confirmRequestMutation.isPending ? (
-                  <>
-                    <Loader2 className='w-4 h-4 ml-2 animate-spin' />
-                    در حال ثبت...
-                  </>
-                ) : (
-                  'ثبت درخواست'
-                )}
-              </Button>
-              <Button
-                type='button'
-                variant='outline'
-                size='lg'
-                onClick={handleCancellation}
-                disabled={isCancelling}
-              >
-                {isCancelling ? (
-                  <>
-                    <Loader2 className='w-4 h-4 ml-2 animate-spin' />
-                    در حال لغو...
-                  </>
-                ) : (
-                  'انصراف'
-                )}
-              </Button>
+              {!isReadOnly && (
+                <Button
+                  onClick={handleConfirm}
+                  disabled={!isChecked || confirmRequestMutation.isPending}
+                  size='lg'
+                >
+                  {confirmRequestMutation.isPending ? (
+                    <>
+                      <Loader2 className='w-4 h-4 ml-2 animate-spin' />
+                      در حال ثبت...
+                    </>
+                  ) : (
+                    'ثبت درخواست'
+                  )}
+                </Button>
+              )}
+              {onCancel && (
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='lg'
+                  onClick={handleCancellation}
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? (
+                    <>
+                      <Loader2 className='w-4 h-4 ml-2 animate-spin' />
+                      در حال لغو...
+                    </>
+                  ) : (
+                    'انصراف'
+                  )}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

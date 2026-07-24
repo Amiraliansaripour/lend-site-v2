@@ -15,6 +15,7 @@ interface PayValidationProps {
   onNext?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 const explanations = [
@@ -31,6 +32,7 @@ export function PayValidation({
   onNext,
   onCancel,
   isEditMode,
+  isReadOnly = false,
 }: PayValidationProps) {
   const getPaymentTokenMutation = useGetPaymentToken();
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
@@ -97,7 +99,7 @@ export function PayValidation({
     );
   };
 
-  const isPaymentButtonDisabled = isPaymentLoading || !user?.id;
+  const isPaymentButtonDisabled = isPaymentLoading || !user?.id || isReadOnly;
 
   return (
     <div className='w-full space-y-0'>

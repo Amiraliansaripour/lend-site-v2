@@ -19,6 +19,7 @@ interface ChequeRegistrationProps {
   onNext?: (data?: ChequeFormData) => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 interface ChequeFormData {
@@ -152,6 +153,7 @@ export function ChequeRegistration({
   onNext,
   onCancel,
   isEditMode = false,
+  isReadOnly = false,
 }: ChequeRegistrationProps) {
   const registerChequeMutation = useRegisterCheque();
   const changeRequestStateMutation = useChangeRequestState();
@@ -388,6 +390,8 @@ export function ChequeRegistration({
 
   const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (isReadOnly) return;
 
     if (guarantees.includes('چک')) {
       if (formData.sayadId.length !== 16) {
@@ -678,7 +682,9 @@ export function ChequeRegistration({
       <div className='flex justify-center gap-4'>
         <Button
           type='submit'
-          disabled={registerChequeMutation.isPending || changeRequestStateMutation.isPending}
+          disabled={
+            isReadOnly || registerChequeMutation.isPending || changeRequestStateMutation.isPending
+          }
           size='lg'
         >
           {registerChequeMutation.isPending || changeRequestStateMutation.isPending

@@ -25,6 +25,7 @@ interface UserInformationProps {
   onNext?: (data: UserInformationFormData) => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 interface UserInformationFormData {
@@ -77,6 +78,7 @@ export function UserInformation({
   onNext,
   onCancel,
   isEditMode = false,
+  isReadOnly = false,
 }: UserInformationProps) {
   const uploadUserAttachmentsMutation = useUploadUserAttachments();
   const validateUserIdentityMutation = useValidateUserIdentityInfo();
@@ -269,7 +271,7 @@ export function UserInformation({
 
   const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    if (isReadOnly) return;
     if (!requestId) {
       toast.error('شناسه درخواست یافت نشد. لطفا ابتدا درخواست را ثبت کنید.');
       return;
@@ -599,6 +601,7 @@ export function UserInformation({
         <Button
           type='submit'
           disabled={
+            isReadOnly ||
             uploadUserAttachmentsMutation.isPending ||
             validateUserIdentityMutation.isPending ||
             changeRequestStateMutation.isPending
@@ -615,7 +618,7 @@ export function UserInformation({
         </Button>
         {onCancel && (
           <Button type='button' variant='outline' size='lg' onClick={onCancel}>
-            بازگشت
+            انصراف
           </Button>
         )}
       </div>

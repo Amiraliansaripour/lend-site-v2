@@ -13,6 +13,7 @@ interface CollateralProps {
   onNext?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 export function Collateral({
@@ -22,10 +23,12 @@ export function Collateral({
   onNext,
   onCancel,
   isEditMode = false,
+  isReadOnly = false,
 }: CollateralProps) {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   const handleMethodSelect = (method: string) => {
+    if (isReadOnly) return;
     setSelectedMethod(method);
   };
 
@@ -38,6 +41,7 @@ export function Collateral({
         onNext={onNext ? () => onNext() : undefined}
         onCancel={onCancel}
         isEditMode={isEditMode}
+        isReadOnly={isReadOnly}
       />
     );
   }

@@ -14,7 +14,11 @@ import {
 import { formatNumber } from '@/utils/format';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import { WalletCard } from '@/components/wallet-card';
-import { getRequestStatusInfo, canContinueRequest } from '@/utils/request-status';
+import {
+  getRequestStatusInfo,
+  canContinueRequest,
+  canSubmitNewRequest,
+} from '@/utils/request-status';
 import { getWalletUser, createCashWallet, getPaymentToken } from '@/api/wallet';
 import { toast } from 'sonner';
 import type { Request } from './request-types';
@@ -39,6 +43,7 @@ export function RequestsCards({
   const [rawAmount, setRawAmount] = useState('');
 
   const continueRequests = requests.filter(request => canContinueRequest(request.requestState));
+  const allowNewRequest = canSubmitNewRequest(requests);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -166,11 +171,22 @@ export function RequestsCards({
                 </span>
               </div>
 
-              <Link href='/requests/request-credit'>
-                <Button variant='outline' className='w-fit mr-auto cursor-pointer text-primary!'>
+              {allowNewRequest ? (
+                <Link href='/requests/request-credit'>
+                  <Button variant='outline' className='w-fit mr-auto cursor-pointer text-primary!'>
+                    درخواست اعتبار
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant='outline'
+                  className='w-fit mr-auto text-primary!'
+                  disabled
+                  title='تا زمانی که درخواست در حال بررسی دارید، امکان ثبت درخواست جدید نیست'
+                >
                   درخواست اعتبار
                 </Button>
-              </Link>
+              )}
             </div>
           </WalletCard.Front>
         </WalletCard>

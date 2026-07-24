@@ -12,7 +12,6 @@ import {
   sendFinotechInquiry,
   getFinotechCreditStatus,
   changeRequestState,
-  optOutRequest,
   type FinotechCreditData,
 } from '@/api/facility';
 import { toast } from 'sonner';
@@ -24,6 +23,7 @@ interface ValidationProps {
   neededScore?: number;
   validateType?: number | null;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
   onNext?: () => void;
   onCancel?: () => void;
 }
@@ -80,6 +80,7 @@ function IranianValidation({
   userId,
   neededScore,
   isEditMode,
+  isReadOnly,
   onNext,
   onCancel,
 }: Omit<ValidationProps, 'validateType'>) {
@@ -151,6 +152,8 @@ function IranianValidation({
   };
 
   const handleSubmit = async () => {
+    if (isReadOnly) return;
+
     if (isVerifying) {
       toast.error('پس از اعلام وضعیت اعتبارسنجی امکان رفتن به مرحله بعد وجود دارد.');
       return;
@@ -171,18 +174,6 @@ function IranianValidation({
       }
     } catch {
       toast.error('خطا در ثبت اطلاعات');
-    }
-  };
-
-  const handleCancelRequest = async () => {
-    if (!id) return;
-
-    try {
-      await optOutRequest(id);
-      toast.success('درخواست شما با موفقیت لغو شد');
-      router.push('/requests');
-    } catch {
-      toast.error('خطا در لغو درخواست');
     }
   };
 
@@ -256,12 +247,16 @@ function IranianValidation({
       </Card>
 
       <div className='flex justify-center gap-4'>
-        <Button onClick={handleSubmit} disabled={!checkValidationScore() || isVerifying} size='lg'>
+        <Button
+          onClick={handleSubmit}
+          disabled={isReadOnly || !checkValidationScore() || isVerifying}
+          size='lg'
+        >
           {isEditMode ? 'ویرایش' : 'مرحله بعد'}
         </Button>
-        {!isEditMode && (
-          <Button variant='outline' size='lg' onClick={onCancel || handleCancelRequest}>
-            {onCancel ? 'بازگشت' : 'لغو درخواست'}
+        {!isEditMode && onCancel && (
+          <Button variant='outline' size='lg' onClick={onCancel}>
+            انصراف
           </Button>
         )}
       </div>
@@ -275,6 +270,7 @@ function FinotechValidation({
   requestId,
   userId,
   isEditMode,
+  isReadOnly,
   onNext,
   onCancel,
 }: Omit<ValidationProps, 'validateType' | 'neededScore'>) {
@@ -362,6 +358,8 @@ function FinotechValidation({
   };
 
   const handleSubmit = async () => {
+    if (isReadOnly) return;
+
     if (isLoading || !creditData) {
       toast.error('پس از اعلام وضعیت اعتبارسنجی امکان رفتن به مرحله بعد وجود دارد.');
       return;
@@ -382,18 +380,6 @@ function FinotechValidation({
       }
     } catch {
       toast.error('خطا در ثبت اطلاعات');
-    }
-  };
-
-  const handleCancelRequest = async () => {
-    if (!id) return;
-
-    try {
-      await optOutRequest(id);
-      toast.success('درخواست شما با موفقیت لغو شد');
-      router.push('/requests');
-    } catch {
-      toast.error('خطا در لغو درخواست');
     }
   };
 
@@ -497,12 +483,16 @@ function FinotechValidation({
       </Card>
 
       <div className='flex justify-center gap-4'>
-        <Button onClick={handleSubmit} disabled={!checkAllConditions() || isLoading} size='lg'>
+        <Button
+          onClick={handleSubmit}
+          disabled={isReadOnly || !checkAllConditions() || isLoading}
+          size='lg'
+        >
           {isEditMode ? 'ویرایش' : 'مرحله بعد'}
         </Button>
-        {!isEditMode && (
-          <Button variant='outline' size='lg' onClick={onCancel || handleCancelRequest}>
-            {onCancel ? 'بازگشت' : 'لغو درخواست'}
+        {!isEditMode && onCancel && (
+          <Button variant='outline' size='lg' onClick={onCancel}>
+            انصراف
           </Button>
         )}
       </div>
@@ -518,6 +508,7 @@ export function Validation({
   neededScore = 0,
   validateType,
   isEditMode = false,
+  isReadOnly = false,
   onNext,
   onCancel,
 }: ValidationProps) {
@@ -528,6 +519,7 @@ export function Validation({
         userId={userId}
         neededScore={neededScore}
         isEditMode={isEditMode}
+        isReadOnly={isReadOnly}
         onNext={onNext}
         onCancel={onCancel}
       />
@@ -540,6 +532,7 @@ export function Validation({
         requestId={requestId}
         userId={userId}
         isEditMode={isEditMode}
+        isReadOnly={isReadOnly}
         onNext={onNext}
         onCancel={onCancel}
       />

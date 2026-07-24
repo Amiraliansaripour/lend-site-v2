@@ -6,19 +6,22 @@ import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { getFinancierPlans, getPlan, type PlanDetail } from '@/api/plan';
-import { createRequest } from '@/api/facility';
+import { createRequest, optOutRequest } from '@/api/facility';
+import { getUserRequests, type Request } from '@/api/request';
 import { toast } from 'sonner';
 import { calculatePMT } from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
 import { getUserId } from '@/lib/auth/client/user-info';
 import { CreditModal } from '@/components/page/landing/credit-modal';
+import { canSubmitNewRequest, getIncompleteRequestsToCancel } from '@/utils/request-status';
 
 interface LoanCalcProps {
   onNext?: (data: { requestId: string; planId: string; creditAmount: number }) => void;
   isEditMode?: boolean;
+  existingRequests?: Request[];
 }
 
-export function LoanCalc({ onNext, isEditMode }: LoanCalcProps) {
+export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalcProps) {
   const router = useRouter();
   const userId = getUserId();
 
@@ -38,9 +41,24 @@ export function LoanCalc({ onNext, isEditMode }: LoanCalcProps) {
   });
 
   const createRequestMutation = useMutation({
-    mutationFn: createRequest,
+    mutationFn: async (payload: {
+      userId: string;
+      planId: string;
+      creditAmount: number;
+      period: number;
+    }) => {
+      const requests = await getUserRequests(payload.userId);
+
+      if (!canSubmitNewRequest(requests)) {
+        throw new Error('BLOCKED_BY_STATUS');
+      }
+
+      const incomplete = getIncompleteRequestsToCancel(requests);
+      await Promise.all(incomplete.map(req => optOutRequest(req.id)));
+
+      return createRequest(payload);
+    },
     onSuccess: response => {
-      console.log('✅ Request created:', response);
       if (response && response.id) {
         toast.success('درخواست با موفقیت ایجاد شد');
         localStorage.setItem('requestId', response.id);
@@ -52,14 +70,17 @@ export function LoanCalc({ onNext, isEditMode }: LoanCalcProps) {
             creditAmount,
           });
         } else {
-          console.log('🚀 Navigating to:', `/requests/request-credit?id=${response.id}`);
           router.push(`/requests/request-credit?id=${response.id}`);
         }
-        // Navigation is handled by the modal now
       }
     },
-    onError: error => {
-      console.error('❌ Request creation failed:', error);
+    onError: (error: Error) => {
+      if (error.message === 'BLOCKED_BY_STATUS') {
+        toast.error(
+          'به‌دلیل وجود درخواست در حال بررسی، امکان ثبت درخواست جدید وجود ندارد. ابتدا درخواست فعلی را لغو کنید.',
+        );
+        return;
+      }
       toast.error('خطا در ایجاد درخواست');
     },
   });
@@ -110,7 +131,13 @@ export function LoanCalc({ onNext, isEditMode }: LoanCalcProps) {
       return;
     }
 
-    // Open modal instead of directly submitting
+    if (!canSubmitNewRequest(existingRequests)) {
+      toast.error(
+        'به‌دلیل وجود درخواست در حال بررسی، امکان ثبت درخواست جدید وجود ندارد. ابتدا درخواست فعلی را لغو کنید.',
+      );
+      return;
+    }
+
     setIsModalOpen(true);
   };
 

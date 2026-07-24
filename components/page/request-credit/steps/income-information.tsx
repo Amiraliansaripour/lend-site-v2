@@ -18,6 +18,7 @@ interface IncomeInformationProps {
   onCancel?: () => void;
   initialData?: IncomeFormData;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 interface IncomeFormData {
@@ -149,6 +150,7 @@ export function IncomeInformation({
   onCancel,
   initialData,
   isEditMode = false,
+  isReadOnly = false,
 }: IncomeInformationProps) {
   const createIncomeInfoMutation = useCreateIncomeInfo();
 
@@ -325,6 +327,8 @@ export function IncomeInformation({
   const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (isReadOnly) return;
+
     const numericIncome = Number(formData.income);
     const numericInstallment = Number(formData.payAbility);
 
@@ -484,7 +488,7 @@ export function IncomeInformation({
           <div className='flex justify-center gap-4'>
             <Button
               type='submit'
-              disabled={createIncomeInfoMutation.isPending || !isFormValid}
+              disabled={isReadOnly || createIncomeInfoMutation.isPending || !isFormValid}
               size='lg'
             >
               {createIncomeInfoMutation.isPending

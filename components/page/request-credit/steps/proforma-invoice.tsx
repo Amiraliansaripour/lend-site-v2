@@ -17,6 +17,7 @@ interface ProformaInvoiceProps {
   onNext?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 interface UploadedFile {
@@ -36,6 +37,7 @@ export function ProformaInvoice({
   onNext,
   onCancel,
   isEditMode = false,
+  isReadOnly = false,
 }: ProformaInvoiceProps) {
   const createInvoiceMutation = useCreateInvoice();
   const changeRequestStateMutation = useChangeRequestState();
@@ -119,6 +121,8 @@ export function ProformaInvoice({
 
   const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (isReadOnly) return;
 
     if (!uploadedFile || uploadProgress?.status !== 'success') {
       toast.error('لطفا تصویر پیش‌فاکتور را آپلود کنید');
@@ -212,6 +216,7 @@ export function ProformaInvoice({
               <Button
                 type='submit'
                 disabled={
+                  isReadOnly ||
                   createInvoiceMutation.isPending ||
                   changeRequestStateMutation.isPending ||
                   !uploadedFile ||
