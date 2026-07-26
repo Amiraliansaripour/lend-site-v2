@@ -231,7 +231,7 @@ function IranianValidation({
               <>
                 <ValidationCard
                   title='امتیاز'
-                  value={validationData?.score || 0}
+                  value={validationData?.score || '-'}
                   variant={checkValidationScore() ? 'success' : 'danger'}
                 />
                 <ValidationCard title='ریسک' value={validationData?.risk || '-'} variant='info' />

@@ -16,7 +16,6 @@ type WalletsPageProps = {
 
 export function WalletsPage({ walletInfo, transactions, isLoading }: WalletsPageProps) {
   const [activeTab, setActiveTab] = useState<WalletType>('credit');
-
   const creditStats: WalletStats = useMemo(
     () => ({
       initial: walletInfo?.sumCreditCharg ?? 0,
@@ -25,6 +24,7 @@ export function WalletsPage({ walletInfo, transactions, isLoading }: WalletsPage
     }),
     [walletInfo],
   );
+  console.log(walletInfo);
 
   const cashStats: WalletStats = useMemo(
     () => ({

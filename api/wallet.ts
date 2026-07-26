@@ -50,8 +50,8 @@ export const getWalletInfo = async (): Promise<WalletInfo | null> => {
     baseURL: 'REPORT',
   });
 
-  if (data && Array.isArray(data) && data.length > 0) {
-    return data[0];
+  if (data && Array.isArray(data)) {
+    return data[0] || null;
   }
 
   return null;

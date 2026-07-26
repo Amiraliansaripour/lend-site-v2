@@ -144,6 +144,8 @@ export function RequestsCards({
     }
   };
 
+  console.log(walletInfo);
+
   return (
     <>
       <div className='flex items-center gap-10 justify-center max-lg:flex-col'>
