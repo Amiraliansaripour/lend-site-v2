@@ -194,7 +194,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
           <div className='mb-8 sm:mb-12 lg:mb-[74px]'>
             <Image
               className='w-28 sm:w-36 lg:w-44'
-              src='/logos/black-logo.png'
+              src='/logos/logo.png'
               alt='Logo'
               width={144}
               height={48}

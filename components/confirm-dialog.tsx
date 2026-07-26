@@ -52,8 +52,10 @@ export function ConfirmDialog({
         className='overflow-hidden text-right grid grid-rows-[auto_1fr_auto] max-h-[min(calc(100dvh-64px),600px)]'
       >
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          {!!description && <AlertDialogDescription>{description}</AlertDialogDescription>}
+          <AlertDialogTitle className='text-right'>{title}</AlertDialogTitle>
+          {!!description && (
+            <AlertDialogDescription className='text-right'>{description}</AlertDialogDescription>
+          )}
         </AlertDialogHeader>
         {children != null && (
           <ScrollArea className='min-h-full max-h-full overflow-hidden'>{children}</ScrollArea>
