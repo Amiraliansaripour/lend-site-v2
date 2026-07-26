@@ -207,7 +207,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                     dir='ltr'
                     type='text'
                     label='کد اعتبار سنجی'
-                    placeholder='####'
+                    placeholder='- - - -'
                     maxLength={4}
                   />
                 )}

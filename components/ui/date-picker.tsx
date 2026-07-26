@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { CalendarIcon } from 'lucide-react';
+import { parse } from 'date-fns-jalali';
 import type { Matcher } from 'react-day-picker';
 
 import { formatJalaliDate } from '@/utils/format';
@@ -40,6 +41,15 @@ function initDate(date: Date | string | undefined) {
   try {
     return typeof date === 'string' ? new Date(date) : date;
   } catch (err) {}
+}
+
+function parseShamsiDate(masked: string) {
+  const normalized = normalizeDigits(masked);
+  const match = normalized.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (!match) return undefined;
+
+  const parsed = parse(normalized, 'yyyy/MM/dd', new Date());
+  return isValidDate(parsed) ? parsed : undefined;
 }
 
 export type DatePickerProps = {
@@ -91,23 +101,19 @@ export function DatePicker({
             return;
           }
 
-          try {
-            const newDate = new Date(masked);
+          const newDate = parseShamsiDate(masked);
 
-            if (isValidDate(newDate)) {
-              setDate(newDate);
-              setMonth(newDate);
-              onValueChange?.(newDate, masked);
-              return;
-            }
-
-            throw new Error('Invalid Date'); // * to reach the catch clause
-          } catch (_err) {
-            setValue(masked);
-            setDate(undefined);
-            setMonth(undefined);
-            onValueChange?.(undefined, masked);
+          if (newDate) {
+            setDate(newDate);
+            setMonth(newDate);
+            onValueChange?.(newDate, masked);
+            return;
           }
+
+          setValue(masked);
+          setDate(undefined);
+          setMonth(undefined);
+          onValueChange?.(undefined, masked);
         }}
       />
 
@@ -135,6 +141,8 @@ export function DatePicker({
           sideOffset={10}
         >
           <Calendar
+            calendar='persian'
+            numerals='latn'
             mode='single'
             selected={date}
             captionLayout='dropdown'

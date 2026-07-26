@@ -60,7 +60,7 @@ const CombinedFormSchema = z.object({
     .string()
     .min(2, 'نام پدر باید حداقل 2 کاراکتر باشد')
     .max(50, 'نام پدر نباید بیشتر از 50 کاراکتر باشد'),
-  birthDate: z.date().optional(),
+  birthDate: z.date({ error: 'تاریخ تولد الزامی است' }),
   nationalCode: z
     .string()
     .regex(/^[0-9]{10}$/, 'کد ملی باید 10 رقم باشد')

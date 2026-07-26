@@ -1,6 +1,14 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, type FormEvent, type ChangeEvent } from 'react';
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+  type FormEvent,
+  type ChangeEvent,
+} from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,13 +19,45 @@ import { FileUploadArea } from '@/components/file-upload-area';
 import { uploadAttachment, deleteAttachment } from '@/api/facility';
 import { getUser } from '@/api/users';
 import { toast } from 'sonner';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, AlertCircle } from 'lucide-react';
+import { Link, useRouter } from '@/i18n/navigation';
 import type { UserInfo } from '@/types/request-credit';
 import {
   useUploadUserAttachments,
   useValidateUserIdentityInfo,
   useChangeRequestState,
 } from '@/mutations/request';
+
+const ESSENTIAL_FIELD_LABELS = {
+  firstName: 'نام',
+  lastName: 'نام خانوادگی',
+  nationalCode: 'کد ملی',
+  birthDate: 'تاریخ تولد',
+  phoneNumber: 'شماره موبایل',
+  cityProvinceName: 'استان',
+  cityName: 'شهر',
+  address: 'آدرس',
+  postalCode: 'کد پستی',
+} as const;
+
+function getMissingEssentialFields(userData?: UserInfo): string[] {
+  const missingFields: string[] = [];
+
+  if (!userData?.firstName?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.firstName);
+  if (!userData?.lastName?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.lastName);
+  if (!userData?.nationalCode?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.nationalCode);
+  if (!userData?.personInfo?.birthDate) missingFields.push(ESSENTIAL_FIELD_LABELS.birthDate);
+  if (!userData?.personInfo?.phoneNumber?.trim())
+    missingFields.push(ESSENTIAL_FIELD_LABELS.phoneNumber);
+  if (!userData?.personInfo?.cityProvinceName?.trim())
+    missingFields.push(ESSENTIAL_FIELD_LABELS.cityProvinceName);
+  if (!userData?.personInfo?.cityName?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.cityName);
+  if (!userData?.personInfo?.address?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.address);
+  if (!userData?.personInfo?.postalCode?.trim())
+    missingFields.push(ESSENTIAL_FIELD_LABELS.postalCode);
+
+  return missingFields;
+}
 
 interface UserInformationProps {
   user?: UserInfo;
@@ -80,6 +120,7 @@ export function UserInformation({
   isEditMode = false,
   isReadOnly = false,
 }: UserInformationProps) {
+  const router = useRouter();
   const uploadUserAttachmentsMutation = useUploadUserAttachments();
   const validateUserIdentityMutation = useValidateUserIdentityInfo();
   const changeRequestStateMutation = useChangeRequestState();
@@ -108,11 +149,49 @@ export function UserInformation({
   const [showImageModal, setShowImageModal] = useState(false);
 
   const fileInputRefs = useRef<Partial<Record<FileKey, HTMLInputElement | null>>>({});
+  const hasRedirectedToProfile = useRef(false);
+
+  const missingEssentialFields = useMemo(() => getMissingEssentialFields(user), [user]);
+  const hasEssentialInfo = missingEssentialFields.length === 0;
+
+  const profileCallbackUrl = requestId
+    ? `/requests/request-credit?id=${requestId}`
+    : '/requests/request-credit';
+  const profileUrl = `/profile?callBackUrl=${encodeURIComponent(profileCallbackUrl)}`;
 
   // Callback to handle ref changes
   const handleRefChange = useCallback((key: FileKey, ref: HTMLInputElement | null) => {
     fileInputRefs.current[key] = ref;
   }, []);
+
+  // Redirect to profile when essential identity fields are missing
+  useEffect(() => {
+    if (hasEssentialInfo) {
+      hasRedirectedToProfile.current = false;
+      return;
+    }
+    if (isReadOnly || hasRedirectedToProfile.current) return;
+
+    hasRedirectedToProfile.current = true;
+    toast.error('لطفا تمام اطلاعات هویتی را در صفحه پروفایل تکمیل کنید');
+    router.push(profileUrl);
+  }, [hasEssentialInfo, isReadOnly, profileUrl, router]);
+
+  // Keep form values in sync when user data is refreshed (e.g. after profile update)
+  useEffect(() => {
+    setFormData({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      birthDate: user?.personInfo?.birthDate || '',
+      nationalCode: user?.nationalCode || '',
+      phoneNumber: user?.personInfo?.phoneNumber || '',
+      branchCityName: user?.personInfo?.cityProvinceName || '',
+      branchName: user?.personInfo?.cityName || '',
+      address: user?.personInfo?.address || '',
+      postalCode: user?.personInfo?.postalCode || '',
+      telephone: user?.personInfo?.telephone || '',
+    });
+  }, [user]);
 
   // Fetch existing attachments
   useEffect(() => {
@@ -272,6 +351,13 @@ export function UserInformation({
   const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isReadOnly) return;
+
+    if (!hasEssentialInfo) {
+      toast.error('لطفا تمام اطلاعات هویتی را در صفحه پروفایل تکمیل کنید');
+      router.push(profileUrl);
+      return;
+    }
+
     if (!requestId) {
       toast.error('شناسه درخواست یافت نشد. لطفا ابتدا درخواست را ثبت کنید.');
       return;
@@ -411,33 +497,68 @@ export function UserInformation({
     { label: 'کد پستی', name: 'postalCode', type: 'text', required: true, maxLength: 10 },
   ];
 
+  const isFieldEmpty = (name: keyof UserInformationFormData) =>
+    !String(formData[name] || '').trim();
+
   return (
     <form onSubmit={onFormSubmit} className='space-y-6'>
+      {!hasEssentialInfo && !isReadOnly && (
+        <div className='p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
+          <div className='flex items-start gap-2'>
+            <AlertCircle className='w-5 h-5 text-yellow-600 shrink-0 mt-0.5' />
+            <div className='flex-1 space-y-3'>
+              <div>
+                <h3 className='text-sm font-medium text-yellow-800 mb-2'>
+                  برای ادامه، اطلاعات هویتی زیر را در صفحه پروفایل تکمیل کنید:
+                </h3>
+                <ul className='text-sm text-yellow-700 space-y-1'>
+                  {missingEssentialFields.map(field => (
+                    <li key={field} className='flex items-center'>
+                      <span className='w-2 h-2 bg-yellow-400 rounded-full ml-2'></span>
+                      {field}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Button asChild type='button' size='sm'>
+                <Link href={profileUrl}>تکمیل اطلاعات در پروفایل</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>اطلاعات هویتی</CardTitle>
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            {formFields.map(field => (
-              <div key={field.name} className='w-full'>
-                <Label htmlFor={field.name} className='mb-2'>
-                  {field.label} {field.required && <span className='text-red-500'>*</span>}
-                </Label>
-                <Input
-                  type={field.type}
-                  id={field.name}
-                  name={field.name}
-                  value={formData[field.name as keyof UserInformationFormData] || ''}
-                  onChange={handleInputChange}
-                  required={field.required}
-                  maxLength={field.maxLength}
-                  placeholder={field.placeholder}
-                  readOnly
-                  disabled
-                />
-              </div>
-            ))}
+            {formFields.map(field => {
+              const fieldName = field.name as keyof UserInformationFormData;
+              const isEmpty = field.required && isFieldEmpty(fieldName);
+
+              return (
+                <div key={field.name} className='w-full'>
+                  <Label htmlFor={field.name} className='mb-2'>
+                    {field.label} {field.required && <span className='text-red-500'>*</span>}
+                  </Label>
+                  <Input
+                    type={field.type}
+                    id={field.name}
+                    name={field.name}
+                    value={formData[fieldName] || ''}
+                    onChange={handleInputChange}
+                    required={field.required}
+                    maxLength={field.maxLength}
+                    placeholder={field.placeholder}
+                    readOnly
+                    disabled
+                    className={isEmpty && !isReadOnly ? 'border-red-400 bg-red-50' : undefined}
+                  />
+                </div>
+              );
+            })}
 
             <div className='md:col-span-2'>
               <Label htmlFor='address' className='mb-2'>
@@ -452,6 +573,9 @@ export function UserInformation({
                 rows={3}
                 disabled
                 readOnly
+                className={
+                  isFieldEmpty('address') && !isReadOnly ? 'border-red-400 bg-red-50' : undefined
+                }
               />
             </div>
           </div>
@@ -602,6 +726,7 @@ export function UserInformation({
           type='submit'
           disabled={
             isReadOnly ||
+            !hasEssentialInfo ||
             uploadUserAttachmentsMutation.isPending ||
             validateUserIdentityMutation.isPending ||
             changeRequestStateMutation.isPending

@@ -1,4 +1,5 @@
 import { api } from '@/lib/api/client';
+import type { APIResult } from '@/types/api';
 
 export type WalletInfo = {
   nationalCode: string;
@@ -46,25 +47,28 @@ export type WalletTransaction = {
 };
 
 export const getWalletInfo = async (): Promise<WalletInfo | null> => {
-  const { data } = await api.get<WalletInfo[]>('/WalletReport/GetWallets', {
+  const { data } = await api.get<APIResult<WalletInfo[]>>('/WalletReport/GetWallets', {
     baseURL: 'REPORT',
   });
 
-  if (data && Array.isArray(data)) {
-    return data[0] || null;
+  if (data?.isSuccess && Array.isArray(data.data)) {
+    return data.data[0] ?? null;
   }
 
   return null;
 };
 
 export const getUserTransactions = async (): Promise<WalletTransaction[]> => {
-  const { data } = await api.get<WalletTransaction[]>('/WalletReport/UserTransaction', {
+  const { data } = await api.get<APIResult<WalletTransaction[]>>('/WalletReport/UserTransaction', {
     baseURL: 'REPORT',
   });
 
-  if (data && Array.isArray(data)) {
-    // Sort by orderId descending (newest first)
-    return data.sort((a, b) => b.orderId - a.orderId);
+  if (data?.isSuccess && Array.isArray(data.data)) {
+    return [...data.data].sort((a, b) => {
+      const aTime = new Date(a.dateTimeFreez).getTime();
+      const bTime = new Date(b.dateTimeFreez).getTime();
+      return bTime - aTime;
+    });
   }
 
   return [];
@@ -82,12 +86,12 @@ export type PaymentTokenResponse = {
 };
 
 export const getWalletUser = async (): Promise<WalletUser[]> => {
-  const { data } = await api.get<WalletUser[]>('/WalletReport/GetWalletUser', {
+  const { data } = await api.get<APIResult<WalletUser[]>>('/WalletReport/GetWalletUser', {
     baseURL: 'REPORT',
   });
 
-  if (data && Array.isArray(data)) {
-    return data;
+  if (data?.isSuccess && Array.isArray(data.data)) {
+    return data.data;
   }
 
   return [];
@@ -106,12 +110,12 @@ export type PaymentTokenPayload = {
 export const getPaymentToken = async (
   payload: PaymentTokenPayload,
 ): Promise<PaymentTokenResponse | null> => {
-  const { data } = await api.post<PaymentTokenPayload, { data: PaymentTokenResponse }>(
+  const { data } = await api.post<PaymentTokenPayload, APIResult<PaymentTokenResponse>>(
     '/Pay/GetToken',
     payload,
   );
-  console.log(data);
-  if (data && data.data) {
+
+  if (data?.isSuccess && data.data) {
     return data.data;
   }
 

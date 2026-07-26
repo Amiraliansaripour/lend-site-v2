@@ -24,7 +24,6 @@ export function WalletsPage({ walletInfo, transactions, isLoading }: WalletsPage
     }),
     [walletInfo],
   );
-  console.log(walletInfo);
 
   const cashStats: WalletStats = useMemo(
     () => ({
