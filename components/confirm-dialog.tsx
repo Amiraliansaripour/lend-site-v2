@@ -47,7 +47,10 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogContent className='overflow-hidden grid grid-rows-[auto_1fr_auto] max-h-[min(calc(100dvh-64px),600px)]'>
+      <AlertDialogContent
+        dir='rtl'
+        className='overflow-hidden text-right grid grid-rows-[auto_1fr_auto] max-h-[min(calc(100dvh-64px),600px)]'
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {!!description && <AlertDialogDescription>{description}</AlertDialogDescription>}

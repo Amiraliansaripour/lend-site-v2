@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // * sonner
 import { toast } from 'sonner';
@@ -32,11 +32,20 @@ import { accessToken } from '@/lib/auth/client/cookies';
 // * components
 import { useAppForm } from './form';
 import { Skeleton } from './ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+const OTP_RESEND_SECONDS = 120;
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'form'>) {
   const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
   const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [captchaCredentials, setCaptchaCredentials] = useState<{
+    id: string;
+    code: string;
+  } | null>(null);
+  const [countdown, setCountdown] = useState(OTP_RESEND_SECONDS);
+  const [canResend, setCanResend] = useState(false);
 
   const router = useRouter();
 
@@ -48,6 +57,26 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
 
   const { mutate: loginUser, isPending } = useLoginByUsername();
   const { mutate: loginByOtp, isPending: isOtpPending } = useLoginByOtp();
+
+  useEffect(() => {
+    if (!isOtpStep || canResend) return;
+
+    if (countdown <= 0) {
+      setCanResend(true);
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setCountdown(prev => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timerId);
+  }, [isOtpStep, countdown, canResend]);
+
+  const startOtpCountdown = () => {
+    setCountdown(OTP_RESEND_SECONDS);
+    setCanResend(false);
+  };
 
   const form = useAppForm<{ phoneNumber: string; X_CaptchaCode: number; otp?: string }>({
     defaultValues: {
@@ -67,12 +96,14 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
           return;
         }
 
+        const captchaCode = X_CaptchaCode.toString();
+
         loginUser(
           {
             phoneNumber,
             isActive: true,
             X_CaptchaId: captchaData.id,
-            X_CaptchaCode: X_CaptchaCode.toString(),
+            X_CaptchaCode: captchaCode,
           },
           {
             onSuccess: response => {
@@ -83,6 +114,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
               // }
               setIsOtpStep(true);
               setPhoneNumber(phoneNumber);
+              setCaptchaCredentials({ id: captchaData.id, code: captchaCode });
+              startOtpCountdown();
               toast.success(response.message || 'ورود با موفقیت انجام شد');
             },
             onError: error => {},
@@ -120,6 +153,34 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
     refetchCaptcha();
   };
 
+  const handleResendOtp = () => {
+    if (!phoneNumber || !captchaCredentials || isPending) return;
+
+    loginUser(
+      {
+        phoneNumber,
+        isActive: true,
+        X_CaptchaId: captchaCredentials.id,
+        X_CaptchaCode: captchaCredentials.code,
+      },
+      {
+        onSuccess: response => {
+          startOtpCountdown();
+          toast.success(response.message || 'کد تایید مجددا ارسال شد');
+        },
+        onError: () => {
+          toast.error('خطا در ارسال مجدد کد');
+        },
+      },
+    );
+  };
+
+  const formatCountdown = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   return (
     <Card className='lg:w-100'>
       <CardHeader>
@@ -144,11 +205,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                   <field.TextField
                     className='text-center tracking-[1em] text-xl font-semibold'
                     dir='ltr'
-                    type='tel'
+                    type='text'
                     label='کد اعتبار سنجی'
-                    inputMode='tel'
                     placeholder='####'
-                    autoComplete='tel'
                     maxLength={4}
                   />
                 )}
@@ -160,6 +219,25 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                     {isOtpPending ? 'در حال ارسال...' : 'تایید'}
                   </form.SubmitButton>
                 </form.AppForm>
+
+                {canResend ? (
+                  <Button
+                    type='button'
+                    variant='outline'
+                    className='w-full'
+                    onClick={handleResendOtp}
+                    disabled={isPending}
+                  >
+                    {isPending ? 'در حال ارسال...' : 'ارسال مجدد کد'}
+                  </Button>
+                ) : (
+                  <p className='text-center text-sm text-muted-foreground'>
+                    ارسال مجدد کد در{' '}
+                    <span dir='ltr' className='inline-block tabular-nums'>
+                      {formatCountdown(countdown)}
+                    </span>
+                  </p>
+                )}
               </div>
             </>
           ) : (
