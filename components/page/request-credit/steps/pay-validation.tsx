@@ -13,6 +13,7 @@ interface PayValidationProps {
   user?: User | null;
   validationPrice?: number;
   onNext?: () => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
   isReadOnly?: boolean;
@@ -30,6 +31,7 @@ export function PayValidation({
   user,
   validationPrice = 0,
   onNext,
+  onBack,
   onCancel,
   isEditMode,
   isReadOnly = false,
@@ -187,6 +189,11 @@ export function PayValidation({
               )}
             </Button>
 
+            {onBack && (
+              <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                بازگشت
+              </Button>
+            )}
             {onCancel && (
               <Button type='button' variant='outline' size='lg' onClick={onCancel}>
                 انصراف

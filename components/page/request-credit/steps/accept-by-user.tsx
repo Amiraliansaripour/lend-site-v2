@@ -10,8 +10,8 @@ import { toast } from 'sonner';
 import { Loader2, User, FileText, TrendingUp, DollarSign, BarChart3, Shield } from 'lucide-react';
 import { useRequestPreview } from '@/queries/request';
 import { useUser } from '@/queries/users';
-import { useConfirmRequestByUser } from '@/mutations/request';
-import { optOutRequest } from '@/api/facility';
+import { useConfirmRequestByUser, useChangeRequestState } from '@/mutations/request';
+import { REQUEST_STATE_CANCELLED } from '@/utils/request-status';
 import { useRouter } from '@/i18n/navigation';
 
 interface AcceptByUserProps {
@@ -19,6 +19,7 @@ interface AcceptByUserProps {
   userId: string;
   ruleText?: string | null;
   onConfirm?: () => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isReadOnly?: boolean;
 }
@@ -27,6 +28,7 @@ export function AcceptByUser({
   requestId,
   userId,
   ruleText,
+  onBack,
   onCancel,
   isReadOnly = false,
 }: AcceptByUserProps) {
@@ -34,6 +36,7 @@ export function AcceptByUser({
   const { data: requestData, isLoading: isLoadingRequest } = useRequestPreview(requestId);
   const { data: userData, isLoading: isLoadingUser } = useUser(userId);
   const confirmRequestMutation = useConfirmRequestByUser();
+  const changeRequestStateMutation = useChangeRequestState();
 
   const [isChecked, setIsChecked] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -99,7 +102,10 @@ export function AcceptByUser({
 
     setIsCancelling(true);
     try {
-      await optOutRequest(requestId);
+      await changeRequestStateMutation.mutateAsync({
+        id: requestId,
+        requestState: REQUEST_STATE_CANCELLED,
+      });
       toast.success('درخواست شما با موفقیت لغو شد');
       router.push('/requests');
     } catch (error: unknown) {
@@ -484,6 +490,11 @@ export function AcceptByUser({
                   ) : (
                     'ثبت درخواست'
                   )}
+                </Button>
+              )}
+              {onBack && (
+                <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                  بازگشت
                 </Button>
               )}
               {onCancel && (

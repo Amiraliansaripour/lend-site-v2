@@ -63,6 +63,7 @@ interface UserInformationProps {
   user?: UserInfo;
   requestId: string;
   onNext?: (data: UserInformationFormData) => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
   isReadOnly?: boolean;
@@ -116,6 +117,7 @@ export function UserInformation({
   user,
   requestId,
   onNext,
+  onBack,
   onCancel,
   isEditMode = false,
   isReadOnly = false,
@@ -741,6 +743,11 @@ export function UserInformation({
               ? 'ویرایش'
               : 'مرحله بعد'}
         </Button>
+        {onBack && (
+          <Button type='button' variant='outline' size='lg' onClick={onBack}>
+            بازگشت
+          </Button>
+        )}
         {onCancel && (
           <Button type='button' variant='outline' size='lg' onClick={onCancel}>
             انصراف

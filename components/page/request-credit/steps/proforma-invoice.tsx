@@ -15,6 +15,7 @@ import { FileUploadArea } from '@/components/file-upload-area';
 interface ProformaInvoiceProps {
   requestId: string;
   onNext?: () => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
   isReadOnly?: boolean;
@@ -35,6 +36,7 @@ interface UploadProgress {
 export function ProformaInvoice({
   requestId,
   onNext,
+  onBack,
   onCancel,
   isEditMode = false,
   isReadOnly = false,
@@ -230,6 +232,11 @@ export function ProformaInvoice({
                     ? 'ویرایش'
                     : 'مرحله بعد'}
               </Button>
+              {onBack && (
+                <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                  بازگشت
+                </Button>
+              )}
               {onCancel && (
                 <Button type='button' variant='outline' size='lg' onClick={onCancel}>
                   انصراف

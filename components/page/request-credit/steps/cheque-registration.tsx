@@ -17,6 +17,7 @@ interface ChequeRegistrationProps {
   guarantees?: string[];
   guaranteedAmount?: number;
   onNext?: (data?: ChequeFormData) => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
   isReadOnly?: boolean;
@@ -151,6 +152,7 @@ export function ChequeRegistration({
   guarantees = [],
   guaranteedAmount,
   onNext,
+  onBack,
   onCancel,
   isEditMode = false,
   isReadOnly = false,
@@ -693,6 +695,11 @@ export function ChequeRegistration({
               ? 'ویرایش'
               : 'مرحله بعد'}
         </Button>
+        {onBack && (
+          <Button type='button' variant='outline' size='lg' onClick={onBack}>
+            بازگشت
+          </Button>
+        )}
         {onCancel && (
           <Button type='button' variant='outline' size='lg' onClick={onCancel}>
             انصراف

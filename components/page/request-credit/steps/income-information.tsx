@@ -15,6 +15,7 @@ import { useCreateIncomeInfo } from '@/mutations/request';
 interface IncomeInformationProps {
   requestId: string;
   onNext?: (data: IncomeFormData) => void;
+  onBack?: () => void;
   onCancel?: () => void;
   initialData?: IncomeFormData;
   isEditMode?: boolean;
@@ -147,6 +148,7 @@ const FileUploadArea = ({
 export function IncomeInformation({
   requestId,
   onNext,
+  onBack,
   onCancel,
   initialData,
   isEditMode = false,
@@ -497,6 +499,11 @@ export function IncomeInformation({
                   ? 'ویرایش'
                   : 'مرحله بعد'}
             </Button>
+            {onBack && (
+              <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                بازگشت
+              </Button>
+            )}
             {onCancel && (
               <Button type='button' variant='outline' size='lg' onClick={onCancel}>
                 انصراف

@@ -25,6 +25,7 @@ interface ValidationProps {
   isEditMode?: boolean;
   isReadOnly?: boolean;
   onNext?: () => void;
+  onBack?: () => void;
   onCancel?: () => void;
 }
 
@@ -82,6 +83,7 @@ function IranianValidation({
   isEditMode,
   isReadOnly,
   onNext,
+  onBack,
   onCancel,
 }: Omit<ValidationProps, 'validateType'>) {
   const router = useRouter();
@@ -254,6 +256,11 @@ function IranianValidation({
         >
           {isEditMode ? 'ویرایش' : 'مرحله بعد'}
         </Button>
+        {onBack && (
+          <Button variant='outline' size='lg' onClick={onBack}>
+            بازگشت
+          </Button>
+        )}
         {!isEditMode && onCancel && (
           <Button variant='outline' size='lg' onClick={onCancel}>
             انصراف
@@ -272,6 +279,7 @@ function FinotechValidation({
   isEditMode,
   isReadOnly,
   onNext,
+  onBack,
   onCancel,
 }: Omit<ValidationProps, 'validateType' | 'neededScore'>) {
   const router = useRouter();
@@ -490,6 +498,11 @@ function FinotechValidation({
         >
           {isEditMode ? 'ویرایش' : 'مرحله بعد'}
         </Button>
+        {onBack && (
+          <Button variant='outline' size='lg' onClick={onBack}>
+            بازگشت
+          </Button>
+        )}
         {!isEditMode && onCancel && (
           <Button variant='outline' size='lg' onClick={onCancel}>
             انصراف
@@ -510,6 +523,7 @@ export function Validation({
   isEditMode = false,
   isReadOnly = false,
   onNext,
+  onBack,
   onCancel,
 }: ValidationProps) {
   if (validateType === 1) {
@@ -521,6 +535,7 @@ export function Validation({
         isEditMode={isEditMode}
         isReadOnly={isReadOnly}
         onNext={onNext}
+        onBack={onBack}
         onCancel={onCancel}
       />
     );
@@ -534,6 +549,7 @@ export function Validation({
         isEditMode={isEditMode}
         isReadOnly={isReadOnly}
         onNext={onNext}
+        onBack={onBack}
         onCancel={onCancel}
       />
     );

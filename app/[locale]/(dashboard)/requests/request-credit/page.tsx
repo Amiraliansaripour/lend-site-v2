@@ -22,8 +22,12 @@ import { useRequestWithPlanData, useUserRequests } from '@/queries/request';
 import { usePlan } from '@/queries/plan';
 import type { PlanDetail } from '@/api/plan';
 import { useUserWithStore } from '@/queries/users';
-import { useOptOutRequest } from '@/queries/facility';
-import { canCancelRequest, canModifyRequestData } from '@/utils/request-status';
+import { useChangeRequestState } from '@/mutations/request';
+import {
+  canCancelRequest,
+  canModifyRequestData,
+  REQUEST_STATE_CANCELLED,
+} from '@/utils/request-status';
 import { toast } from 'sonner';
 
 const breadcrumbs: Breadcrumbs = [{ label: 'درخواست اعتبار', href: '/requests/request-credit' }];
@@ -58,7 +62,7 @@ export default function RequestCreditPage() {
   const { data: requestData } = useRequestWithPlanData(id || '');
   const { data: plan } = usePlan(requestData?.planId || '');
   const { data: userRequests = [] } = useUserRequests(userId || '');
-  const optOutMutation = useOptOutRequest();
+  const changeRequestStateMutation = useChangeRequestState();
 
   const requestState = requestData?.requestState ?? 0;
   const isReadOnly = requestState > 0 && !canModifyRequestData(requestState);
@@ -167,6 +171,28 @@ export default function RequestCreditPage() {
     }
   };
 
+  const handleBack = useCallback(() => {
+    if (isEditMode && forCorrections.length > 0) {
+      if (correctionStepIndex > 0) {
+        setCorrectionStepIndex(prev => prev - 1);
+        setCurrentStep(forCorrections[correctionStepIndex - 1]);
+      }
+      return;
+    }
+
+    const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
+    if (currentIndex > 0) {
+      setCurrentStep(stepsToShow[currentIndex - 1].key);
+    }
+  }, [isEditMode, forCorrections, correctionStepIndex, stepsToShow, currentStep]);
+
+  const canGoBack =
+    isEditMode && forCorrections.length > 0
+      ? correctionStepIndex > 0
+      : stepsToShow.findIndex(step => step.key === currentStep) > 0;
+
+  const backHandler = canGoBack ? handleBack : undefined;
+
   const handleCancelRequest = useCallback(async () => {
     if (!id || !canCancelRequest(requestState)) {
       toast.error('امکان لغو این درخواست وجود ندارد');
@@ -174,8 +200,12 @@ export default function RequestCreditPage() {
     }
 
     try {
-      await optOutMutation.mutateAsync(id);
+      await changeRequestStateMutation.mutateAsync({
+        id,
+        requestState: REQUEST_STATE_CANCELLED,
+      });
       toast.success('درخواست شما با موفقیت لغو شد');
+      setIsCancelDialogOpen(false);
       router.push('/requests');
     } catch (error: unknown) {
       const msg =
@@ -185,7 +215,7 @@ export default function RequestCreditPage() {
           : undefined;
       toast.error(msg || 'خطا در لغو درخواست');
     }
-  }, [id, requestState, optOutMutation, router]);
+  }, [id, requestState, changeRequestStateMutation, router]);
 
   const openCancelDialog = useCallback(() => {
     if (!showCancel) return;
@@ -296,6 +326,7 @@ export default function RequestCreditPage() {
                     },
                   }}
                   onNext={() => handleNext()}
+                  onBack={backHandler}
                   onCancel={cancelHandler}
                   isEditMode={isEditMode}
                   isReadOnly={isReadOnly}
@@ -310,6 +341,7 @@ export default function RequestCreditPage() {
                   user={user}
                   validationPrice={planData?.documentAmount || 0}
                   onNext={() => handleNext()}
+                  onBack={backHandler}
                   onCancel={cancelHandler}
                   isEditMode={isEditMode}
                   isReadOnly={isReadOnly}
@@ -325,6 +357,7 @@ export default function RequestCreditPage() {
                   neededScore={planData?.score}
                   validateType={planData?.validateType ?? requestData?.validateType ?? null}
                   onNext={() => handleNext()}
+                  onBack={backHandler}
                   onCancel={cancelHandler}
                   isEditMode={isEditMode}
                   isReadOnly={isReadOnly}
@@ -337,6 +370,7 @@ export default function RequestCreditPage() {
                 <IncomeInformation
                   requestId={id || ''}
                   onNext={() => handleNext()}
+                  onBack={backHandler}
                   onCancel={cancelHandler}
                   isEditMode={isEditMode}
                   isReadOnly={isReadOnly}
@@ -349,6 +383,7 @@ export default function RequestCreditPage() {
                 <ProformaInvoice
                   requestId={id || ''}
                   onNext={() => handleNext()}
+                  onBack={backHandler}
                   onCancel={cancelHandler}
                   isEditMode={isEditMode}
                   isReadOnly={isReadOnly}
@@ -363,6 +398,7 @@ export default function RequestCreditPage() {
                   guarantees={planData?.guarantees || []}
                   guaranteedAmount={requestData?.guaranteedAmount ?? planData?.documentAmount ?? 0}
                   onNext={() => handleNext()}
+                  onBack={backHandler}
                   onCancel={cancelHandler}
                   isEditMode={isEditMode}
                   isReadOnly={isReadOnly}
@@ -377,6 +413,7 @@ export default function RequestCreditPage() {
                   userId={userId || ''}
                   ruleText={planData?.ruleText}
                   onConfirm={() => handleNext()}
+                  onBack={backHandler}
                   onCancel={cancelHandler}
                   isReadOnly={isReadOnly}
                 />
@@ -392,7 +429,7 @@ export default function RequestCreditPage() {
           description='آیا از لغو این درخواست اطمینان دارید؟ پس از لغو می‌توانید درخواست جدیدی ثبت کنید.'
           confirmText='بله، لغو شود'
           cancelText='خیر'
-          isPending={optOutMutation.isPending}
+          isPending={changeRequestStateMutation.isPending}
           onConfirm={handleCancelRequest}
         />
       </PageContent>

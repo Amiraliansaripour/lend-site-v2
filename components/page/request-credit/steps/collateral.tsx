@@ -11,6 +11,7 @@ interface CollateralProps {
   guarantees?: string[];
   guaranteedAmount?: number;
   onNext?: () => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
   isReadOnly?: boolean;
@@ -21,6 +22,7 @@ export function Collateral({
   guarantees = [],
   guaranteedAmount,
   onNext,
+  onBack,
   onCancel,
   isEditMode = false,
   isReadOnly = false,
@@ -39,6 +41,7 @@ export function Collateral({
         guarantees={guarantees}
         guaranteedAmount={guaranteedAmount}
         onNext={onNext ? () => onNext() : undefined}
+        onBack={() => setSelectedMethod(null)}
         onCancel={onCancel}
         isEditMode={isEditMode}
         isReadOnly={isReadOnly}
@@ -104,11 +107,18 @@ export function Collateral({
               </button>
             </div>
 
-            {onCancel && (
-              <div className='flex justify-center pt-6'>
-                <Button type='button' variant='outline' size='lg' onClick={onCancel}>
-                  انصراف
-                </Button>
+            {(onBack || onCancel) && (
+              <div className='flex justify-center gap-4 pt-6'>
+                {onBack && (
+                  <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                    بازگشت
+                  </Button>
+                )}
+                {onCancel && (
+                  <Button type='button' variant='outline' size='lg' onClick={onCancel}>
+                    انصراف
+                  </Button>
+                )}
               </div>
             )}
           </div>
