@@ -121,3 +121,109 @@ export const getPaymentToken = async (
 
   return null;
 };
+
+// --- Merchant payment gateway ---
+
+export type MerchantTokenPayload = {
+  username: string;
+  password: string;
+  grant_type: 'password';
+};
+
+export type MerchantTokenResult = {
+  access_token: string;
+  expires_in: string;
+};
+
+export const getMerchantToken = async (
+  payload: MerchantTokenPayload,
+): Promise<APIResult<MerchantTokenResult>> => {
+  const { data } = await api.post<MerchantTokenPayload, APIResult<MerchantTokenResult>>(
+    '/User/MerchantToken',
+    payload,
+    { skipAuth: true },
+  );
+  return data;
+};
+
+export type GetOrderIdPayload = {
+  nationalcode: string;
+  amount: number;
+  IsOnline: true;
+};
+
+export type GetOrderIdResult = {
+  merchantId: string;
+  orderId: number;
+};
+
+export const getOrderId = async (
+  payload: GetOrderIdPayload,
+  merchantToken: string,
+): Promise<APIResult<GetOrderIdResult>> => {
+  const { data } = await api.post<GetOrderIdPayload, APIResult<GetOrderIdResult>>(
+    '/WalletReport/GetOrderId',
+    payload,
+    {
+      skipAuth: true,
+      headers: { Authorization: `Bearer ${merchantToken}` },
+      baseURL: 'REPORT',
+    },
+  );
+  return data;
+};
+
+export type MerchantInfo = {
+  id: string;
+  name: string;
+  organName?: string;
+  url?: string;
+};
+
+export const getMerchantInfo = async (merchantId: string): Promise<MerchantInfo | null> => {
+  const { data } = await api.get<APIResult<MerchantInfo>>(`/Merchant/Get/${merchantId}`, {
+    skipAuth: true,
+  });
+  if (data?.isSuccess && data.data) return data.data;
+  return null;
+};
+
+export type FreezRequestPayload = {
+  IsOnline: true;
+  orderId: string;
+  freezAmount: number;
+};
+
+export type FreezRequestResult = {
+  resultMessage?: string;
+};
+
+export const freezRequest = async (
+  payload: FreezRequestPayload,
+): Promise<(APIResult<FreezRequestResult> & { resultMessage?: string }) | null> => {
+  const { data } = await api.post<
+    FreezRequestPayload,
+    APIResult<FreezRequestResult> & { resultMessage?: string }
+  >('/WalletReport/FreezRequest', payload, { baseURL: 'REPORT' });
+  return data ?? null;
+};
+
+export type ConfirmOrderPayload = {
+  orderId: number;
+};
+
+export const confirmOrder = async (
+  payload: ConfirmOrderPayload,
+  merchantToken: string,
+): Promise<APIResult<unknown>> => {
+  const { data } = await api.put<ConfirmOrderPayload, APIResult<unknown>>(
+    '/WalletReport/Confirm',
+    payload,
+    {
+      skipAuth: true,
+      headers: { Authorization: `Bearer ${merchantToken}` },
+      baseURL: 'REPORT',
+    },
+  );
+  return data;
+};
