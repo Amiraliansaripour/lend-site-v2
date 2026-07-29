@@ -175,6 +175,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
     );
   };
 
+  const goBackToPhoneStep = () => {
+    setIsOtpStep(false);
+    form.setFieldValue('otp', '');
+    startOtpCountdown();
+  };
+
   const formatCountdown = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -221,22 +227,42 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                 </form.AppForm>
 
                 {canResend ? (
-                  <Button
-                    type='button'
-                    variant='outline'
-                    className='w-full'
-                    onClick={handleResendOtp}
-                    disabled={isPending}
-                  >
-                    {isPending ? 'در حال ارسال...' : 'ارسال مجدد کد'}
-                  </Button>
+                  <>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      className='w-full'
+                      onClick={handleResendOtp}
+                      disabled={isPending}
+                    >
+                      {isPending ? 'در حال ارسال...' : 'ارسال مجدد کد'}
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      className='w-full'
+                      onClick={goBackToPhoneStep}
+                    >
+                      بازگشت
+                    </Button>
+                  </>
                 ) : (
-                  <p className='text-center text-sm text-muted-foreground'>
-                    ارسال مجدد کد در{' '}
-                    <span dir='ltr' className='inline-block tabular-nums'>
-                      {formatCountdown(countdown)}
-                    </span>
-                  </p>
+                  <div className='flex flex-col items-center gap-2'>
+                    <p className='text-center text-sm text-muted-foreground'>
+                      ارسال مجدد کد در{' '}
+                      <span dir='ltr' className='inline-block tabular-nums'>
+                        {formatCountdown(countdown)}
+                      </span>
+                    </p>
+                    <Button
+                      type='button'
+                      variant='link'
+                      className='text-sm text-muted-foreground hover:text-foreground h-auto p-0'
+                      onClick={goBackToPhoneStep}
+                    >
+                      ویرایش شماره همراه
+                    </Button>
+                  </div>
                 )}
               </div>
             </>
