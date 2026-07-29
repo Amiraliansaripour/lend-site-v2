@@ -154,11 +154,11 @@ export function RequestsCards({
           <WalletCard.Front>
             <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
               <Image
-                src='/logos/wallet-logo.png'
+                src='/logos/white-logo.png'
                 alt='wallet'
-                width={56}
-                height={56}
-                className='w-14'
+                width={86}
+                height={86}
+                className='w-28'
               />
             </div>
 
@@ -199,11 +199,11 @@ export function RequestsCards({
           <WalletCard.Front>
             <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
               <Image
-                src='/logos/wallet-logo.png'
+                src='/logos/white-logo.png'
                 alt='wallet'
-                width={56}
-                height={56}
-                className='w-14'
+                width={86}
+                height={86}
+                className='w-28'
               />
             </div>
 
@@ -236,11 +236,11 @@ export function RequestsCards({
             <WalletCard.Front>
               <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
                 <Image
-                  src='/logos/wallet-logo.png'
+                  src='/logos/white-logo.png'
                   alt='wallet'
-                  width={56}
-                  height={56}
-                  className='w-14'
+                  width={86}
+                  height={86}
+                  className='w-28'
                 />
               </div>
 
@@ -263,11 +263,11 @@ export function RequestsCards({
                 <WalletCard.Front>
                   <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
                     <Image
-                      src='/logos/wallet-logo.png'
+                      src='/logos/white-logo.png'
                       alt='wallet'
-                      width={56}
-                      height={56}
-                      className='w-14'
+                      width={86}
+                      height={86}
+                      className='w-28'
                     />
                   </div>
 

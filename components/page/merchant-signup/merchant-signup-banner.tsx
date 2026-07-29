@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import ShopBanner from '@/assets/images/banners/signupMerchantBanner.png';
-import ShopBannerMobile from '@/assets/images/banners/signupMerchantBanner-res.png';
+import ShopBanner from '@/assets/images/banners/signupMerchantBanner.webp';
+import ShopBannerMobile from '@/assets/images/banners/signupMerchantBanner.webp';
 export function MerchantSignupBanner() {
   const scrollToForm = () => {
     const formSection = document.getElementById('merchant-signup-form');

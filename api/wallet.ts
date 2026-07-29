@@ -188,23 +188,61 @@ export const getMerchantInfo = async (merchantId: string): Promise<MerchantInfo 
   return null;
 };
 
+export type ValidWallet = {
+  id: string;
+  walletType: number;
+  walletTypeDescription: string;
+  remain: number;
+};
+
+export type ValidWalletsPayload = {
+  orderId: number;
+  nationalcode: string;
+  isOnline: true;
+};
+
+export const getValidWallets = async (payload: ValidWalletsPayload): Promise<ValidWallet[]> => {
+  const { data } = await api.post<ValidWalletsPayload, APIResult<ValidWallet[]> | ValidWallet[]>(
+    '/WalletReport/ValidWallets',
+    payload,
+    { baseURL: 'REPORT' },
+  );
+
+  if (Array.isArray(data)) return data;
+  if (data && 'data' in data && Array.isArray(data.data)) return data.data;
+  return [];
+};
+
+export type WalletListItem = {
+  id: string;
+  walletType: number;
+  amount: number;
+};
+
 export type FreezRequestPayload = {
-  IsOnline: true;
-  orderId: string;
+  orderId: number;
   freezAmount: number;
+  walletList: WalletListItem[];
 };
 
 export type FreezRequestResult = {
+  success?: number;
+  orderId?: number;
+  freezAmount?: number;
   resultMessage?: string;
+  dateTimeFreez?: string;
+  message?: string;
+  isSuccess?: boolean;
 };
 
 export const freezRequest = async (
   payload: FreezRequestPayload,
-): Promise<(APIResult<FreezRequestResult> & { resultMessage?: string }) | null> => {
-  const { data } = await api.post<
-    FreezRequestPayload,
-    APIResult<FreezRequestResult> & { resultMessage?: string }
-  >('/WalletReport/FreezRequest', payload, { baseURL: 'REPORT' });
+): Promise<FreezRequestResult | null> => {
+  const { data } = await api.post<FreezRequestPayload, FreezRequestResult>(
+    '/WalletReport/FreezRequest',
+    payload,
+    { baseURL: 'REPORT' },
+  );
   return data ?? null;
 };
 
@@ -212,11 +250,21 @@ export type ConfirmOrderPayload = {
   orderId: number;
 };
 
+export type ConfirmOrderResult = {
+  orderId?: number;
+  freezAmount?: number;
+  resultMessage?: string;
+  dateTimeFreez?: string;
+  dateTimeFinal?: string;
+  message?: string;
+  isSuccess?: boolean;
+};
+
 export const confirmOrder = async (
   payload: ConfirmOrderPayload,
   merchantToken: string,
-): Promise<APIResult<unknown>> => {
-  const { data } = await api.put<ConfirmOrderPayload, APIResult<unknown>>(
+): Promise<ConfirmOrderResult | null> => {
+  const { data } = await api.put<ConfirmOrderPayload, ConfirmOrderResult>(
     '/WalletReport/Confirm',
     payload,
     {
@@ -225,5 +273,5 @@ export const confirmOrder = async (
       baseURL: 'REPORT',
     },
   );
-  return data;
+  return data ?? null;
 };

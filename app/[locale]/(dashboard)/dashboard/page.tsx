@@ -28,7 +28,7 @@ export default function DashboardPage() {
             <WalletCard isFlippable>
               <WalletCard.Front>
                 <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                  <Image src='/logos/logo-white.png' width={64} height={20} alt='' />
+                  <Image src='/logos/white-logo.png' width={86} height={86} alt='' />
                 </div>
 
                 <div className='absolute bottom-0'>
@@ -54,7 +54,7 @@ export default function DashboardPage() {
             <WalletCard isFlippable>
               <WalletCard.Front>
                 <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                  <Image src='/logos/logo-white.png' width={64} height={20} alt='' />
+                  <Image src='/logos/white-logo.png' width={86} height={86} alt='' />
                 </div>
 
                 <div className='absolute bottom-0'>

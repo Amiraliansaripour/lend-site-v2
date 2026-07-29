@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 import FirstWhyUs from '@/assets/images/slider-1.png';
 import SecondWhyUs from '@/assets/images/slider-2.png';
-import ThirdWhyUs from '@/assets/images/slider-3.png';
+import ThirdWhyUs from '@/assets/images/slider-3.webp';
 import FourthWhyUs from '@/assets/images/slider-4.png';
 
 const SLIDES = [

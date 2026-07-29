@@ -34,11 +34,18 @@ export default function PaymentVerifyPage() {
 
     confirmOrder({ orderId }, merchantToken)
       .then(result => {
-        if (result?.isSuccess) {
-          toast.success('پرداخت تایید شد');
+        const ok =
+          result?.isSuccess === true ||
+          (typeof result?.resultMessage === 'string' &&
+            (result.resultMessage === 'Success' ||
+              result.resultMessage === 'OK' ||
+              result.resultMessage.includes('موفق')));
+
+        if (ok) {
+          toast.success(result?.resultMessage ?? 'پرداخت تایید شد');
           setVerifyStatus('success');
         } else {
-          toast.error(result?.message ?? 'خطا در تایید پرداخت');
+          toast.error(result?.resultMessage ?? result?.message ?? 'خطا در تایید پرداخت');
           setVerifyStatus('error');
         }
       })
