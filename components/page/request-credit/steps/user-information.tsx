@@ -23,11 +23,23 @@ import { X, Loader2, AlertCircle } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import type { UserInfo } from '@/types/request-credit';
 import { getShopImageUrl } from '@/lib/shop-utils';
+import { normalizedFormatJalaliDate } from '@/utils/format';
 import {
   useUploadUserAttachments,
   useValidateUserIdentityInfo,
   useChangeRequestState,
 } from '@/mutations/request';
+
+function formatBirthDate(date?: string) {
+  if (!date) return '';
+  const shifted = new Date(date);
+  shifted.setDate(shifted.getDate() + 1);
+  return normalizedFormatJalaliDate(shifted, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}
 
 const ESSENTIAL_FIELD_LABELS = {
   firstName: 'نام',
@@ -132,7 +144,7 @@ export function UserInformation({
   const [formData, setFormData] = useState<UserInformationFormData>({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    birthDate: user?.personInfo?.birthDate || '',
+    birthDate: formatBirthDate(user?.personInfo?.birthDate),
     nationalCode: user?.nationalCode || '',
     phoneNumber: user?.personInfo?.phoneNumber || '',
     branchCityName: user?.personInfo?.cityProvinceName || '',
@@ -186,7 +198,7 @@ export function UserInformation({
     setFormData({
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
-      birthDate: user?.personInfo?.birthDate || '',
+      birthDate: formatBirthDate(user?.personInfo?.birthDate),
       nationalCode: user?.nationalCode || '',
       phoneNumber: user?.personInfo?.phoneNumber || '',
       branchCityName: user?.personInfo?.cityProvinceName || '',

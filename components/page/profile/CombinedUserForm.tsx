@@ -33,6 +33,13 @@ interface CombinedUserFormProps {
   user: User | null;
 }
 
+function getDisplayBirthDate(date?: string) {
+  if (!date) return undefined;
+  const shifted = new Date(date);
+  shifted.setDate(shifted.getDate() + 1);
+  return shifted;
+}
+
 // National code validator function
 const validateNationalCode = (val: string) => {
   if (!/^\d{10}$/.test(val)) return false;
@@ -103,7 +110,7 @@ const CombinedUserForm: React.FC<CombinedUserFormProps> = ({ user }) => {
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
       fatherName: user?.personInfo?.fatherName || '',
-      birthDate: user?.personInfo?.birthDate ? new Date(user.personInfo.birthDate) : undefined,
+      birthDate: getDisplayBirthDate(user?.personInfo?.birthDate),
       nationalCode: user?.nationalCode || '',
       issuePlace: user?.personInfo?.issuePlace || '',
       birthCertificateNumber: user?.personInfo?.birthCertificateNumber || '',
@@ -144,19 +151,22 @@ const CombinedUserForm: React.FC<CombinedUserFormProps> = ({ user }) => {
       };
       updateProfile(payload, {
         onSuccess: response => {
-          if (!response.isSuccess) {
-            toast.error(response.message || 'خطا در به‌روزرسانی اطلاعات');
+          if (!response?.id) {
+            toast.error('خطا در به‌روزرسانی اطلاعات');
             return;
           }
 
           toast.success('اطلاعات با موفقیت به‌روزرسانی شد');
 
           // Update localStorage with complete updated user info from server response
-          const updatedUserInfo = response.data;
+          const updatedUserInfo = { ...response };
 
           // Add cityProvinceId to the personInfo if it exists
           if (updatedUserInfo.personInfo && value.provinceId) {
-            updatedUserInfo.personInfo.cityProvinceId = value.provinceId;
+            updatedUserInfo.personInfo = {
+              ...updatedUserInfo.personInfo,
+              cityProvinceId: value.provinceId,
+            };
           }
 
           localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));

@@ -25,7 +25,7 @@ export const useLoginByOtp = () => {
 export const useUpdateUserProfile = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<APIResult<UpdateProfileResponse>, Error, UpdateProfilePayload>({
+  return useMutation<UpdateProfileResponse, Error, UpdateProfilePayload>({
     mutationFn: updateUserProfile,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.users });

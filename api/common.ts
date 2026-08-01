@@ -68,7 +68,7 @@ export type UpdateProfileResponse = {
 };
 
 export const updateUserProfile = async (payload: UpdateProfilePayload) => {
-  const resp = await api.put<UpdateProfilePayload, APIResult<UpdateProfileResponse>>(
+  const resp = await api.put<UpdateProfilePayload, UpdateProfileResponse>(
     '/user/UpdateProfile',
     payload,
   );
