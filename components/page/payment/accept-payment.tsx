@@ -9,8 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUser } from '@/api/users';
-import { getUserId } from '@/lib/auth/client/user-info';
 import {
   getMerchantInfo,
   getValidWallets,
@@ -23,6 +21,8 @@ type Props = {
   amount: number;
   merchantId: string;
   orderId: string;
+  nationalcode: string;
+  userToken: string;
   description?: string;
   returnUrl?: string;
 };
@@ -36,7 +36,15 @@ type WalletSelection = {
 
 const formatAmount = (n: number) => new Intl.NumberFormat('fa-IR').format(n) + ' ریال';
 
-export function AcceptPayment({ amount, merchantId, orderId, description, returnUrl }: Props) {
+export function AcceptPayment({
+  amount,
+  merchantId,
+  orderId,
+  nationalcode,
+  userToken,
+  description,
+  returnUrl,
+}: Props) {
   const [merchant, setMerchant] = useState<MerchantInfo | null>(null);
   const [merchantLoading, setMerchantLoading] = useState(true);
   const [wallets, setWallets] = useState<ValidWallet[]>([]);
@@ -54,24 +62,19 @@ export function AcceptPayment({ amount, merchantId, orderId, description, return
     const loadWallets = async () => {
       setWalletsLoading(true);
       try {
-        const userId = getUserId();
-        if (!userId) {
-          toast.error('اطلاعات کاربر یافت نشد. لطفا دوباره وارد شوید');
-          return;
-        }
-
-        const user = await getUser(userId);
-        const nationalcode = user?.nationalCode;
         if (!nationalcode) {
-          toast.error('کد ملی کاربر یافت نشد');
+          toast.error('کد ملی در اطلاعات پرداخت موجود نیست');
           return;
         }
 
-        const list = await getValidWallets({
-          orderId: Number(orderId),
-          nationalcode,
-          isOnline: true,
-        });
+        const list = await getValidWallets(
+          {
+            orderId: Number(orderId),
+            nationalcode,
+            isOnline: true,
+          },
+          userToken,
+        );
 
         setWallets(list);
         setSelections(Object.fromEntries(list.map(w => [w.id, { selected: false, amount: '' }])));
@@ -82,12 +85,12 @@ export function AcceptPayment({ amount, merchantId, orderId, description, return
       }
     };
 
-    if (orderId) void loadWallets();
-  }, [orderId]);
+    if (orderId && userToken) void loadWallets();
+  }, [orderId, nationalcode, userToken]);
 
   const allocatedTotal = useMemo(
     () =>
-      Object.entries(selections).reduce((sum, [id, sel]) => {
+      Object.entries(selections).reduce((sum, [, sel]) => {
         if (!sel.selected) return sum;
         return sum + (Number(sel.amount) || 0);
       }, 0),
@@ -155,11 +158,14 @@ export function AcceptPayment({ amount, merchantId, orderId, description, return
 
     setStatus('loading');
     try {
-      const result = await freezRequest({
-        orderId: Number(orderId),
-        freezAmount: amount,
-        walletList,
-      });
+      const result = await freezRequest(
+        {
+          orderId: Number(orderId),
+          freezAmount: amount,
+          walletList,
+        },
+        userToken,
+      );
 
       const ok =
         result?.success === 1 ||

@@ -35,7 +35,7 @@ export function MerchantCreateOrder({ merchantToken, onLogout }: Props) {
         if (result?.isSuccess && result.data) {
           const { merchantId, orderId } = result.data;
           const origin = window.location.origin;
-          const link = `${origin}/recipient?amount=${value.amount}&merchantId=${merchantId}&orderId=${orderId}&description=خریدکالا&returnUrl=${origin}/payment/verify`;
+          const link = `${origin}/recipient?amount=${value.amount}&merchantId=${merchantId}&orderId=${orderId}&nationalcode=${value.nationalcode}&description=خریدکالا&returnUrl=${origin}/payment/verify`;
           setPaymentLink(link);
           toast.success('لینک پرداخت ایجاد شد');
         } else {

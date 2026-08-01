@@ -188,6 +188,30 @@ export const getMerchantInfo = async (merchantId: string): Promise<MerchantInfo 
   return null;
 };
 
+export type ConfirmOtpPayload = {
+  otp: string;
+  orderId: number;
+  inOnline: true;
+};
+
+export type ConfirmOtpResult = {
+  otp?: string;
+  isAccepted: boolean;
+  userToken: string;
+};
+
+export const confirmOtp = async (payload: ConfirmOtpPayload): Promise<ConfirmOtpResult | null> => {
+  const { data } = await api.post<
+    ConfirmOtpPayload,
+    ConfirmOtpResult | APIResult<ConfirmOtpResult>
+  >('/WalletReport/ConfirmOtp', payload, { skipAuth: true, baseURL: 'REPORT' });
+
+  if (!data) return null;
+  if ('userToken' in data && data.userToken) return data as ConfirmOtpResult;
+  if ('data' in data && data.data?.userToken) return data.data;
+  return null;
+};
+
 export type ValidWallet = {
   id: string;
   walletType: number;
@@ -201,11 +225,18 @@ export type ValidWalletsPayload = {
   isOnline: true;
 };
 
-export const getValidWallets = async (payload: ValidWalletsPayload): Promise<ValidWallet[]> => {
+export const getValidWallets = async (
+  payload: ValidWalletsPayload,
+  userToken: string,
+): Promise<ValidWallet[]> => {
   const { data } = await api.post<ValidWalletsPayload, APIResult<ValidWallet[]> | ValidWallet[]>(
     '/WalletReport/ValidWallets',
     payload,
-    { baseURL: 'REPORT' },
+    {
+      skipAuth: true,
+      headers: { Authorization: `Bearer ${userToken}` },
+      baseURL: 'REPORT',
+    },
   );
 
   if (Array.isArray(data)) return data;
@@ -237,11 +268,16 @@ export type FreezRequestResult = {
 
 export const freezRequest = async (
   payload: FreezRequestPayload,
+  userToken: string,
 ): Promise<FreezRequestResult | null> => {
   const { data } = await api.post<FreezRequestPayload, FreezRequestResult>(
     '/WalletReport/FreezRequest',
     payload,
-    { baseURL: 'REPORT' },
+    {
+      skipAuth: true,
+      headers: { Authorization: `Bearer ${userToken}` },
+      baseURL: 'REPORT',
+    },
   );
   return data ?? null;
 };

@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { Clock } from 'lucide-react';
 
-import { accessToken } from '@/lib/auth/client/cookies';
 import { RecipientLogin } from '@/components/page/payment/recipient-login';
 import { AcceptPayment } from '@/components/page/payment/accept-payment';
 
@@ -19,17 +18,14 @@ export default function RecipientPage() {
   const amount = Number(params.get('amount') ?? 0);
   const merchantId = params.get('merchantId') ?? '';
   const orderId = params.get('orderId') ?? '';
+  const nationalcode = params.get('nationalcode') ?? '';
   const description = params.get('description') ?? undefined;
   const returnUrl = params.get('returnUrl') ?? undefined;
 
   const [step, setStep] = useState<Step>('login');
+  const [userToken, setUserToken] = useState('');
   const [timeLeft, setTimeLeft] = useState(SESSION_SECONDS);
   const [hasWarnedTimeout, setHasWarnedTimeout] = useState(false);
-
-  // Determine initial step from existing auth
-  useEffect(() => {
-    if (accessToken.has()) setStep('payment');
-  }, []);
 
   // Session countdown
   useEffect(() => {
@@ -59,7 +55,7 @@ export default function RecipientPage() {
         ? 'text-yellow-500'
         : 'text-destructive';
 
-  if (!merchantId || !amount) {
+  if (!merchantId || !amount || !orderId) {
     return (
       <div className='flex min-h-[70vh] items-center justify-center'>
         <p className='text-muted-foreground text-center'>اطلاعات پرداخت ناقص است.</p>
@@ -78,12 +74,20 @@ export default function RecipientPage() {
       </div>
 
       {step === 'login' ? (
-        <RecipientLogin onLoginSuccess={() => setStep('payment')} />
+        <RecipientLogin
+          orderId={orderId}
+          onLoginSuccess={token => {
+            setUserToken(token);
+            setStep('payment');
+          }}
+        />
       ) : (
         <AcceptPayment
           amount={amount}
           merchantId={merchantId}
           orderId={orderId}
+          nationalcode={nationalcode}
+          userToken={userToken}
           description={description}
           returnUrl={returnUrl}
         />
