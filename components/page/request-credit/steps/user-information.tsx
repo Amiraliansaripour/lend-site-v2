@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import type { UserInfo } from '@/types/request-credit';
+import { getShopImageUrl } from '@/lib/shop-utils';
 import {
   useUploadUserAttachments,
   useValidateUserIdentityInfo,
@@ -97,7 +98,8 @@ interface UploadProgress {
 interface ExistingAttachment {
   id: string;
   attachmentType: number;
-  file: string; // base64 string
+  filePath: string;
+  name?: string;
 }
 
 interface UserWithAttachments {
@@ -231,10 +233,10 @@ export function UserInformation({
     }));
   };
 
-  const getExistingPhotoBase64 = useCallback(
+  const getExistingPhotoUrl = useCallback(
     (type: number) => {
       const attachment = existingAttachments?.find(item => item.attachmentType === type);
-      return attachment?.file;
+      return getShopImageUrl(attachment?.filePath);
     },
     [existingAttachments],
   );
@@ -602,23 +604,22 @@ export function UserInformation({
                   { type: 100, label: 'روی کارت ملی', key: 'nationalCardFront' as FileKey },
                   { type: 101, label: 'پشت کارت ملی', key: 'nationalCardBack' as FileKey },
                 ].map(({ type, label, key }) => {
-                  const photoBase64 = getExistingPhotoBase64(type);
+                  const photoUrl = getExistingPhotoUrl(type);
                   const attachment = existingAttachments.find(item => item.attachmentType === type);
 
                   return (
                     <div key={type} className='space-y-2'>
                       <Label>{label}</Label>
-                      {photoBase64 ? (
+                      {photoUrl ? (
                         <div className='relative'>
                           <div className='relative w-full h-40 border-2 border-green-500 rounded-lg overflow-hidden'>
                             <Image
-                              src={`data:image/jpeg;base64,${photoBase64}`}
+                              src={photoUrl}
                               alt={label}
                               fill
+                              unoptimized
                               className='object-cover cursor-pointer hover:opacity-80 transition-opacity'
-                              onClick={() =>
-                                openImageModal(`data:image/jpeg;base64,${photoBase64}`)
-                              }
+                              onClick={() => openImageModal(photoUrl)}
                             />
                           </div>
                           <Button

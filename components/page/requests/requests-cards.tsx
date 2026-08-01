@@ -144,11 +144,9 @@ export function RequestsCards({
     }
   };
 
-  console.log(walletInfo);
-
   return (
     <>
-      <div className='flex items-center gap-10 justify-center max-lg:flex-col'>
+      <div className='grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3'>
         {/* Credit Wallet Card */}
         <WalletCard>
           <WalletCard.Front>
@@ -331,11 +329,11 @@ export function RequestsCards({
 
 export function RequestsCardsSkeleton() {
   return (
-    <div className='flex items-center gap-10 justify-center max-lg:flex-col'>
+    <div className='grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3'>
       {[1, 2, 3].map(i => (
         <div
           key={i}
-          className='w-full max-w-sm h-64 rounded-xl bg-gray-100 animate-pulse shadow-lg'
+          className='w-full max-w-96 h-64 rounded-xl bg-gray-100 animate-pulse shadow-lg'
         />
       ))}
     </div>

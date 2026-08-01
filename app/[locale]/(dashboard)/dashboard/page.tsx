@@ -23,59 +23,57 @@ export default function DashboardPage() {
   return (
     <PageContainer breadcrumbs={breadcrumbs}>
       <PageContent title='کیف پول های من'>
-        <div className='w-full flex items-center justify-center gap-10'>
-          <div className='flex items-center justify-center gap-10 max-lg:flex-col'>
-            <WalletCard isFlippable>
-              <WalletCard.Front>
-                <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                  <Image src='/logos/white-logo.png' width={86} height={86} alt='' />
-                </div>
+        <div className='grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2 sm:gap-6'>
+          <WalletCard isFlippable>
+            <WalletCard.Front>
+              <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
+                <Image src='/logos/white-logo.png' width={86} height={86} alt='' />
+              </div>
 
-                <div className='absolute bottom-0'>
-                  <div className='flex flex-col gap-4'>
-                    <span>کیف پول اعتباری</span>
-                    <div className='text-sm'>موجودی 0 ریال</div>
-                  </div>
+              <div className='absolute bottom-0'>
+                <div className='flex flex-col gap-4'>
+                  <span>کیف پول اعتباری</span>
+                  <div className='text-sm'>موجودی 0 ریال</div>
                 </div>
-              </WalletCard.Front>
+              </div>
+            </WalletCard.Front>
 
-              <WalletCard.Back>
-                <WalletCard.MagStripe />
-                <div className='flex items-center justify-end mt-20'>
-                  <p className='text-sm leading-6'>
-                    کیف پول اعتباری به شما امکان می‌دهد بدون پرداخت نقدی فوری، با استفاده از اعتبار
-                    تخصیص‌داده‌شده خرید و پرداخت انجام دهید و هزینه‌ها را در زمان مقرر یا به‌صورت
-                    اقساط تسویه کنید.
-                  </p>
-                </div>
-              </WalletCard.Back>
-            </WalletCard>
+            <WalletCard.Back>
+              <WalletCard.MagStripe />
+              <div className='flex items-center justify-end mt-20'>
+                <p className='text-sm leading-6'>
+                  کیف پول اعتباری به شما امکان می‌دهد بدون پرداخت نقدی فوری، با استفاده از اعتبار
+                  تخصیص‌داده‌شده خرید و پرداخت انجام دهید و هزینه‌ها را در زمان مقرر یا به‌صورت
+                  اقساط تسویه کنید.
+                </p>
+              </div>
+            </WalletCard.Back>
+          </WalletCard>
 
-            <WalletCard isFlippable>
-              <WalletCard.Front>
-                <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                  <Image src='/logos/white-logo.png' width={86} height={86} alt='' />
-                </div>
+          <WalletCard isFlippable>
+            <WalletCard.Front>
+              <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
+                <Image src='/logos/white-logo.png' width={86} height={86} alt='' />
+              </div>
 
-                <div className='absolute bottom-0'>
-                  <div className='flex flex-col gap-4'>
-                    <span>کیف پول نقدی</span>
-                    <div className='text-sm'>موجودی 0 ریال</div>
-                  </div>
+              <div className='absolute bottom-0'>
+                <div className='flex flex-col gap-4'>
+                  <span>کیف پول نقدی</span>
+                  <div className='text-sm'>موجودی 0 ریال</div>
                 </div>
-              </WalletCard.Front>
+              </div>
+            </WalletCard.Front>
 
-              <WalletCard.Back>
-                <WalletCard.MagStripe />
-                <div className='flex items-center justify-end mt-20'>
-                  <p className='text-sm leading-6'>
-                    کیف پول نقدی به شما امکان می‌دهد مبلغی را از قبل شارژ کرده و تنها به اندازه
-                    موجودی خود، سریع و آسان پرداخت‌های روزمره را انجام دهید.
-                  </p>
-                </div>
-              </WalletCard.Back>
-            </WalletCard>
-          </div>
+            <WalletCard.Back>
+              <WalletCard.MagStripe />
+              <div className='flex items-center justify-end mt-20'>
+                <p className='text-sm leading-6'>
+                  کیف پول نقدی به شما امکان می‌دهد مبلغی را از قبل شارژ کرده و تنها به اندازه موجودی
+                  خود، سریع و آسان پرداخت‌های روزمره را انجام دهید.
+                </p>
+              </div>
+            </WalletCard.Back>
+          </WalletCard>
         </div>
       </PageContent>
 
