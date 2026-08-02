@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Upload, X, FileCheck, Loader2, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRegisterCheque, useChangeRequestState } from '@/mutations/request';
+import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile } from '@/lib/image-file';
 
 interface ChequeRegistrationProps {
   requestId: string;
@@ -89,13 +90,16 @@ const FileUploadArea = ({
         <input
           ref={el => onRefChange(fileKey, el)}
           type='file'
-          accept='image/jpeg,image/png'
+          accept={ALLOWED_IMAGE_ACCEPT}
           onChange={e => onFileSelect(e, fileKey)}
-          className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
+          className={cn(
+            'absolute inset-0 w-full h-full opacity-0 cursor-pointer',
+            uploadedFile && 'pointer-events-none',
+          )}
         />
 
         {uploadedFile ? (
-          <div className='space-y-2'>
+          <div className='relative z-10 space-y-2'>
             <div className='relative w-full h-32'>
               <Image
                 src={uploadedFile.preview}
@@ -127,6 +131,7 @@ const FileUploadArea = ({
               variant='destructive'
               size='sm'
               onClick={e => {
+                e.preventDefault();
                 e.stopPropagation();
                 void onRemoveFile(fileKey);
               }}
@@ -242,8 +247,15 @@ export function ChequeRegistration({
       const file = event.target.files?.[0];
       if (!file) return;
 
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        event.target.value = '';
+        return;
+      }
+
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');
+        event.target.value = '';
         return;
       }
 
@@ -268,6 +280,11 @@ export function ChequeRegistration({
       event.preventDefault();
       const file = event.dataTransfer.files[0];
       if (!file) return;
+
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        return;
+      }
 
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');

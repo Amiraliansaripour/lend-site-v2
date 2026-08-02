@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Upload, X, FileCheck, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCreateIncomeInfo } from '@/mutations/request';
+import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile } from '@/lib/image-file';
 
 interface IncomeInformationProps {
   requestId: string;
@@ -73,9 +74,7 @@ const FileUploadArea = ({
   return (
     <div className='space-y-2'>
       <Label className='block'>{FILE_LABELS[fileKey]}</Label>
-      <p className='text-xs text-blue-600 mb-2'>
-        پسوندهای مجاز: excel, txt, jpg, jpeg, png (حداکثر 3 مگابایت)
-      </p>
+      <p className='text-xs text-blue-600 mb-2'>پسوندهای مجاز: jpg, jpeg, png (حداکثر 3 مگابایت)</p>
       <div
         className={cn(
           'relative border-2 border-dashed rounded-lg p-4 text-center transition-colors',
@@ -87,13 +86,16 @@ const FileUploadArea = ({
         <input
           ref={el => onRefChange(fileKey, el)}
           type='file'
-          accept='application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xls,.xlsx,text/plain,.txt,image/jpeg,.jpg,.jpeg,image/png,.png'
+          accept={ALLOWED_IMAGE_ACCEPT}
           onChange={e => onFileSelect(e, fileKey)}
-          className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
+          className={cn(
+            'absolute inset-0 w-full h-full opacity-0 cursor-pointer',
+            uploadedFile && 'pointer-events-none',
+          )}
         />
 
         {uploadedFile ? (
-          <div className='space-y-2'>
+          <div className='relative z-10 space-y-2'>
             <div className='relative w-full h-32'>
               <Image
                 src={uploadedFile.preview}
@@ -125,6 +127,7 @@ const FileUploadArea = ({
               variant='destructive'
               size='sm'
               onClick={e => {
+                e.preventDefault();
                 e.stopPropagation();
                 onRemoveFile(fileKey);
               }}
@@ -228,8 +231,15 @@ export function IncomeInformation({
       const file = event.target.files?.[0];
       if (!file) return;
 
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        event.target.value = '';
+        return;
+      }
+
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');
+        event.target.value = '';
         return;
       }
 
@@ -254,6 +264,11 @@ export function IncomeInformation({
       event.preventDefault();
       const file = event.dataTransfer.files[0];
       if (!file) return;
+
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        return;
+      }
 
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');

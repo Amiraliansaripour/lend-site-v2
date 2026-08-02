@@ -40,8 +40,10 @@ function PlanGuaranteesButton({ guarantees }: { guarantees: string[] }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
-            <DialogTitle>ضمانت‌های طرح</DialogTitle>
-            <DialogDescription>لیست ضمانت‌های مورد نیاز این طرح</DialogDescription>
+            <DialogTitle className='text-right'>ضمانت‌های طرح</DialogTitle>
+            <DialogDescription className='text-right'>
+              لیست ضمانت‌های مورد نیاز این طرح
+            </DialogDescription>
           </DialogHeader>
           <ul className='mt-2 list-disc space-y-2 pr-5 text-sm'>
             {guarantees.map(guarantee => (

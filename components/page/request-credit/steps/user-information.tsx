@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUploadArea } from '@/components/file-upload-area';
+import { isAllowedImageFile } from '@/lib/image-file';
 import { uploadAttachment, deleteAttachment } from '@/api/facility';
 import { getUser } from '@/api/users';
 import { toast } from 'sonner';
@@ -312,8 +313,15 @@ export function UserInformation({
       const file = event.target.files?.[0];
       if (!file) return;
 
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        event.target.value = '';
+        return;
+      }
+
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');
+        event.target.value = '';
         return;
       }
 

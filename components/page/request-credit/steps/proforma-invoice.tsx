@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { ZoomIn } from 'lucide-react';
 import { useCreateInvoice, useChangeRequestState } from '@/mutations/request';
 import { FileUploadArea } from '@/components/file-upload-area';
+import { isAllowedImageFile } from '@/lib/image-file';
 
 interface ProformaInvoiceProps {
   requestId: string;
@@ -76,8 +77,15 @@ export function ProformaInvoice({
       const file = event.target.files?.[0];
       if (!file) return;
 
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        event.target.value = '';
+        return;
+      }
+
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');
+        event.target.value = '';
         return;
       }
 
@@ -189,7 +197,6 @@ export function ProformaInvoice({
               }}
               onFileSelect={handleFileSelect}
               onRemoveFile={() => void handleRemoveFile()}
-              accept='image/jpeg,image/png'
             />
 
             {uploadedFile && (
