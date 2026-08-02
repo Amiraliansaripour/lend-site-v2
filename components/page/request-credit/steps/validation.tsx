@@ -7,9 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  sendValidationOtp,
-  verifyValidationOtp,
-  sendFinotechInquiry,
+  facilityInquiry,
   getFinotechCreditStatus,
   changeRequestState,
   type FinotechCreditData,
@@ -27,13 +25,6 @@ interface ValidationProps {
   onNext?: () => void;
   onBack?: () => void;
   onCancel?: () => void;
-}
-
-interface IranianValidationData {
-  score?: number;
-  risk?: string;
-  token?: string;
-  trackId?: string;
 }
 
 function ValidationCard({
@@ -74,6 +65,143 @@ function SkeletonCard() {
   );
 }
 
+function OtpVerificationCard({
+  title,
+  otp,
+  isVerifying,
+  onOtpChange,
+  onVerify,
+  onCancel,
+}: {
+  title: string;
+  otp: string;
+  isVerifying: boolean;
+  onOtpChange: (value: string) => void;
+  onVerify: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Card className='max-w-md mx-auto'>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className='space-y-4'>
+        <p className='text-sm text-muted-foreground'>
+          لطفا کد 5 رقمی ارسال شده به شماره موبایل خود را وارد کنید.
+        </p>
+        <input
+          type='text'
+          maxLength={5}
+          value={otp}
+          onChange={e => onOtpChange(e.target.value.replace(/\D/g, ''))}
+          className='w-full text-center text-2xl tracking-widest border rounded-lg p-4'
+          placeholder='- - - - -'
+          dir='ltr'
+        />
+        <div className='flex gap-2'>
+          <Button onClick={onVerify} disabled={isVerifying || otp.length !== 5} className='flex-1'>
+            {isVerifying ? 'در حال تایید...' : 'تایید'}
+          </Button>
+          <Button variant='outline' onClick={onCancel}>
+            انصراف
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Shared inquiry → OTP → credit-status flow used by both validation types. */
+function useValidationInquiry(userId: string | undefined, requestId: string) {
+  const searchParams = useSearchParams();
+  const id = searchParams?.get('id') || requestId;
+
+  const [creditData, setCreditData] = useState<FinotechCreditData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [otp, setOtp] = useState('');
+
+  const fetchCreditData = useCallback(async () => {
+    if (!userId || !id) return;
+
+    try {
+      setIsLoading(true);
+      const data = await getFinotechCreditStatus(userId, id);
+      setCreditData(data);
+      setShowOtpModal(false);
+    } catch {
+      setCreditData(null);
+      toast.error('خطا در دریافت نتیجه اعتبارسنجی');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, id]);
+
+  const initializeInquiry = useCallback(async () => {
+    if (!userId || !id) return;
+
+    try {
+      setIsLoading(true);
+      // Initial call must send otp as an empty string to trigger SMS delivery.
+      const response = await facilityInquiry({ userId, requestId: id, otp: '' });
+
+      if (response.otpStatus) {
+        setShowOtpModal(true);
+        setIsLoading(false);
+      } else {
+        // Already verified — load the credit status result directly.
+        await fetchCreditData();
+      }
+    } catch {
+      toast.error('خطا در دریافت اطلاعات اعتبارسنجی');
+      setIsLoading(false);
+    }
+  }, [userId, id, fetchCreditData]);
+
+  useEffect(() => {
+    if (id && userId) {
+      void initializeInquiry();
+    }
+  }, [id, userId, initializeInquiry]);
+
+  const handleVerifyOtp = async () => {
+    if (!userId || !id || otp.length !== 5) {
+      toast.error('لطفا کد 5 رقمی را وارد کنید');
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+      const response = await facilityInquiry({ userId, requestId: id, otp });
+
+      if (response.otpStatus) {
+        toast.error('کد وارد شده صحیح نیست');
+        return;
+      }
+
+      toast.success('کد با موفقیت تایید شد');
+      await fetchCreditData();
+    } catch {
+      toast.error('کد وارد شده صحیح نیست');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  return {
+    id,
+    creditData,
+    isLoading,
+    showOtpModal,
+    setShowOtpModal,
+    isVerifying,
+    otp,
+    setOtp,
+    handleVerifyOtp,
+  };
+}
+
 // ─── Iranian Validation (validateType === 1) ─────────────────────────────────
 
 function IranianValidation({
@@ -87,76 +215,27 @@ function IranianValidation({
   onCancel,
 }: Omit<ValidationProps, 'validateType'>) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = searchParams?.get('id') || requestId;
-
-  const [validationData, setValidationData] = useState<IranianValidationData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpInfo, setOtpInfo] = useState<{ token: string; trackId: string } | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [otp, setOtp] = useState('');
+  const {
+    id,
+    creditData,
+    isLoading,
+    showOtpModal,
+    setShowOtpModal,
+    isVerifying,
+    otp,
+    setOtp,
+    handleVerifyOtp,
+  } = useValidationInquiry(userId, requestId);
 
   const checkValidationScore = useCallback(() => {
-    if (!validationData?.score) return false;
-    return Number(validationData.score) >= Number(neededScore);
-  }, [validationData?.score, neededScore]);
-
-  const initializeValidation = useCallback(async () => {
-    if (!id) return;
-
-    try {
-      setIsLoading(true);
-      const data = await sendValidationOtp(id);
-
-      if (!data?.score) {
-        setShowOtpModal(true);
-        setOtpInfo({ token: data.token!, trackId: data.trackId! });
-      } else {
-        setValidationData(data);
-      }
-    } catch {
-      toast.error('خطا در دریافت اطلاعات اعتبارسنجی');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (id && userId) {
-      void initializeValidation();
-    }
-  }, [id, userId, initializeValidation]);
-
-  const handleVerifyOtp = async () => {
-    if (!otpInfo || !id || otp.length !== 5) {
-      toast.error('لطفا کد 5 رقمی را وارد کنید');
-      return;
-    }
-
-    try {
-      setIsVerifying(true);
-      const data = await verifyValidationOtp({
-        trackId: otpInfo.trackId,
-        token: otpInfo.token,
-        otp,
-        requestId: id,
-      });
-
-      toast.success('کد با موفقیت تایید شد');
-      setShowOtpModal(false);
-      setValidationData(data);
-    } catch {
-      toast.error('کد وارد شده صحیح نیست');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+    if (!creditData?.score) return false;
+    return Number(creditData.score) >= Number(neededScore);
+  }, [creditData?.score, neededScore]);
 
   const handleSubmit = async () => {
     if (isReadOnly) return;
 
-    if (isVerifying) {
+    if (isVerifying || isLoading || !creditData) {
       toast.error('پس از اعلام وضعیت اعتبارسنجی امکان رفتن به مرحله بعد وجود دارد.');
       return;
     }
@@ -179,39 +258,24 @@ function IranianValidation({
     }
   };
 
+  if (isLoading && !creditData && !showOtpModal) {
+    return (
+      <div className='flex flex-col items-center justify-center min-h-[200px]'>
+        <p className='text-gray-700 text-lg'>در حال بررسی وضعیت اعتبارسنجی...</p>
+      </div>
+    );
+  }
+
   if (showOtpModal) {
     return (
-      <Card className='max-w-md mx-auto'>
-        <CardHeader>
-          <CardTitle>تایید کد پنج رقمی</CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <p className='text-sm text-muted-foreground'>
-            لطفا کد 5 رقمی ارسال شده به شماره موبایل خود را وارد کنید.
-          </p>
-          <input
-            type='text'
-            maxLength={5}
-            value={otp}
-            onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-            className='w-full text-center text-2xl tracking-widest border rounded-lg p-4'
-            placeholder='- - - - -'
-            dir='ltr'
-          />
-          <div className='flex gap-2'>
-            <Button
-              onClick={handleVerifyOtp}
-              disabled={isVerifying || otp.length !== 5}
-              className='flex-1'
-            >
-              {isVerifying ? 'در حال تایید...' : 'تایید'}
-            </Button>
-            <Button variant='outline' onClick={() => setShowOtpModal(false)}>
-              انصراف
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <OtpVerificationCard
+        title='تایید کد پنج رقمی'
+        otp={otp}
+        isVerifying={isVerifying}
+        onOtpChange={setOtp}
+        onVerify={handleVerifyOtp}
+        onCancel={() => setShowOtpModal(false)}
+      />
     );
   }
 
@@ -223,7 +287,7 @@ function IranianValidation({
         </CardHeader>
         <CardContent>
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {isLoading || isVerifying ? (
+            {isLoading || isVerifying || !creditData ? (
               <>
                 <SkeletonCard />
                 <SkeletonCard />
@@ -233,10 +297,10 @@ function IranianValidation({
               <>
                 <ValidationCard
                   title='امتیاز'
-                  value={validationData?.score || '-'}
+                  value={creditData.score || '-'}
                   variant={checkValidationScore() ? 'success' : 'danger'}
                 />
-                <ValidationCard title='ریسک' value={validationData?.risk || '-'} variant='info' />
+                <ValidationCard title='ریسک' value={creditData.risk || '-'} variant='info' />
                 <ValidationCard
                   title='امتیاز مورد نیاز'
                   value={neededScore || 0}
@@ -251,7 +315,7 @@ function IranianValidation({
       <div className='flex justify-center gap-4'>
         <Button
           onClick={handleSubmit}
-          disabled={isReadOnly || !checkValidationScore() || isVerifying}
+          disabled={isReadOnly || !checkValidationScore() || isVerifying || isLoading}
           size='lg'
         >
           {isEditMode ? 'ویرایش' : 'مرحله بعد'}
@@ -283,14 +347,8 @@ function FinotechValidation({
   onCancel,
 }: Omit<ValidationProps, 'validateType' | 'neededScore'>) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = searchParams?.get('id') || requestId;
-
-  const [creditData, setCreditData] = useState<FinotechCreditData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [otp, setOtp] = useState('');
+  const { id, creditData, isLoading, showOtpModal, isVerifying, otp, setOtp, handleVerifyOtp } =
+    useValidationInquiry(userId, requestId);
 
   const checkAllConditions = useCallback(() => {
     if (!creditData) return false;
@@ -303,67 +361,6 @@ function FinotechValidation({
       creditData.guarantyDeferred === false
     );
   }, [creditData]);
-
-  const fetchCreditData = useCallback(async () => {
-    if (!userId || !id) return;
-    try {
-      setIsLoading(true);
-      const data = await getFinotechCreditStatus(userId, id);
-      setCreditData(data);
-    } catch {
-      setCreditData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId, id]);
-
-  const checkOtpStatus = useCallback(async () => {
-    if (!id) return;
-
-    try {
-      setIsLoading(true);
-      const response = await sendFinotechInquiry(id);
-
-      if (response?.otpStatus) {
-        setShowOtpModal(true);
-        setIsLoading(false);
-      } else {
-        await fetchCreditData();
-      }
-    } catch {
-      setIsLoading(false);
-    }
-  }, [id, fetchCreditData]);
-
-  useEffect(() => {
-    if (id && userId) {
-      void checkOtpStatus();
-    }
-  }, [id, userId, checkOtpStatus]);
-
-  const handleVerifyOtp = async () => {
-    if (!id || otp.length !== 5) {
-      toast.error('لطفا کد 5 رقمی را وارد کنید');
-      return;
-    }
-
-    try {
-      setIsVerifying(true);
-      const response = await sendFinotechInquiry(id, otp);
-
-      if (!response?.otpStatus) {
-        toast.success('کد با موفقیت تایید شد');
-        setShowOtpModal(false);
-        await fetchCreditData();
-      } else {
-        toast.error('کد وارد شده صحیح نیست.');
-      }
-    } catch {
-      toast.error('خطا در بررسی کد تایید.');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
 
   const handleSubmit = async () => {
     if (isReadOnly) return;
@@ -401,37 +398,14 @@ function FinotechValidation({
 
   if (showOtpModal) {
     return (
-      <Card className='max-w-md mx-auto'>
-        <CardHeader>
-          <CardTitle>کد دریافت اعتبار سنجی</CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-4'>
-          <p className='text-sm text-muted-foreground'>
-            لطفا کد 5 رقمی ارسال شده به شماره موبایل خود را وارد کنید.
-          </p>
-          <input
-            type='text'
-            maxLength={5}
-            value={otp}
-            onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-            className='w-full text-center text-2xl tracking-widest border rounded-lg p-4'
-            placeholder='- - - - -'
-            dir='ltr'
-          />
-          <div className='flex gap-2'>
-            <Button
-              onClick={handleVerifyOtp}
-              disabled={isVerifying || otp.length !== 5}
-              className='flex-1'
-            >
-              {isVerifying ? 'در حال تایید...' : 'تایید'}
-            </Button>
-            <Button variant='outline' onClick={() => router.push('/requests')}>
-              انصراف
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <OtpVerificationCard
+        title='کد دریافت اعتبار سنجی'
+        otp={otp}
+        isVerifying={isVerifying}
+        onOtpChange={setOtp}
+        onVerify={handleVerifyOtp}
+        onCancel={() => router.push('/requests')}
+      />
     );
   }
 

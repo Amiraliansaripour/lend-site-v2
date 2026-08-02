@@ -15,10 +15,18 @@ import type {
 import { resolveURL } from '@/utils/url';
 
 export async function facilityInquiry(payload: FacilityInquiryPayload) {
-  const { data } = await api.post<FacilityInquiryPayload, FacilityInquiryResponse>(
+  const { data, resp } = await api.post<FacilityInquiryPayload, FacilityInquiryResponse>(
     '/UserFacility/Inquiry',
     payload,
   );
+
+  if (!resp.ok) {
+    throw new Error(
+      (data as FacilityInquiryResponse & { message?: string })?.message ??
+        `Facility inquiry failed with status ${resp.status}`,
+    );
+  }
+
   return data;
 }
 
