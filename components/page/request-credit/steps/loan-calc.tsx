@@ -100,10 +100,10 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
   const loanCalculation = useMemo(() => {
     if (!planDetails || !creditAmount) return null;
 
-    const totalFeeRate = planDetails.duringBankFee + planDetails.duringSystemFee;
+    const interestRate = planDetails.percentage ?? 0;
     const firstFeeRate = planDetails.firstBankFee + planDetails.firstSystemFee;
 
-    const result = calculatePMT(creditAmount, totalFeeRate, planDetails.period);
+    const result = calculatePMT(creditAmount, interestRate, planDetails.period);
     const receivedAmount = creditAmount - (creditAmount * firstFeeRate) / 100;
 
     return {

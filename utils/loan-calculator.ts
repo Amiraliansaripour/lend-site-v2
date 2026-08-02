@@ -86,7 +86,20 @@ export function calculatePMT(
   installment: number;
   total: number;
 } {
+  if (!totalPayments || totalPayments <= 0) {
+    return { installment: 0, total: 0 };
+  }
+
   const r = annualInterestRate / 100 / 12;
+
+  // Zero interest: equal principal installments (avoid 0/0 → NaN)
+  if (!r) {
+    const installment = principal / totalPayments;
+    return {
+      installment,
+      total: installment * totalPayments,
+    };
+  }
 
   const numerator = principal * r * Math.pow(1 + r, totalPayments);
   const denominator = Math.pow(1 + r, totalPayments) - 1;

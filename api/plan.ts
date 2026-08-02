@@ -16,6 +16,7 @@ export type PlanDetail = {
   period: number;
   minAmount: number;
   maxAmount: number;
+  percentage: number;
   firstSystemFee: number;
   firstBankFee: number;
   duringSystemFee: number;
