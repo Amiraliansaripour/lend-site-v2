@@ -109,3 +109,15 @@ export const getRequestStatusInfo = (requestState: number): RequestStatusInfo =>
 export const canContinueRequest = (requestState: number): boolean => {
   return requestState >= 1 && requestState < 8;
 };
+
+/**
+ * Admin rejections 22–28 can be resumed by the user.
+ * Resume stage = requestState - 20 (e.g. 25 → stage 5).
+ */
+export const canResumeRequest = (requestState: number): boolean => {
+  return requestState >= 22 && requestState <= 28;
+};
+
+export const getResumeStep = (requestState: number): number => {
+  return requestState - 20;
+};

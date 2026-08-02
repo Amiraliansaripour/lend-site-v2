@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Column, ColumnDef } from '@tanstack/react-table';
+import { Link } from '@/i18n/navigation';
 
 import { DataTableColumnHeader } from '../../data-table/data-table-column-header';
 import { DataTableToolbar } from '../../data-table/data-table-toolbar';
@@ -18,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { getRequestStatusInfo } from '@/utils/request-status';
+import { canResumeRequest, getRequestStatusInfo } from '@/utils/request-status';
 import type { Request } from './request-types';
 
 type RequestsTableComponentProps = {
@@ -141,6 +142,28 @@ export function RequestsTableComponent({ requests }: RequestsTableComponentProps
             <Badge variant={statusInfo.variant} className='whitespace-nowrap'>
               {statusInfo.text}
             </Badge>
+          );
+        },
+      },
+      {
+        id: 'actions',
+        enableSorting: false,
+        meta: { label: 'عملیات' },
+        header: ({ column }: { column: Column<Request, unknown> }) => (
+          <DataTableColumnHeader label='عملیات' column={column} />
+        ),
+        cell: ({ row }) => {
+          const { id, requestState } = row.original;
+
+          if (!canResumeRequest(requestState)) {
+            return <span className='text-muted-foreground'>—</span>;
+          }
+
+          // editMode lands on the rejected step (state - 20), e.g. 25 → stage 5
+          return (
+            <Button variant='outline' size='sm' asChild>
+              <Link href={`/requests/request-credit?id=${id}&editMode=true`}>از سرگیری</Link>
+            </Button>
           );
         },
       },
