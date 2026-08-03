@@ -204,7 +204,7 @@ export const confirmOtp = async (payload: ConfirmOtpPayload): Promise<ConfirmOtp
   const { data } = await api.post<
     ConfirmOtpPayload,
     ConfirmOtpResult | APIResult<ConfirmOtpResult>
-  >('/WalletReport/ConfirmOtp', payload, { skipAuth: true, baseURL: 'REPORT' });
+  >('/WalletReport/ConfirmOtp', payload, { skipAuth: true });
 
   if (!data) return null;
   if ('userToken' in data && data.userToken) return data as ConfirmOtpResult;
