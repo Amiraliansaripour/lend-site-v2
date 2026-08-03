@@ -167,7 +167,6 @@ export const getOrderId = async (
     {
       skipAuth: true,
       headers: { Authorization: `Bearer ${merchantToken}` },
-      baseURL: 'REPORT',
     },
   );
   return data;
@@ -235,7 +234,6 @@ export const getValidWallets = async (
     {
       skipAuth: true,
       headers: { Authorization: `Bearer ${userToken}` },
-      baseURL: 'REPORT',
     },
   );
 
@@ -276,7 +274,6 @@ export const freezRequest = async (
     {
       skipAuth: true,
       headers: { Authorization: `Bearer ${userToken}` },
-      baseURL: 'REPORT',
     },
   );
   return data ?? null;
@@ -306,7 +303,6 @@ export const confirmOrder = async (
     {
       skipAuth: true,
       headers: { Authorization: `Bearer ${merchantToken}` },
-      baseURL: 'REPORT',
     },
   );
   return data ?? null;

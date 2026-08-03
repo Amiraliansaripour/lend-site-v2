@@ -39,7 +39,7 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
   const resp = await fetch(_url, {
     ...opts,
     ...payload,
-    headers: { ...opts.headers, ...headers },
+    headers: { ...headers, ...opts.headers },
   });
 
   const text = await resp.text();

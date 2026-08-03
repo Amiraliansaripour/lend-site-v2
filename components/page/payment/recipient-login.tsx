@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 
 import { useAppForm } from '@/components/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,11 +10,21 @@ import { confirmOtp } from '@/api/wallet';
 
 type Props = {
   orderId: string;
-  onLoginSuccess: (userToken: string) => void;
+  timeLeft: number;
+  onLoginSuccess: (userToken: string) => void | Promise<void>;
 };
 
-export function RecipientLogin({ orderId, onLoginSuccess }: Props) {
+const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+
+export function RecipientLogin({ orderId, timeLeft, onLoginSuccess }: Props) {
   const [isPending, setIsPending] = useState(false);
+
+  const timerColor =
+    timeLeft > 60
+      ? 'text-muted-foreground'
+      : timeLeft > 30
+        ? 'text-yellow-500'
+        : 'text-destructive';
 
   const form = useAppForm<{ otp: string }>({
     defaultValues: { otp: '' },
@@ -39,7 +49,7 @@ export function RecipientLogin({ orderId, onLoginSuccess }: Props) {
 
         if (result?.isAccepted && result.userToken) {
           toast.success('ورود با موفقیت انجام شد');
-          onLoginSuccess(result.userToken);
+          await onLoginSuccess(result.userToken);
         } else {
           toast.error('کد تایید نامعتبر است');
         }
@@ -54,8 +64,19 @@ export function RecipientLogin({ orderId, onLoginSuccess }: Props) {
   return (
     <Card className='w-full max-w-sm'>
       <CardHeader>
-        <CardTitle>تایید هویت</CardTitle>
-        <CardDescription>کد تایید ارسال‌شده را وارد کنید</CardDescription>
+        <div className='flex items-start justify-between gap-3'>
+          <div className='min-w-0'>
+            <CardTitle>تایید هویت</CardTitle>
+            <CardDescription>کد تایید ارسال‌شده را وارد کنید</CardDescription>
+          </div>
+          <div
+            className={`shrink-0 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-mono ${timerColor}`}
+            title='زمان باقی‌مانده'
+          >
+            <Clock className='size-4' />
+            <span dir='ltr'>{formatTime(timeLeft)}</span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <form

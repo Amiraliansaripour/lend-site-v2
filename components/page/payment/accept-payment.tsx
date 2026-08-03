@@ -2,30 +2,29 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle2, XCircle, Wallet } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Wallet, Clock, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  getMerchantInfo,
-  getValidWallets,
-  freezRequest,
-  type MerchantInfo,
-  type ValidWallet,
-} from '@/api/wallet';
+import { getMerchantInfo, freezRequest, type MerchantInfo, type ValidWallet } from '@/api/wallet';
 
 type Props = {
   amount: number;
   merchantId: string;
   orderId: string;
-  nationalcode: string;
   userToken: string;
+  wallets: ValidWallet[];
+  walletsLoading: boolean;
+  onReloadWallets: () => Promise<ValidWallet[]>;
   description?: string;
   returnUrl?: string;
+  timeLeft: number;
 };
+
+const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -40,17 +39,25 @@ export function AcceptPayment({
   amount,
   merchantId,
   orderId,
-  nationalcode,
   userToken,
+  wallets,
+  walletsLoading,
+  onReloadWallets,
   description,
   returnUrl,
+  timeLeft,
 }: Props) {
   const [merchant, setMerchant] = useState<MerchantInfo | null>(null);
   const [merchantLoading, setMerchantLoading] = useState(true);
-  const [wallets, setWallets] = useState<ValidWallet[]>([]);
-  const [walletsLoading, setWalletsLoading] = useState(true);
   const [selections, setSelections] = useState<Record<string, WalletSelection>>({});
   const [status, setStatus] = useState<Status>('idle');
+
+  const timerColor =
+    timeLeft > 60
+      ? 'text-muted-foreground'
+      : timeLeft > 30
+        ? 'text-yellow-500'
+        : 'text-destructive';
 
   useEffect(() => {
     getMerchantInfo(merchantId)
@@ -59,34 +66,14 @@ export function AcceptPayment({
   }, [merchantId]);
 
   useEffect(() => {
-    const loadWallets = async () => {
-      setWalletsLoading(true);
-      try {
-        if (!nationalcode) {
-          toast.error('کد ملی در اطلاعات پرداخت موجود نیست');
-          return;
-        }
-
-        const list = await getValidWallets(
-          {
-            orderId: Number(orderId),
-            nationalcode,
-            isOnline: true,
-          },
-          userToken,
-        );
-
-        setWallets(list);
-        setSelections(Object.fromEntries(list.map(w => [w.id, { selected: false, amount: '' }])));
-      } catch {
-        toast.error('خطا در دریافت لیست کیف پول‌ها');
-      } finally {
-        setWalletsLoading(false);
+    setSelections(prev => {
+      const next: Record<string, WalletSelection> = {};
+      for (const w of wallets) {
+        next[w.id] = prev[w.id] ?? { selected: false, amount: '' };
       }
-    };
-
-    if (orderId && userToken) void loadWallets();
-  }, [orderId, nationalcode, userToken]);
+      return next;
+    });
+  }, [wallets]);
 
   const allocatedTotal = useMemo(
     () =>
@@ -221,10 +208,21 @@ export function AcceptPayment({
   return (
     <Card className='w-full max-w-md'>
       <CardHeader>
-        <CardTitle>تایید پرداخت</CardTitle>
-        <CardDescription>
-          {description ?? 'کیف پول‌ها را انتخاب و مبلغ را تخصیص دهید'}
-        </CardDescription>
+        <div className='flex items-start justify-between gap-3'>
+          <div className='min-w-0'>
+            <CardTitle>تایید پرداخت</CardTitle>
+            <CardDescription>
+              {description ?? 'کیف پول‌ها را انتخاب و مبلغ را تخصیص دهید'}
+            </CardDescription>
+          </div>
+          <div
+            className={`shrink-0 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-mono ${timerColor}`}
+            title='زمان باقی‌مانده'
+          >
+            <Clock className='size-4' />
+            <span dir='ltr'>{formatTime(timeLeft)}</span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className='flex flex-col gap-4'>
         <div className='rounded-lg border p-4 flex flex-col gap-3 text-sm'>
@@ -255,9 +253,21 @@ export function AcceptPayment({
         </div>
 
         <div className='flex flex-col gap-2'>
-          <div className='flex items-center gap-2 text-sm font-medium'>
-            <Wallet className='size-4' />
-            انتخاب کیف پول
+          <div className='flex items-center justify-between gap-2'>
+            <div className='flex items-center gap-2 text-sm font-medium'>
+              <Wallet className='size-4' />
+              انتخاب کیف پول
+            </div>
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              disabled={walletsLoading}
+              onClick={() => void onReloadWallets()}
+            >
+              <RefreshCw className={`size-3.5 me-1 ${walletsLoading ? 'animate-spin' : ''}`} />
+              دریافت کیف پول‌ها
+            </Button>
           </div>
 
           {walletsLoading ? (
@@ -266,9 +276,17 @@ export function AcceptPayment({
               <Skeleton className='h-16 w-full' />
             </div>
           ) : wallets.length === 0 ? (
-            <p className='text-sm text-muted-foreground text-center py-4'>
-              کیف پول معتبری یافت نشد
-            </p>
+            <div className='flex flex-col items-center gap-3 py-4'>
+              <p className='text-sm text-muted-foreground text-center'>کیف پول معتبری یافت نشد</p>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => void onReloadWallets()}
+              >
+                دریافت مجدد لیست کیف پول
+              </Button>
+            </div>
           ) : (
             <div className='flex flex-col gap-2 max-h-72 overflow-y-auto'>
               {wallets.map(wallet => {
@@ -299,7 +317,7 @@ export function AcceptPayment({
                           className='text-xs text-muted-foreground font-mono truncate mt-0.5'
                           dir='ltr'
                         >
-                          {wallet.id}
+                          {/* {wallet.id} */}
                         </p>
                       </div>
                     </label>

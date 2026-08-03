@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { Clock } from 'lucide-react';
 
 import { RecipientLogin } from '@/components/page/payment/recipient-login';
 import { AcceptPayment } from '@/components/page/payment/accept-payment';
+import { getValidWallets, type ValidWallet } from '@/api/wallet';
 
 const SESSION_SECONDS = 300;
 
@@ -24,6 +24,8 @@ export default function RecipientPage() {
 
   const [step, setStep] = useState<Step>('login');
   const [userToken, setUserToken] = useState('');
+  const [wallets, setWallets] = useState<ValidWallet[]>([]);
+  const [walletsLoading, setWalletsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(SESSION_SECONDS);
   const [hasWarnedTimeout, setHasWarnedTimeout] = useState(false);
 
@@ -46,14 +48,40 @@ export default function RecipientPage() {
     return () => clearTimeout(id);
   }, [timeLeft, hasWarnedTimeout, returnUrl]);
 
-  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+  const loadWallets = async (token: string) => {
+    if (!orderId || !token) return [];
 
-  const timerColor =
-    timeLeft > 60
-      ? 'text-muted-foreground'
-      : timeLeft > 30
-        ? 'text-yellow-500'
-        : 'text-destructive';
+    if (!nationalcode) {
+      toast.error('کد ملی در اطلاعات پرداخت موجود نیست');
+      return [];
+    }
+
+    setWalletsLoading(true);
+    try {
+      const list = await getValidWallets(
+        {
+          orderId: Number(orderId),
+          nationalcode,
+          isOnline: true,
+        },
+        token,
+      );
+      setWallets(list);
+      return list;
+    } catch {
+      toast.error('خطا در دریافت لیست کیف پول‌ها');
+      setWallets([]);
+      return [];
+    } finally {
+      setWalletsLoading(false);
+    }
+  };
+
+  const handleLoginSuccess = async (token: string) => {
+    setUserToken(token);
+    await loadWallets(token);
+    setStep('payment');
+  };
 
   if (!merchantId || !amount || !orderId) {
     return (
@@ -64,32 +92,21 @@ export default function RecipientPage() {
   }
 
   return (
-    <div className='relative flex min-h-[70vh] items-center justify-center p-6'>
-      {/* Session timer */}
-      <div
-        className={`fixed top-4 end-4 flex items-center gap-1.5 text-sm font-mono ${timerColor}`}
-      >
-        <Clock className='size-4' />
-        <span dir='ltr'>{formatTime(timeLeft)}</span>
-      </div>
-
+    <div className='flex min-h-[70vh] items-center justify-center p-6'>
       {step === 'login' ? (
-        <RecipientLogin
-          orderId={orderId}
-          onLoginSuccess={token => {
-            setUserToken(token);
-            setStep('payment');
-          }}
-        />
+        <RecipientLogin orderId={orderId} timeLeft={timeLeft} onLoginSuccess={handleLoginSuccess} />
       ) : (
         <AcceptPayment
           amount={amount}
           merchantId={merchantId}
           orderId={orderId}
-          nationalcode={nationalcode}
           userToken={userToken}
+          wallets={wallets}
+          walletsLoading={walletsLoading}
+          onReloadWallets={() => loadWallets(userToken)}
           description={description}
           returnUrl={returnUrl}
+          timeLeft={timeLeft}
         />
       )}
     </div>
