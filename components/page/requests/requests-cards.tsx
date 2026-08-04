@@ -302,8 +302,10 @@ export function RequestsCards({
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
-            <DialogTitle>شارژ کیف پول نقدی</DialogTitle>
-            <DialogDescription>مبلغ مدنظر خود برای شارژ کیف پول را وارد کنید.</DialogDescription>
+            <DialogTitle className='text-right'>شارژ کیف پول نقدی</DialogTitle>
+            <DialogDescription className='text-right'>
+              مبلغ مدنظر خود برای شارژ کیف پول را وارد کنید.
+            </DialogDescription>
           </DialogHeader>
           <div className='flex gap-2 mt-4'>
             <Input

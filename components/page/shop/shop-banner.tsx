@@ -8,15 +8,9 @@ type ShopBannerProps = {
 };
 
 export function ShopBanner({ shop }: ShopBannerProps) {
-  const desktopSrc =
-    getShopImageUrl(shop.attachmentBannerFilePath) ||
-    (shop.banner ? `data:image/png;base64,${shop.banner}` : ShopsBannerDesktop);
+  const desktopSrc = getShopImageUrl(shop.attachmentBannerFilePath) || ShopsBannerDesktop;
 
-  const mobileSrc =
-    getShopImageUrl(shop.attachmentMobileFilePath) ||
-    (shop.mobile ? `data:image/png;base64,${shop.mobile}` : null) ||
-    getShopImageUrl(shop.attachmentBannerFilePath) ||
-    (shop.banner ? `data:image/png;base64,${shop.banner}` : ShopsBannerMobile);
+  const mobileSrc = getShopImageUrl(shop.attachmentMobileFilePath) || ShopsBannerMobile;
 
   return (
     <div className='overflow-hidden mb-11 md:mb-[70px]'>
