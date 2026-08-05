@@ -97,11 +97,11 @@ export async function createRequest(payload: CreateRequestPayload) {
     { suppressErrorToast: true },
   );
 
-  if (resp.status === 400 && data.statusCode === REQUEST_CREATE_EXISTING_REQUEST_STATUS) {
+  if (data.statusCode === REQUEST_CREATE_EXISTING_REQUEST_STATUS) {
     throw new ExistingRequestError(data.message);
   }
 
-  if (!resp.ok || !data.isSuccess) {
+  if (!data.isSuccess) {
     throw new Error(data.message || 'خطا در ایجاد درخواست');
   }
 
