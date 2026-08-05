@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Column, ColumnDef } from '@tanstack/react-table';
 import { Link } from '@/i18n/navigation';
+import { toast } from 'sonner';
 
 import { DataTableColumnHeader } from '../../data-table/data-table-column-header';
 import { DataTableToolbar } from '../../data-table/data-table-toolbar';
@@ -12,6 +13,7 @@ import { formatJalaliDate, formatNumber } from '@/utils/format';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +21,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { canResumeRequest, getRequestStatusInfo } from '@/utils/request-status';
+import { useChangeRequestState } from '@/mutations/request';
+import {
+  canCancelRequest,
+  canContinueRequest,
+  canResumeRequest,
+  getRequestStatusInfo,
+  REQUEST_STATE_CANCELLED,
+} from '@/utils/request-status';
 import type { Request } from './request-types';
 
 type RequestsTableComponentProps = {
@@ -54,6 +63,75 @@ function PlanGuaranteesButton({ guarantees }: { guarantees: string[] }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function RequestActionsCell({ request }: { request: Request }) {
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const changeRequestStateMutation = useChangeRequestState();
+
+  const { id, requestState } = request;
+  const showContinue = canContinueRequest(requestState);
+  const showResume = canResumeRequest(requestState);
+  const showCancel = canCancelRequest(requestState);
+
+  const handleCancelRequest = useCallback(async () => {
+    if (!canCancelRequest(requestState)) {
+      toast.error('امکان لغو این درخواست وجود ندارد');
+      return;
+    }
+
+    try {
+      await changeRequestStateMutation.mutateAsync({
+        id,
+        requestState: REQUEST_STATE_CANCELLED,
+      });
+      toast.success('درخواست شما با موفقیت لغو شد');
+      setIsCancelDialogOpen(false);
+    } catch (error: unknown) {
+      const msg =
+        error && typeof error === 'object' && 'response' in error
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (error as any).response?.data?.message
+          : undefined;
+      toast.error(msg || 'خطا در لغو درخواست');
+    }
+  }, [id, requestState, changeRequestStateMutation]);
+
+  if (!showContinue && !showResume && !showCancel) {
+    return <span className='text-muted-foreground'>—</span>;
+  }
+
+  return (
+    <div className='flex flex-wrap items-center gap-2'>
+      {showContinue && (
+        <Button variant='outline' size='sm' asChild>
+          <Link href={`/requests/request-credit?id=${id}`}>ادامه درخواست</Link>
+        </Button>
+      )}
+      {showResume && (
+        <Button variant='outline' size='sm' asChild>
+          <Link href={`/requests/request-credit?id=${id}&editMode=true`}>از سرگیری</Link>
+        </Button>
+      )}
+      {showCancel && (
+        <>
+          <Button variant='destructive' size='sm' onClick={() => setIsCancelDialogOpen(true)}>
+            لغو
+          </Button>
+          <ConfirmDialog
+            open={isCancelDialogOpen}
+            setOpen={setIsCancelDialogOpen}
+            title='لغو درخواست'
+            description='آیا از لغو این درخواست اطمینان دارید؟ پس از لغو می‌توانید درخواست جدیدی ثبت کنید.'
+            confirmText='بله، لغو شود'
+            cancelText='خیر'
+            isPending={changeRequestStateMutation.isPending}
+            onConfirm={handleCancelRequest}
+          />
+        </>
+      )}
+    </div>
   );
 }
 
@@ -152,20 +230,7 @@ export function RequestsTableComponent({ requests }: RequestsTableComponentProps
         header: ({ column }: { column: Column<Request, unknown> }) => (
           <DataTableColumnHeader label='عملیات' column={column} />
         ),
-        cell: ({ row }) => {
-          const { id, requestState } = row.original;
-
-          if (!canResumeRequest(requestState)) {
-            return <span className='text-muted-foreground'>—</span>;
-          }
-
-          // editMode lands on the rejected step (state - 20), e.g. 25 → stage 5
-          return (
-            <Button variant='outline' size='sm' asChild>
-              <Link href={`/requests/request-credit?id=${id}&editMode=true`}>از سرگیری</Link>
-            </Button>
-          );
-        },
+        cell: ({ row }) => <RequestActionsCell request={row.original} />,
       },
     ],
     [],

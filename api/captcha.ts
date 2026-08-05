@@ -8,7 +8,9 @@ type Captcha = {
   isActive: boolean;
 };
 
-export const getCaptcha = async (params: Params = {}) => {
-  const resp = await api.get<APIResult<Captcha>>('/Captcha/GenerateCaptcha', params);
+export const getCaptcha = async (_params: Params = {}) => {
+  const resp = await api.get<APIResult<Captcha>>('/Captcha/GenerateCaptcha', {
+    skipAuth: true,
+  });
   return resp.data.data as Captcha;
 };

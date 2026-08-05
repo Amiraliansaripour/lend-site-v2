@@ -14,11 +14,18 @@ type $FetchOptions<P = never> = OverrideExtend<
     body: P;
     baseURL: BaseURL;
     skipAuth: boolean;
+    suppressErrorToast: boolean;
   }>
 >;
 
 const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
-  let { body = {}, baseURL = 'DEFAULT', skipAuth = false, ...opts } = options ?? {};
+  let {
+    body = {},
+    baseURL = 'DEFAULT',
+    skipAuth = false,
+    suppressErrorToast = false,
+    ...opts
+  } = options ?? {};
   baseURL = isMappedBaseURL(baseURL) ? BASE_URLS[baseURL] : baseURL;
 
   const _url = resolveURL(url, baseURL);
@@ -66,7 +73,7 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     }
   }
 
-  if (!resp.ok) {
+  if (!resp.ok && !suppressErrorToast) {
     toast.error((data as APIResult<D>)?.message ?? `Request failed with status ${resp.status}`);
   }
 

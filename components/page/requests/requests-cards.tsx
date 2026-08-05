@@ -14,11 +14,7 @@ import {
 import { formatNumber } from '@/utils/format';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import { WalletCard } from '@/components/wallet-card';
-import {
-  getRequestStatusInfo,
-  canContinueRequest,
-  canSubmitNewRequest,
-} from '@/utils/request-status';
+import { canSubmitNewRequest } from '@/utils/request-status';
 import { getWalletUser, createCashWallet, getPaymentToken } from '@/api/wallet';
 import { toast } from 'sonner';
 import type { Request } from './request-types';
@@ -42,7 +38,6 @@ export function RequestsCards({
   const [chargeAmount, setChargeAmount] = useState('');
   const [rawAmount, setRawAmount] = useState('');
 
-  const continueRequests = requests.filter(request => canContinueRequest(request.requestState));
   const allowNewRequest = canSubmitNewRequest(requests);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,75 +222,6 @@ export function RequestsCards({
             </div>
           </WalletCard.Front>
         </WalletCard>
-
-        {/* Continue Request Cards */}
-        {isLoading ? (
-          <WalletCard>
-            <WalletCard.Front>
-              <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                <Image
-                  src='/logos/white-logo.png'
-                  alt='wallet'
-                  width={86}
-                  height={86}
-                  className='w-28'
-                />
-              </div>
-
-              <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
-                <div className='flex flex-col gap-y-1'>
-                  <span className='font-bold'>درخواست در حال بارگذاری</span>
-                  <div className='flex items-center gap-2'>
-                    <div className='h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent' />
-                  </div>
-                </div>
-              </div>
-            </WalletCard.Front>
-          </WalletCard>
-        ) : (
-          continueRequests.map(request => {
-            const statusInfo = getRequestStatusInfo(request.requestState);
-
-            return (
-              <WalletCard key={request.id}>
-                <WalletCard.Front>
-                  <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                    <Image
-                      src='/logos/white-logo.png'
-                      alt='wallet'
-                      width={86}
-                      height={86}
-                      className='w-28'
-                    />
-                  </div>
-
-                  <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
-                    <div className='flex flex-col gap-y-1'>
-                      <span className='font-bold'>درخواست اعتبار</span>
-                      <span className='text-sm text-secondary'>
-                        موجودی{' '}
-                        {normalizeToPersianDigits(
-                          formatNumber(request.creditAmount, { int: true }),
-                        )}{' '}
-                        ریال
-                      </span>
-                      <span className='text-sm text-secondary'>وضعیت: {statusInfo.text}</span>
-                    </div>
-
-                    <Link href={`/requests/request-credit?id=${request.id}`}>
-                      <Button
-                        variant='outline'
-                        className='w-fit mr-auto cursor-pointer text-primary!'
-                      >
-                        ادامه درخواست
-                      </Button>
-                    </Link>
-                  </div>
-                </WalletCard.Front>
-              </WalletCard>
-            );
-          })
-        )}
       </div>
 
       {/* Charge Wallet Modal */}
@@ -332,7 +258,7 @@ export function RequestsCards({
 export function RequestsCardsSkeleton() {
   return (
     <div className='grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3'>
-      {[1, 2, 3].map(i => (
+      {[1, 2].map(i => (
         <div
           key={i}
           className='w-full max-w-96 h-64 rounded-xl bg-gray-100 animate-pulse shadow-lg'

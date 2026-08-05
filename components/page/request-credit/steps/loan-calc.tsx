@@ -6,14 +6,16 @@ import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { getFinancierPlans, getPlan, type PlanDetail } from '@/api/plan';
-import { createRequest, optOutRequest } from '@/api/facility';
+import { createRequest, ExistingRequestError } from '@/api/facility';
 import { getUserRequests, type Request } from '@/api/request';
 import { toast } from 'sonner';
 import { calculatePMT } from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
 import { getUserId } from '@/lib/auth/client/user-info';
 import { CreditModal } from '@/components/page/landing/credit-modal';
-import { canSubmitNewRequest, getIncompleteRequestsToCancel } from '@/utils/request-status';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { canSubmitNewRequest } from '@/utils/request-status';
+import type { CreateRequestPayload } from '@/types/request-credit';
 
 interface LoanCalcProps {
   onNext?: (data: { requestId: string; planId: string; creditAmount: number }) => void;
@@ -28,6 +30,8 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
   const [selectedPlan, setSelectedPlan] = useState<PlanDetail | null>(null);
   const [creditAmount, setCreditAmount] = useState(30000000);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isForceDialogOpen, setIsForceDialogOpen] = useState(false);
+  const [forceDialogMessage, setForceDialogMessage] = useState('');
 
   const { data: financierData, isLoading: isLoadingPlans } = useQuery({
     queryKey: ['financier-plans'],
@@ -41,25 +45,18 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
   });
 
   const createRequestMutation = useMutation({
-    mutationFn: async (payload: {
-      userId: string;
-      planId: string;
-      creditAmount: number;
-      period: number;
-    }) => {
+    mutationFn: async (payload: CreateRequestPayload) => {
       const requests = await getUserRequests(payload.userId);
 
       if (!canSubmitNewRequest(requests)) {
         throw new Error('BLOCKED_BY_STATUS');
       }
 
-      const incomplete = getIncompleteRequestsToCancel(requests);
-      await Promise.all(incomplete.map(req => optOutRequest(req.id)));
-
       return createRequest(payload);
     },
     onSuccess: response => {
       if (response && response.id) {
+        setIsForceDialogOpen(false);
         toast.success('درخواست با موفقیت ایجاد شد');
         localStorage.setItem('requestId', response.id);
         localStorage.setItem('planId', selectedPlan!.id);
@@ -81,7 +78,14 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
         );
         return;
       }
-      toast.error('خطا در ایجاد درخواست');
+
+      if (error instanceof ExistingRequestError) {
+        setForceDialogMessage(error.message);
+        setIsForceDialogOpen(true);
+        return;
+      }
+
+      toast.error(error.message || 'خطا در ایجاد درخواست');
     },
   });
 
@@ -142,12 +146,22 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
   };
 
   const handleModalConfirm = () => {
-    // This is called when modal confirms
     createRequestMutation.mutate({
       userId: userId!,
       planId: selectedPlan!.id,
       creditAmount,
       period: selectedPlan!.period,
+      force: false,
+    });
+  };
+
+  const handleForceConfirm = async () => {
+    await createRequestMutation.mutateAsync({
+      userId: userId!,
+      planId: selectedPlan!.id,
+      creditAmount,
+      period: selectedPlan!.period,
+      force: true,
     });
   };
 
@@ -284,6 +298,17 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
         price={planDetails?.firstSystemFee}
         onConfirm={handleModalConfirm}
         isCheckRequired={planDetails?.guarantees?.includes('چک')}
+      />
+
+      <ConfirmDialog
+        open={isForceDialogOpen}
+        setOpen={setIsForceDialogOpen}
+        title='تایید درخواست جدید'
+        description={forceDialogMessage}
+        confirmText='ادامه'
+        cancelText='انصراف'
+        isPending={createRequestMutation.isPending}
+        onConfirm={handleForceConfirm}
       />
     </div>
   );

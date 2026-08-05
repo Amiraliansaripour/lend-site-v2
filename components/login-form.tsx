@@ -107,18 +107,17 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
           },
           {
             onSuccess: response => {
-              // if (!response.isSuccess) {
-              //   refetchCaptcha();
-              //   toast.error(response.message);
-              //   return;
-              // }
+              if (!response.isSuccess) {
+                refetchCaptcha();
+                toast.error(response.message);
+                return;
+              }
               setIsOtpStep(true);
               setPhoneNumber(phoneNumber);
               setCaptchaCredentials({ id: captchaData.id, code: captchaCode });
               startOtpCountdown();
               toast.success(response.message || 'ورود با موفقیت انجام شد');
             },
-            onError: error => {},
           },
         );
       } else {
@@ -165,6 +164,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
       },
       {
         onSuccess: response => {
+          if (!response.isSuccess) {
+            toast.error(response.message);
+            return;
+          }
           startOtpCountdown();
           toast.success(response.message || 'کد تایید مجددا ارسال شد');
         },

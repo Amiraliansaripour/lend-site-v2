@@ -12,6 +12,7 @@ import type {
   CreateRequestResponse,
   RequestStateChangePayload,
 } from '@/types/request-credit';
+import { REQUEST_CREATE_EXISTING_REQUEST_STATUS } from '@/types/request-credit';
 import { resolveURL } from '@/utils/url';
 
 export async function facilityInquiry(payload: FacilityInquiryPayload) {
@@ -80,12 +81,31 @@ export async function getFinotechCreditStatus(userId: string, requestId: string)
   return data.data as FinotechCreditData;
 }
 
+export class ExistingRequestError extends Error {
+  readonly statusCode = REQUEST_CREATE_EXISTING_REQUEST_STATUS;
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'ExistingRequestError';
+  }
+}
+
 export async function createRequest(payload: CreateRequestPayload) {
-  const { data } = await api.post<CreateRequestPayload, APIResult<CreateRequestResponse>>(
+  const { data, resp } = await api.post<CreateRequestPayload, APIResult<CreateRequestResponse>>(
     '/Request/Create',
     payload,
+    { suppressErrorToast: true },
   );
-  return data.data; // Return the unwrapped data from APIResult
+
+  if (resp.status === 400 && data.statusCode === REQUEST_CREATE_EXISTING_REQUEST_STATUS) {
+    throw new ExistingRequestError(data.message);
+  }
+
+  if (!resp.ok || !data.isSuccess) {
+    throw new Error(data.message || 'خطا در ایجاد درخواست');
+  }
+
+  return data.data;
 }
 
 export async function changeRequestState(payload: RequestStateChangePayload) {

@@ -58,6 +58,7 @@ const Login = ({ onLoginSuccess, paymentData }) => {
     try {
       const response = await axiosInstance.get(
         `${import.meta.env.VITE_BASE_API}/api/v1/Captcha/GenerateCaptcha`,
+        { skipAuth: true },
       );
       setCaptchaImage(response.data?.data.captchaImage);
       setCaptchaId(response.data?.data.id);

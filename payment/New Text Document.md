@@ -149,7 +149,7 @@ The merchant opens this link (or sends it to the customer) to start payment.
 **Example:**
 
 ```
-/recipient?amount=5000000&merchantId=abc123&orderId=ORD-001&description=خریدکالا&returnUrl=https://example.com/payment/verify
+/recipient?amount=5000000&merchantId=7d16dbd5-6f6e-485e-97e7-8ea926f8ebe5&orderId=1000178&description=خریدکالا&returnUrl=https://example.com/payment/verify
 ```
 
 ### Steps (state machine)
