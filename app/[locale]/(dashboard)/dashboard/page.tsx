@@ -7,6 +7,9 @@ import { WalletCard } from '@/components/wallet-card';
 import Link from 'next/link';
 import { getUserId } from '@/lib/auth/client/user-info';
 import { useUserWithStore } from '@/queries/users';
+import { useWalletInfo } from '@/queries/wallet';
+import { formatNumber } from '@/utils/format';
+import { normalizeToPersianDigits } from '@/utils/normalize';
 import Image from 'next/image';
 
 export default function DashboardPage() {
@@ -15,10 +18,7 @@ export default function DashboardPage() {
 
   // Fetch and update user info on dashboard load
   useUserWithStore(userId || '');
-
-  // * Api
-  // * get wallets
-  // * user transactions
+  const { data: walletInfo } = useWalletInfo();
 
   return (
     <PageContainer breadcrumbs={breadcrumbs}>
@@ -33,7 +33,13 @@ export default function DashboardPage() {
               <div className='absolute bottom-0'>
                 <div className='flex flex-col gap-4'>
                   <span>کیف پول اعتباری</span>
-                  <div className='text-sm'>موجودی 0 ریال</div>
+                  <div className='text-sm'>
+                    موجودی{' '}
+                    {normalizeToPersianDigits(
+                      formatNumber(walletInfo?.sumCreditCharg ?? 0, { int: true }),
+                    )}{' '}
+                    ریال
+                  </div>
                 </div>
               </div>
             </WalletCard.Front>
@@ -59,7 +65,13 @@ export default function DashboardPage() {
               <div className='absolute bottom-0'>
                 <div className='flex flex-col gap-4'>
                   <span>کیف پول نقدی</span>
-                  <div className='text-sm'>موجودی 0 ریال</div>
+                  <div className='text-sm'>
+                    موجودی{' '}
+                    {normalizeToPersianDigits(
+                      formatNumber(walletInfo?.sumCachCharg ?? 0, { int: true }),
+                    )}{' '}
+                    ریال
+                  </div>
                 </div>
               </div>
             </WalletCard.Front>

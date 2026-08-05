@@ -20,7 +20,7 @@ export function PwaInstallPrompt() {
     if (
       typeof window === 'undefined' ||
       window.matchMedia('(display-mode: standalone)').matches ||
-      sessionStorage.getItem(STORAGE_KEY)
+      localStorage.getItem(STORAGE_KEY)
     )
       return;
 
@@ -43,7 +43,7 @@ export function PwaInstallPrompt() {
   };
 
   const handleDismiss = () => {
-    sessionStorage.setItem(STORAGE_KEY, '1');
+    localStorage.setItem(STORAGE_KEY, '1');
     setVisible(false);
   };
 
