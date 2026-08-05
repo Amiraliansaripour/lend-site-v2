@@ -103,12 +103,24 @@ export const changeRequestState = async (data: ChangeRequestStateData) => {
 export type UploadUserAttachmentsData = {
   userId: string;
   attachmentIdsToSend: string[];
+  isActive?: boolean;
+};
+
+export type UploadUserAttachmentsPayload = {
+  id: string;
+  isActive: boolean;
+  attachmentIdsToSend: string[];
 };
 
 export const uploadUserAttachments = async (data: UploadUserAttachmentsData) => {
-  const resp = await api.put<{ attachmentIdsToSend: string[] }, APIResult<unknown>>(
+  const payload: UploadUserAttachmentsPayload = {
+    id: data.userId,
+    isActive: data.isActive ?? true,
+    attachmentIdsToSend: data.attachmentIdsToSend,
+  };
+  const resp = await api.put<UploadUserAttachmentsPayload, APIResult<unknown>>(
     `/User/Upload/${data.userId}`,
-    { attachmentIdsToSend: data.attachmentIdsToSend },
+    payload,
   );
   return resp.data;
 };

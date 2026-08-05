@@ -166,6 +166,7 @@ export function UserInformation({
   const [showImageModal, setShowImageModal] = useState(false);
 
   const fileInputRefs = useRef<Partial<Record<FileKey, HTMLInputElement | null>>>({});
+  const uploadedAttachmentIdsRef = useRef<Partial<Record<FileKey, string>>>({});
   const hasRedirectedToProfile = useRef(false);
 
   const missingEssentialFields = useMemo(() => getMissingEssentialFields(user), [user]);
@@ -274,39 +275,89 @@ export function UserInformation({
     setSelectedImage(null);
   };
 
-  const uploadToServer = useCallback(async (file: File, key: FileKey) => {
-    setUploadProgress(prev => ({
-      ...prev,
-      [key]: { status: 'uploading', message: 'در حال آپلود...', progress: 0 },
-    }));
+  const collectAttachmentIdsToSend = useCallback(
+    (newlyUploadedType?: number) => {
+      const ids = new Set<string>();
 
-    try {
-      const formDataUpload = new FormData();
-      formDataUpload.append('Name', file.name);
-      formDataUpload.append('attachmentType', String(ATTACHMENT_TYPES[key]));
-      formDataUpload.append('file', file);
+      for (const attachment of existingAttachments) {
+        if (newlyUploadedType !== undefined && attachment.attachmentType === newlyUploadedType) {
+          continue;
+        }
+        if (attachment.id) ids.add(attachment.id);
+      }
 
-      const result = await uploadAttachment(formDataUpload);
+      for (const id of Object.values(uploadedAttachmentIdsRef.current)) {
+        if (id) ids.add(id);
+      }
+
+      return Array.from(ids);
+    },
+    [existingAttachments],
+  );
+
+  const uploadToServer = useCallback(
+    async (file: File, key: FileKey) => {
+      const userId = user?.id;
+      if (!userId) {
+        toast.error('شناسه کاربری یافت نشد.');
+        return;
+      }
 
       setUploadProgress(prev => ({
         ...prev,
-        [key]: { status: 'success', message: 'آپلود موفق' },
+        [key]: { status: 'uploading', message: 'در حال آپلود...', progress: 0 },
       }));
 
-      setUploadedFiles(prev => ({
-        ...prev,
-        [key]: { ...prev[key]!, id: result.id },
-      }));
+      try {
+        const formDataUpload = new FormData();
+        formDataUpload.append('Name', file.name);
+        formDataUpload.append('attachmentType', String(ATTACHMENT_TYPES[key]));
+        formDataUpload.append('file', file);
 
-      toast.success('فایل با موفقیت آپلود شد');
-    } catch {
-      setUploadProgress(prev => ({
-        ...prev,
-        [key]: { status: 'error', message: 'خطا در آپلود' },
-      }));
-      toast.error('خطا در آپلود فایل');
-    }
-  }, []);
+        const result = await uploadAttachment(formDataUpload);
+
+        uploadedAttachmentIdsRef.current[key] = result.id;
+
+        setUploadedFiles(prev => ({
+          ...prev,
+          [key]: { ...prev[key]!, id: result.id },
+        }));
+
+        const attachmentIdsToSend = collectAttachmentIdsToSend(ATTACHMENT_TYPES[key]);
+
+        const uploadResponse = await uploadUserAttachmentsMutation.mutateAsync({
+          userId,
+          attachmentIdsToSend,
+          isActive: true,
+        });
+
+        if (!uploadResponse?.isSuccess) {
+          delete uploadedAttachmentIdsRef.current[key];
+          setUploadProgress(prev => ({
+            ...prev,
+            [key]: { status: 'error', message: 'خطا در ثبت مدرک' },
+          }));
+          toast.error(uploadResponse?.message || 'خطا در ثبت مدارک');
+          return;
+        }
+
+        setUploadProgress(prev => ({
+          ...prev,
+          [key]: { status: 'success', message: 'آپلود موفق' },
+        }));
+
+        toast.success('فایل با موفقیت آپلود شد');
+      } catch {
+        delete uploadedAttachmentIdsRef.current[key];
+        setUploadProgress(prev => ({
+          ...prev,
+          [key]: { status: 'error', message: 'خطا در آپلود' },
+        }));
+        toast.error('خطا در آپلود فایل');
+      }
+    },
+    [user?.id, collectAttachmentIdsToSend, uploadUserAttachmentsMutation],
+  );
 
   const handleFileSelect = useCallback(
     (event: ChangeEvent<HTMLInputElement>, key: FileKey) => {
@@ -353,6 +404,8 @@ export function UserInformation({
         }
       }
 
+      delete uploadedAttachmentIdsRef.current[key];
+
       setUploadedFiles(prev => {
         const newFiles = { ...prev };
         delete newFiles[key];
@@ -398,7 +451,7 @@ export function UserInformation({
     const isUploadingNewFiles = showUploadSection || existingAttachments.length === 0;
 
     if (isUploadingNewFiles) {
-      // Validate new file uploads
+      // Validate new file uploads (IDs are already sent via User/Upload after each photo)
       const requiredFiles: FileKey[] = ['nationalCardFront', 'birthCertificate'];
 
       for (const key of requiredFiles) {
@@ -413,62 +466,35 @@ export function UserInformation({
         }
       }
 
-      const attachmentIdsToSend: string[] = [];
-      for (const key of requiredFiles) {
-        const fileId = uploadedFiles[key]?.id;
-        if (fileId) {
-          attachmentIdsToSend.push(fileId);
-        }
-      }
-      if (uploadedFiles.nationalCardBack?.id) {
-        attachmentIdsToSend.push(uploadedFiles.nationalCardBack.id);
-      }
+      validateUserIdentityMutation.mutate(requestId, {
+        onSuccess: validationResponse => {
+          if (!validationResponse?.isSuccess) {
+            toast.error(validationResponse?.message || 'خطا در تایید اطلاعات هویتی');
+            return;
+          }
 
-      uploadUserAttachmentsMutation.mutate(
-        { userId, attachmentIdsToSend },
-        {
-          onSuccess: uploadResponse => {
-            if (!uploadResponse?.isSuccess) {
-              toast.error(uploadResponse?.message || 'خطا در آپلود مدارک');
-              return;
-            }
-            validateUserIdentityMutation.mutate(requestId, {
-              onSuccess: validationResponse => {
-                if (!validationResponse?.isSuccess) {
-                  toast.error(validationResponse?.message || 'خطا در تایید اطلاعات هویتی');
-                  return;
+          changeRequestStateMutation.mutate(
+            { id: requestId, requestState: 2 },
+            {
+              onSuccess: () => {
+                toast.success('اطلاعات هویتی با موفقیت تایید و مرحله بعد فعال شد');
+                if (onNext) {
+                  onNext(formData);
                 }
-
-                changeRequestStateMutation.mutate(
-                  { id: requestId, requestState: 2 },
-                  {
-                    onSuccess: () => {
-                      toast.success('اطلاعات هویتی با موفقیت تایید و مرحله بعد فعال شد');
-                      if (onNext) {
-                        onNext(formData);
-                      }
-                    },
-                    onError: error => {
-                      const message =
-                        error instanceof Error ? error.message : 'خطا در تغییر وضعیت درخواست';
-                      toast.error(message);
-                    },
-                  },
-                );
               },
               onError: error => {
                 const message =
-                  error instanceof Error ? error.message : 'خطا در تایید اطلاعات هویتی';
+                  error instanceof Error ? error.message : 'خطا در تغییر وضعیت درخواست';
                 toast.error(message);
               },
-            });
-          },
-          onError: error => {
-            const message = error instanceof Error ? error.message : 'خطا در آپلود مدارک';
-            toast.error(message);
-          },
+            },
+          );
         },
-      );
+        onError: error => {
+          const message = error instanceof Error ? error.message : 'خطا در تایید اطلاعات هویتی';
+          toast.error(message);
+        },
+      });
     } else if (hasExistingAttachments) {
       // User has existing attachments, just validate and proceed
       validateUserIdentityMutation.mutate(requestId, {
@@ -668,7 +694,16 @@ export function UserInformation({
                 })}
               </div>
               <div className='flex justify-center'>
-                <Button type='button' variant='outline' onClick={() => setShowUploadSection(true)}>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => {
+                    uploadedAttachmentIdsRef.current = {};
+                    setUploadedFiles({});
+                    setUploadProgress({});
+                    setShowUploadSection(true);
+                  }}
+                >
                   بارگذاری مدارک جدید
                 </Button>
               </div>
