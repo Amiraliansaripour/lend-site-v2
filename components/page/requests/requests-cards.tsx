@@ -167,22 +167,14 @@ export function RequestsCards({
                 </span>
               </div>
 
-              {allowNewRequest ? (
-                <Link href='/requests/request-credit'>
-                  <Button variant='outline' className='w-fit mr-auto cursor-pointer text-primary!'>
-                    درخواست اعتبار
-                  </Button>
-                </Link>
-              ) : (
-                <Button
-                  variant='outline'
-                  className='w-fit mr-auto text-primary!'
-                  disabled
-                  title='تا زمانی که درخواست در حال بررسی دارید، امکان ثبت درخواست جدید نیست'
-                >
-                  درخواست اعتبار
-                </Button>
-              )}
+              <Button
+                variant='outline'
+                className='w-fit mr-auto text-primary!'
+                disabled
+                title='تا زمانی که درخواست در حال بررسی دارید، امکان ثبت درخواست جدید نیست'
+              >
+                درخواست اعتبار
+              </Button>
             </div>
           </WalletCard.Front>
         </WalletCard>
