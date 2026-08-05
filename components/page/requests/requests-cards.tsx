@@ -170,7 +170,6 @@ export function RequestsCards({
               <Button
                 variant='outline'
                 className='w-fit mr-auto text-primary!'
-                disabled
                 title='تا زمانی که درخواست در حال بررسی دارید، امکان ثبت درخواست جدید نیست'
               >
                 درخواست اعتبار
