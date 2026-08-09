@@ -166,14 +166,11 @@ export function RequestsCards({
                   ریال
                 </span>
               </div>
-
-              <Button
-                variant='outline'
-                className='w-fit mr-auto text-primary!'
-                title='تا زمانی که درخواست در حال بررسی دارید، امکان ثبت درخواست جدید نیست'
-              >
-                درخواست اعتبار
-              </Button>
+              <Link href='/requests/request-credit'>
+                <Button variant='outline' className='w-fit mr-auto text-primary!'>
+                  درخواست اعتبار
+                </Button>
+              </Link>
             </div>
           </WalletCard.Front>
         </WalletCard>
