@@ -27,6 +27,8 @@ export type PlanDetail = {
   validateType?: number;
   ruleText?: string;
   score?: number;
+  hasLink?: boolean;
+  link?: string;
 };
 
 export type FinancierPlansResponse = {

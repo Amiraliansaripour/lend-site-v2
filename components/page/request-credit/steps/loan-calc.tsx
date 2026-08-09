@@ -3,8 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from '@/i18n/navigation';
+import { HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFinancierPlans, getPlan, type PlanDetail } from '@/api/plan';
 import { createRequest, ExistingRequestError } from '@/api/facility';
 import { getUserRequests, type Request } from '@/api/request';
@@ -32,6 +34,7 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isForceDialogOpen, setIsForceDialogOpen] = useState(false);
   const [forceDialogMessage, setForceDialogMessage] = useState('');
+  const [isLinkConfirmOpen, setIsLinkConfirmOpen] = useState(false);
 
   const { data: financierData, isLoading: isLoadingPlans } = useQuery({
     queryKey: ['financier-plans'],
@@ -165,6 +168,20 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
     });
   };
 
+  const planGuarantees = selectedPlan?.guarantees?.length
+    ? selectedPlan.guarantees
+    : planDetails?.guarantees;
+  const hasExternalLink = Boolean(selectedPlan?.hasLink && selectedPlan?.link);
+
+  const handleGetCreditConfirm = () => {
+    const link = selectedPlan?.link;
+    if (!link) {
+      toast.error('لینک دریافت اعتبار موجود نیست');
+      return;
+    }
+    window.open(link, '_blank', 'noopener,noreferrer');
+  };
+
   if (isLoadingPlans) {
     return (
       <div className='flex items-center justify-center min-h-[400px]'>
@@ -234,8 +251,29 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
         </div>
 
         <div className='bg-card rounded-2xl shadow-lg p-6 h-fit'>
-          <div className='mb-8'>
+          <div className='mb-8 flex items-center gap-2'>
             <h3 className='text-lg font-bold'>جزئیات وام</h3>
+            {!!planGuarantees?.length && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type='button'
+                    className='inline-flex text-muted-foreground hover:text-primary transition-colors'
+                    aria-label='اطلاعات تکمیلی طرح'
+                  >
+                    <HelpCircle className='size-4' />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side='bottom' className='max-w-xs text-right'>
+                  <p className='mb-1 font-medium'>ضمانت‌های طرح</p>
+                  <ul className='list-disc space-y-1 pr-4 text-xs'>
+                    {planGuarantees.map(guarantee => (
+                      <li key={guarantee}>{guarantee}</li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           {loanCalculation && (
@@ -269,21 +307,31 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
               </div>
             </div>
           )}
+
+          {hasExternalLink && (
+            <div className='mt-6'>
+              <Button className='w-full' size='lg' onClick={() => setIsLinkConfirmOpen(true)}>
+                دریافت اعتبار
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       <div className='flex justify-center gap-4 mt-8'>
-        <Button
-          onClick={handleSubmit}
-          disabled={!selectedPlan || createRequestMutation.isPending}
-          size='lg'
-        >
-          {createRequestMutation.isPending
-            ? 'در حال ایجاد...'
-            : isEditMode
-              ? 'ویرایش'
-              : 'مرحله بعد'}
-        </Button>
+        {!hasExternalLink && (
+          <Button
+            onClick={handleSubmit}
+            disabled={!selectedPlan || createRequestMutation.isPending}
+            size='lg'
+          >
+            {createRequestMutation.isPending
+              ? 'در حال ایجاد...'
+              : isEditMode
+                ? 'ویرایش'
+                : 'مرحله بعد'}
+          </Button>
+        )}
         {!isEditMode && (
           <Button variant='outline' size='lg' onClick={() => router.back()}>
             بازگشت
@@ -309,6 +357,16 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
         cancelText='انصراف'
         isPending={createRequestMutation.isPending}
         onConfirm={handleForceConfirm}
+      />
+
+      <ConfirmDialog
+        open={isLinkConfirmOpen}
+        setOpen={setIsLinkConfirmOpen}
+        title='دریافت اعتبار'
+        description='آیا مایل به انتقال به صفحه دریافت اعتبار هستید؟'
+        confirmText='بله، ادامه'
+        cancelText='انصراف'
+        onConfirm={handleGetCreditConfirm}
       />
     </div>
   );
