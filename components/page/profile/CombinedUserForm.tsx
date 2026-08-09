@@ -53,26 +53,40 @@ const validateNationalCode = (val: string) => {
   return remainder < 2 ? checkDigit === remainder : checkDigit === 11 - remainder;
 };
 
+// Persian letters, ZWNJ (نیم‌فاصله), and spaces only — blocks English/Latin characters
+const PERSIAN_TEXT_REGEX = /^[\u0600-\u06FF\u200C\s]+$/;
+const PERSIAN_TEXT_ERROR = 'فقط حروف فارسی مجاز است';
+
+// Address may include digits and common punctuation, but not English letters
+const PERSIAN_ADDRESS_REGEX = /^[\u0600-\u06FF\u200C\s0-9۰-۹،.\-\/]+$/;
+const PERSIAN_ADDRESS_ERROR = 'آدرس فقط می‌تواند شامل حروف فارسی، عدد و علائم مجاز باشد';
+
 // Zod validation schema
 const CombinedFormSchema = z.object({
   firstName: z
     .string()
     .min(2, 'نام باید حداقل 2 کاراکتر باشد')
-    .max(50, 'نام نباید بیشتر از 50 کاراکتر باشد'),
+    .max(50, 'نام نباید بیشتر از 50 کاراکتر باشد')
+    .regex(PERSIAN_TEXT_REGEX, PERSIAN_TEXT_ERROR),
   lastName: z
     .string()
     .min(2, 'نام خانوادگی باید حداقل 2 کاراکتر باشد')
-    .max(50, 'نام خانوادگی نباید بیشتر از 50 کاراکتر باشد'),
+    .max(50, 'نام خانوادگی نباید بیشتر از 50 کاراکتر باشد')
+    .regex(PERSIAN_TEXT_REGEX, PERSIAN_TEXT_ERROR),
   fatherName: z
     .string()
     .min(2, 'نام پدر باید حداقل 2 کاراکتر باشد')
-    .max(50, 'نام پدر نباید بیشتر از 50 کاراکتر باشد'),
+    .max(50, 'نام پدر نباید بیشتر از 50 کاراکتر باشد')
+    .regex(PERSIAN_TEXT_REGEX, PERSIAN_TEXT_ERROR),
   birthDate: z.date({ error: 'تاریخ تولد الزامی است' }),
   nationalCode: z
     .string()
     .regex(/^[0-9]{10}$/, 'کد ملی باید 10 رقم باشد')
     .refine(validateNationalCode, 'کد ملی نامعتبر است'),
-  issuePlace: z.string().min(1, 'محل صدور الزامی است'),
+  issuePlace: z
+    .string()
+    .min(1, 'محل صدور الزامی است')
+    .regex(PERSIAN_TEXT_REGEX, PERSIAN_TEXT_ERROR),
   birthCertificateNumber: z.string().min(1, 'شماره شناسنامه الزامی است'),
   email: z
     .string()
@@ -88,9 +102,16 @@ const CombinedFormSchema = z.object({
   provinceId: z.string().min(1, 'انتخاب استان الزامی است'),
   cityId: z.string().min(1, 'انتخاب شهر الزامی است'),
   postalCode: z.string().regex(/^[0-9]{10}$/, 'کد پستی باید 10 رقم باشد'),
-  jobTitle: z.string().optional().or(z.literal('')),
+  jobTitle: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine(val => !val || PERSIAN_TEXT_REGEX.test(val), { message: PERSIAN_TEXT_ERROR }),
   telephone: z.string().optional().or(z.literal('')),
-  address: z.string().min(10, 'آدرس باید حداقل 10 کاراکتر باشد'),
+  address: z
+    .string()
+    .min(10, 'آدرس باید حداقل 10 کاراکتر باشد')
+    .regex(PERSIAN_ADDRESS_REGEX, PERSIAN_ADDRESS_ERROR),
 });
 
 const CombinedUserForm: React.FC<CombinedUserFormProps> = ({ user }) => {
