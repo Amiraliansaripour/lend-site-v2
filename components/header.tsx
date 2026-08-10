@@ -124,7 +124,7 @@ export function Header() {
               />
             ) : (
               <Image
-                src='/logos/white-logo.png'
+                src='/logos/logo.png'
                 alt='logo'
                 width={120}
                 height={24}
