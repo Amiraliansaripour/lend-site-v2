@@ -47,38 +47,72 @@ export async function verifyValidationOtp(payload: OtpVerifyPayload) {
   return data;
 }
 
-// * Finotech validation flow
-export interface FinotechInquiryResponse {
-  otpStatus?: boolean;
-  token?: string;
-  trackId?: string;
+// * ICS validation flow (SendOtpIc → IcsFullProcess)
+export type IcsValidationStatus =
+  | 'Completed'
+  | 'Pending'
+  | 'ReportGenerated'
+  | 'Unavailable'
+  | 'InQueue'
+  | 'waiting'
+  | string;
+
+export interface SendOtpIcPayload {
+  nationalCode: string;
+  mobileNumber: string;
 }
 
-export interface FinotechCreditData {
-  lifeStatus?: boolean;
-  chequeColorStatus?: number;
-  isBlocked?: boolean;
-  over18?: boolean;
-  facilityDeferred?: boolean;
-  guarantyDeferred?: boolean;
-  score?: number;
+export interface SendOtpIcData {
+  success: boolean;
+  message: string;
+  requestId?: string;
+  status: IcsValidationStatus;
+  isComplete: boolean;
+  isInQueue: boolean;
+  isReportGenerated: boolean;
+}
+
+export interface IcsFullProcessPayload {
+  lendRequestId: string;
+  nationalCode: string;
+  mobileNumber: string;
+  token: string;
+}
+
+export interface IcsFullProcessData {
+  gatewayRequestId?: string;
   risk?: string;
+  score?: string | number;
+  status: IcsValidationStatus;
+  isComplete: boolean;
+  success: boolean;
+  message: string;
 }
 
-export async function sendFinotechInquiry(requestId: string, otp = '') {
-  const { data } = await api.post<{ requestId: string; otp: string }, FinotechInquiryResponse>(
-    '/UserFacility/Inquiry',
-    { requestId, otp },
+export async function sendOtpIc(payload: SendOtpIcPayload) {
+  const { data, resp } = await api.post<SendOtpIcPayload, APIResult<SendOtpIcData>>(
+    '/UserFacility/SendOtpIc',
+    payload,
   );
-  return data;
+
+  if (!resp.ok || !data.isSuccess) {
+    throw new Error(data.message || 'خطا در ارسال کد تایید');
+  }
+
+  return data.data;
 }
 
-export async function getFinotechCreditStatus(userId: string, requestId: string) {
-  const { data } = await api.post<
-    { userId: string; requestId: string },
-    APIResult<FinotechCreditData>
-  >('/UserCreditStatus/CreditStatus', { userId, requestId });
-  return data.data as FinotechCreditData;
+export async function icsFullProcess(payload: IcsFullProcessPayload) {
+  const { data, resp } = await api.post<IcsFullProcessPayload, APIResult<IcsFullProcessData>>(
+    '/UserFacility/IcsFullProcess',
+    payload,
+  );
+
+  if (!resp.ok || !data.isSuccess) {
+    throw new Error(data.message || 'خطا در انجام اعتبارسنجی');
+  }
+
+  return data.data;
 }
 
 export class ExistingRequestError extends Error {

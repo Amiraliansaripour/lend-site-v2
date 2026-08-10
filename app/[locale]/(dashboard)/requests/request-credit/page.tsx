@@ -51,6 +51,7 @@ export default function RequestCreditPage() {
   const [forCorrections] = useState<number[]>([]);
   const [correctionStepIndex, setCorrectionStepIndex] = useState(0);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isBackToPaymentDialogOpen, setIsBackToPaymentDialogOpen] = useState(false);
 
   const activeStepRef = useRef<HTMLDivElement>(null);
 
@@ -171,6 +172,8 @@ export default function RequestCreditPage() {
     }
   };
 
+  const hasValidationStep = Boolean(requestData?.planIsValidateRequired);
+
   const handleBack = useCallback(() => {
     if (isEditMode && forCorrections.length > 0) {
       if (correctionStepIndex > 0) {
@@ -180,11 +183,28 @@ export default function RequestCreditPage() {
       return;
     }
 
+    // From income (step 5), going back with validation required jumps to payment (step 3).
+    if (currentStep === 5 && hasValidationStep) {
+      setIsBackToPaymentDialogOpen(true);
+      return;
+    }
+
     const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
     if (currentIndex > 0) {
       setCurrentStep(stepsToShow[currentIndex - 1].key);
     }
-  }, [isEditMode, forCorrections, correctionStepIndex, stepsToShow, currentStep]);
+  }, [
+    isEditMode,
+    forCorrections,
+    correctionStepIndex,
+    stepsToShow,
+    currentStep,
+    hasValidationStep,
+  ]);
+
+  const handleConfirmBackToPayment = useCallback(() => {
+    setCurrentStep(3);
+  }, []);
 
   const canGoBack =
     isEditMode && forCorrections.length > 0
@@ -353,9 +373,9 @@ export default function RequestCreditPage() {
               <div key='step4'>
                 <Validation
                   requestId={id || ''}
-                  userId={userId || ''}
+                  nationalCode={user?.nationalCode || ''}
+                  mobileNumber={user?.personInfo?.phoneNumber || user?.phoneNumber || ''}
                   neededScore={planData?.score}
-                  validateType={planData?.validateType ?? requestData?.validateType ?? null}
                   onNext={() => handleNext()}
                   onBack={backHandler}
                   onCancel={cancelHandler}
@@ -431,6 +451,16 @@ export default function RequestCreditPage() {
           cancelText='خیر'
           isPending={changeRequestStateMutation.isPending}
           onConfirm={handleCancelRequest}
+        />
+
+        <ConfirmDialog
+          open={isBackToPaymentDialogOpen}
+          setOpen={setIsBackToPaymentDialogOpen}
+          title='بازگشت به مرحله پرداخت'
+          description='در صورت بازگشت، به مرحله پرداخت (مرحله ۳) منتقل می‌شوید و باید دوباره از آن مرحله ادامه دهید. آیا مطمئن هستید؟'
+          confirmText='بله، بازگشت'
+          cancelText='انصراف'
+          onConfirm={handleConfirmBackToPayment}
         />
       </PageContent>
     </PageContainer>
