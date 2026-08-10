@@ -4,13 +4,14 @@ import { useEffect, useState, useMemo, useRef, startTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { calculateLoanDetails } from '@/utils/loan-calculator';
+import { calculateLoanSummary } from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
-import { getPlanWithoutAuth, type PlanDetail } from '@/api/plan';
+import { type PlanDetail } from '@/api/plan';
 import { getFinancierPlansQueryOptions } from '@/queries/plan';
 import { Slider } from '@/components/ui/slider';
 import { CreditModal } from '@/components/page/landing/credit-modal';
-import type { LoanCalculation } from '@/types/request-credit';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { toast } from 'sonner';
 
 import { useRouter } from '@/i18n/navigation';
 
@@ -20,10 +21,9 @@ interface CalculatorProps {
 
 export function Calculator({ onRequestCredit }: CalculatorProps) {
   const [value, setValue] = useState(0);
-  const [duration, setDuration] = useState(12);
   const [selectedPlan, setSelectedPlan] = useState<PlanDetail | null>(null);
-  const [selectedPlanDetails, setSelectedPlanDetails] = useState<PlanDetail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLinkConfirmOpen, setIsLinkConfirmOpen] = useState(false);
   const isInitializedRef = useRef(false);
   const { data: financierPlansData } = useQuery(getFinancierPlansQueryOptions());
   const router = useRouter();
@@ -40,48 +40,34 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
 
       startTransition(() => {
         setSelectedPlan(firstPlan);
-        setDuration(firstPlan?.period);
         setValue(firstPlan.minAmount);
-
-        // Fetch plan details
-        getPlanWithoutAuth(firstPlan?.id)
-          .then(planDetails => {
-            setSelectedPlanDetails(planDetails as unknown as PlanDetail);
-          })
-          .catch(error => {
-            console.error('Error fetching plan details:', error);
-          });
       });
     }
   }, [financiers]);
 
-  const loanCalculation = useMemo<LoanCalculation | null>(() => {
-    if (!selectedPlanDetails || !value) {
+  const loanCalculation = useMemo(() => {
+    if (!selectedPlan || !value) {
       return null;
     }
-    return calculateLoanDetails(selectedPlanDetails, value);
-  }, [selectedPlanDetails, value]);
+    return calculateLoanSummary(value, selectedPlan);
+  }, [selectedPlan, value]);
 
   const handleSliderChange = (values: number[]) => {
     setValue(values[0]);
   };
 
-  const handlePlanClick = async (plan: PlanDetail) => {
-    try {
-      const planDetails = (await getPlanWithoutAuth(plan?.id)) as unknown as PlanDetail;
-
-      setSelectedPlanDetails(planDetails);
-      setSelectedPlan(plan);
-      setDuration(plan?.period);
-      setValue(plan.minAmount);
-    } catch (error) {
-      console.error('Error fetching plan details:', error);
-      setSelectedPlan(plan);
-      setDuration(plan?.period);
-    }
+  const handlePlanClick = (plan: PlanDetail) => {
+    setSelectedPlan(plan);
+    setValue(plan.minAmount);
   };
 
+  const hasExternalLink = Boolean(selectedPlan?.hasLink && selectedPlan?.link);
+
   const handleRequestCredit = () => {
+    if (hasExternalLink) {
+      setIsLinkConfirmOpen(true);
+      return;
+    }
     setIsModalOpen(true);
   };
 
@@ -92,22 +78,25 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
     router.push('/requests');
   };
 
-  const installmentAmount = loanCalculation
-    ? loanCalculation.monthlyInstallment
-    : Math.floor((value + value / 100) / duration);
+  const handleGetCreditConfirm = () => {
+    const link = selectedPlan?.link;
+    if (!link) {
+      toast.error('لینک دریافت اعتبار موجود نیست');
+      return;
+    }
+    window.open(link, '_blank', 'noopener,noreferrer');
+  };
 
-  const totalPayable = loanCalculation
-    ? loanCalculation.totalRepaymentAmount
-    : installmentAmount * duration;
-
-  const totalInterest = loanCalculation ? loanCalculation.totalInterest : totalPayable - value;
-
-  const totalRecived = loanCalculation ? loanCalculation.netAmountReceived : value;
+  const installmentAmount = loanCalculation?.monthlyInstallment ?? 0;
+  const totalPayable = loanCalculation?.totalRepayment ?? 0;
+  const totalInterest = loanCalculation?.totalInterest ?? 0;
+  const totalRecived = loanCalculation?.netReceived ?? 0;
 
   const minAmount = selectedPlan ? selectedPlan.minAmount : 0;
   const maxAmount = selectedPlan ? selectedPlan.maxAmount : 0;
 
-  const sliderPercentage = ((value - minAmount) / (maxAmount - minAmount)) * 100;
+  const sliderPercentage =
+    maxAmount > minAmount ? ((value - minAmount) / (maxAmount - minAmount)) * 100 : 0;
 
   return (
     <div className='flex flex-col lg:flex-row gap-6 lg:gap-10 px-4 sm:px-6 md:px-8 lg:px-10 xl:pl-20 xl:pr-10 mb-10 border-t border-gray-100 justify-center'>
@@ -227,7 +216,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
               className='w-full bg-secondary-green text-white h-12 sm:h-14 rounded text-sm sm:text-base font-medium transition-colors bg-primary hover:bg-green-600'
               onClick={handleRequestCredit}
             >
-              درخواست اعتبار
+              {hasExternalLink ? 'دریافت اعتبار' : 'درخواست اعتبار'}
             </button>
           </div>
         </div>
@@ -237,9 +226,19 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
       <CreditModal
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
-        price={selectedPlanDetails?.firstSystemFee}
+        price={selectedPlan?.firstSystemFee}
         onConfirm={handleModalConfirm}
         isCheckRequired={selectedPlan?.guarantees?.includes('چک')}
+      />
+
+      <ConfirmDialog
+        open={isLinkConfirmOpen}
+        setOpen={setIsLinkConfirmOpen}
+        title='دریافت اعتبار'
+        description='آیا مایل به انتقال به صفحه دریافت اعتبار هستید؟'
+        confirmText='بله، ادامه'
+        cancelText='انصراف'
+        onConfirm={handleGetCreditConfirm}
       />
     </div>
   );

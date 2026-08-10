@@ -86,7 +86,13 @@ export function calculatePMT(
   installment: number;
   total: number;
 } {
-  if (!totalPayments || totalPayments <= 0) {
+  if (
+    !totalPayments ||
+    totalPayments <= 0 ||
+    !Number.isFinite(totalPayments) ||
+    !Number.isFinite(principal) ||
+    !Number.isFinite(annualInterestRate)
+  ) {
     return { installment: 0, total: 0 };
   }
 
@@ -101,13 +107,79 @@ export function calculatePMT(
     };
   }
 
-  const numerator = principal * r * Math.pow(1 + r, totalPayments);
-  const denominator = Math.pow(1 + r, totalPayments) - 1;
+  const factor = Math.pow(1 + r, totalPayments);
+  if (!Number.isFinite(factor)) {
+    return { installment: 0, total: 0 };
+  }
+
+  const numerator = principal * r * factor;
+  const denominator = factor - 1;
+
+  if (!denominator) {
+    return { installment: 0, total: 0 };
+  }
 
   const installment = numerator / denominator;
 
+  if (!Number.isFinite(installment)) {
+    return { installment: 0, total: 0 };
+  }
+
   return {
-    installment: installment,
+    installment,
     total: installment * totalPayments,
   };
+}
+
+export type LoanSummaryInput = {
+  percentage?: number | null;
+  firstBankFee?: number | null;
+  firstSystemFee?: number | null;
+  period?: number | null;
+};
+
+export type LoanSummary = {
+  monthlyInstallment: number;
+  totalRepayment: number;
+  totalInterest: number;
+  netReceived: number;
+};
+
+/** Shared installment summary used by homepage + credit-request calculators. */
+export function calculateLoanSummary(
+  creditAmount: number,
+  plan: LoanSummaryInput | null | undefined,
+): LoanSummary | null {
+  if (!plan || !creditAmount || !Number.isFinite(creditAmount)) {
+    return null;
+  }
+
+  const interestRate = plan.percentage ?? 0;
+  const firstFeeRate = (plan.firstBankFee ?? 0) + (plan.firstSystemFee ?? 0);
+  const period = plan.period ?? 0;
+
+  if (!period || period <= 0 || !Number.isFinite(period) || !Number.isFinite(firstFeeRate)) {
+    return null;
+  }
+
+  const result = calculatePMT(creditAmount, interestRate, period);
+  const receivedAmount = creditAmount - (creditAmount * firstFeeRate) / 100;
+
+  const summary: LoanSummary = {
+    monthlyInstallment: Math.round(result.installment),
+    totalRepayment: Math.round(result.total),
+    totalInterest: Math.round(result.total - creditAmount),
+    netReceived: Math.round(receivedAmount),
+  };
+
+  if (
+    !Number.isFinite(summary.monthlyInstallment) ||
+    !Number.isFinite(summary.totalRepayment) ||
+    !Number.isFinite(summary.totalInterest) ||
+    !Number.isFinite(summary.netReceived)
+  ) {
+    return null;
+  }
+
+  return summary;
 }

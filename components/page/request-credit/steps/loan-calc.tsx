@@ -11,7 +11,7 @@ import { getFinancierPlans, getPlan, type PlanDetail } from '@/api/plan';
 import { createRequest, ExistingRequestError } from '@/api/facility';
 import { getUserRequests, type Request } from '@/api/request';
 import { toast } from 'sonner';
-import { calculatePMT } from '@/utils/loan-calculator';
+import { calculateLoanSummary } from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
 import { getUserId } from '@/lib/auth/client/user-info';
 import { CreditModal } from '@/components/page/landing/credit-modal';
@@ -105,21 +105,11 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
   }, [activePlans, selectedPlan]);
 
   const loanCalculation = useMemo(() => {
-    if (!planDetails || !creditAmount) return null;
-
-    const interestRate = planDetails.percentage ?? 0;
-    const firstFeeRate = planDetails.firstBankFee + planDetails.firstSystemFee;
-
-    const result = calculatePMT(creditAmount, interestRate, planDetails.period);
-    const receivedAmount = creditAmount - (creditAmount * firstFeeRate) / 100;
-
-    return {
-      monthlyInstallment: Math.round(result.installment),
-      totalRepayment: Math.round(result.total),
-      totalInterest: Math.round(result.total - creditAmount),
-      netReceived: Math.round(receivedAmount),
-    };
-  }, [planDetails, creditAmount]);
+    // Prefer full plan details; fall back to list plan from GetPlanForLend
+    const plan = planDetails ?? selectedPlan;
+    if (!plan || !creditAmount) return null;
+    return calculateLoanSummary(creditAmount, plan);
+  }, [planDetails, selectedPlan, creditAmount]);
 
   const handlePlanSelect = (plan: PlanDetail) => {
     setSelectedPlan(plan);
