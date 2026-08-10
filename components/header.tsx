@@ -4,9 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { X, Menu, User, LogIn } from 'lucide-react';
 
-import Logo from '@/assets/logo.png';
-import LogoWhite from '@/assets/logo-white.png';
-
 import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
 import { getUserInfo } from '@/lib/auth/client/user-info';
