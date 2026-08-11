@@ -14,6 +14,7 @@ import {
 } from '@/api/facility';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { normalizePhoneNo } from '@/utils/normalize';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 
 interface ValidationProps {
@@ -229,7 +230,10 @@ export function Validation({
         setIsSendingOtp(true);
         setPhase('loading');
 
-        const data = await sendOtpIc({ nationalCode, mobileNumber });
+        const data = await sendOtpIc({
+          nationalCode,
+          mobileNumber: normalizePhoneNo(mobileNumber),
+        });
 
         if (isUnavailableStatus(data.status)) {
           setPhase('unavailable');
@@ -318,7 +322,7 @@ export function Validation({
       const data = await icsFullProcess({
         lendRequestId: id,
         nationalCode,
-        mobileNumber,
+        mobileNumber: normalizePhoneNo(mobileNumber),
         token: otp,
       });
       handleProcessResult(data);
