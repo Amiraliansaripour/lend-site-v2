@@ -44,6 +44,12 @@ export function PayValidation({
   };
 
   const navigateUserToPayment = (token: string, terminalID: string, merchantId: string) => {
+    // Persist so /CallBack can return the user to this request after gateway redirect.
+    if (requestId) {
+      localStorage.setItem('requestId', requestId);
+      localStorage.setItem('pendingPayType', '2');
+    }
+
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = 'https://rt.sizpay.ir/Route/Payment';
