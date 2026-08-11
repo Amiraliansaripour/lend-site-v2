@@ -34,7 +34,6 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isForceDialogOpen, setIsForceDialogOpen] = useState(false);
   const [forceDialogMessage, setForceDialogMessage] = useState('');
-  const [isLinkConfirmOpen, setIsLinkConfirmOpen] = useState(false);
 
   const { data: financierData, isLoading: isLoadingPlans } = useQuery({
     queryKey: ['financier-plans'],
@@ -163,7 +162,7 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
     : planDetails?.guarantees;
   const hasExternalLink = Boolean(selectedPlan?.hasLink && selectedPlan?.link);
 
-  const handleGetCreditConfirm = () => {
+  const handleExternalLinkRedirect = () => {
     const link = selectedPlan?.link;
     if (!link) {
       toast.error('لینک دریافت اعتبار موجود نیست');
@@ -266,7 +265,7 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
             )}
           </div>
 
-          {loanCalculation && (
+          {!hasExternalLink && loanCalculation && (
             <div className='space-y-4'>
               <div className='flex justify-between items-center py-3 border-b'>
                 <span className='text-muted-foreground'>مبلغ قسط ماهانه</span>
@@ -300,7 +299,10 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
 
           {hasExternalLink && (
             <div className='mt-6'>
-              <Button className='w-full' size='lg' onClick={() => setIsLinkConfirmOpen(true)}>
+              <p className='text-muted-foreground text-sm mb-3'>
+                با انتخاب این طرح، به صفحه دریافت اعتبار منتقل می‌شوید.
+              </p>
+              <Button className='w-full' size='lg' onClick={handleExternalLinkRedirect}>
                 دریافت اعتبار
               </Button>
             </div>
@@ -347,16 +349,6 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
         cancelText='انصراف'
         isPending={createRequestMutation.isPending}
         onConfirm={handleForceConfirm}
-      />
-
-      <ConfirmDialog
-        open={isLinkConfirmOpen}
-        setOpen={setIsLinkConfirmOpen}
-        title='دریافت اعتبار'
-        description='آیا مایل به انتقال به صفحه دریافت اعتبار هستید؟'
-        confirmText='بله، ادامه'
-        cancelText='انصراف'
-        onConfirm={handleGetCreditConfirm}
       />
     </div>
   );

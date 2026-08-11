@@ -10,7 +10,6 @@ import { type PlanDetail } from '@/api/plan';
 import { getFinancierPlansQueryOptions } from '@/queries/plan';
 import { Slider } from '@/components/ui/slider';
 import { CreditModal } from '@/components/page/landing/credit-modal';
-import { ConfirmDialog } from '@/components/confirm-dialog';
 import { toast } from 'sonner';
 
 import { useRouter } from '@/i18n/navigation';
@@ -23,7 +22,6 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
   const [value, setValue] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanDetail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLinkConfirmOpen, setIsLinkConfirmOpen] = useState(false);
   const isInitializedRef = useRef(false);
   const { data: financierPlansData } = useQuery(getFinancierPlansQueryOptions());
   const router = useRouter();
@@ -65,7 +63,12 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
 
   const handleRequestCredit = () => {
     if (hasExternalLink) {
-      setIsLinkConfirmOpen(true);
+      const link = selectedPlan?.link;
+      if (!link) {
+        toast.error('لینک دریافت اعتبار موجود نیست');
+        return;
+      }
+      window.open(link, '_blank', 'noopener,noreferrer');
       return;
     }
     setIsModalOpen(true);
@@ -76,15 +79,6 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
       onRequestCredit(selectedPlan, value);
     }
     router.push('/requests');
-  };
-
-  const handleGetCreditConfirm = () => {
-    const link = selectedPlan?.link;
-    if (!link) {
-      toast.error('لینک دریافت اعتبار موجود نیست');
-      return;
-    }
-    window.open(link, '_blank', 'noopener,noreferrer');
   };
 
   const installmentAmount = loanCalculation?.monthlyInstallment ?? 0;
@@ -191,24 +185,30 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
           </div>
 
           {/* Calculation Results */}
-          <div className='space-y-3 sm:space-y-4'>
-            <div className='flex justify-between text-sm sm:text-base lg:text-lg mb-3'>
-              <div>مبلغ قسط ماهانه</div>
-              <div>{formatNumber(installmentAmount.toString())} ریال</div>
+          {!hasExternalLink ? (
+            <div className='space-y-3 sm:space-y-4'>
+              <div className='flex justify-between text-sm sm:text-base lg:text-lg mb-3'>
+                <div>مبلغ قسط ماهانه</div>
+                <div>{formatNumber(installmentAmount.toString())} ریال</div>
+              </div>
+              <div className='flex justify-between text-sm sm:text-base lg:text-lg mb-3 text-darker-text font-light'>
+                <div>اعتبار دریافتی شما</div>
+                <div>{formatNumber(totalRecived.toString())} ریال</div>
+              </div>
+              <div className='flex justify-between text-sm sm:text-base lg:text-lg pb-4 border-b border-[#F5F0FF] text-darker-text font-light'>
+                <div>سود پرداختی</div>
+                <div>{formatNumber(totalInterest.toString())} ریال</div>
+              </div>
+              <div className='flex justify-between text-sm sm:text-base lg:text-lg pt-4'>
+                <div className=''>جمع کل اقساط</div>
+                <div className=''>{formatNumber(totalPayable.toString())} ریال</div>
+              </div>
             </div>
-            <div className='flex justify-between text-sm sm:text-base lg:text-lg mb-3 text-darker-text font-light'>
-              <div>اعتبار دریافتی شما</div>
-              <div>{formatNumber(totalRecived.toString())} ریال</div>
+          ) : (
+            <div className='text-darker-text text-sm sm:text-base font-light'>
+              با انتخاب این طرح، به صفحه دریافت اعتبار منتقل می‌شوید.
             </div>
-            <div className='flex justify-between text-sm sm:text-base lg:text-lg pb-4 border-b border-[#F5F0FF] text-darker-text font-light'>
-              <div>سود پرداختی</div>
-              <div>{formatNumber(totalInterest.toString())} ریال</div>
-            </div>
-            <div className='flex justify-between text-sm sm:text-base lg:text-lg pt-4'>
-              <div className=''>جمع کل اقساط</div>
-              <div className=''>{formatNumber(totalPayable.toString())} ریال</div>
-            </div>
-          </div>
+          )}
 
           {/* CTA Button */}
           <div className='w-full mt-8 sm:mt-12 lg:mt-16 flex items-end'>
@@ -229,16 +229,6 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
         price={selectedPlan?.firstSystemFee}
         onConfirm={handleModalConfirm}
         isCheckRequired={selectedPlan?.guarantees?.includes('چک')}
-      />
-
-      <ConfirmDialog
-        open={isLinkConfirmOpen}
-        setOpen={setIsLinkConfirmOpen}
-        title='دریافت اعتبار'
-        description='آیا مایل به انتقال به صفحه دریافت اعتبار هستید؟'
-        confirmText='بله، ادامه'
-        cancelText='انصراف'
-        onConfirm={handleGetCreditConfirm}
       />
     </div>
   );
