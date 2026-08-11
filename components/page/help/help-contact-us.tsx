@@ -22,8 +22,10 @@ export function HelpContactUs() {
           height={200}
         />
         <div className='flex flex-col justify-center gap-3 md:gap-5 text-white md:text-right z-10'>
-          <div className='text-sm md:text-xl font-semibold'>نیاز به مشاوره بیشتر دارید؟</div>
-          <div className='text-xs md:text-lg leading-relaxed'>
+          <div className='text-sm md:text-xl font-semibold text-black'>
+            نیاز به مشاوره بیشتر دارید؟
+          </div>
+          <div className='text-xs md:text-lg leading-relaxed text-gray-700'>
             همین حالا با کارشناسان ما در ارتباط باشید و پاسخ سوالات خود را دریافت کنید.
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { X, Download } from 'lucide-react';
 
@@ -11,22 +11,49 @@ interface BeforeInstallPromptEvent extends Event {
 
 const STORAGE_KEY = 'pwa-install-dismissed';
 
+declare global {
+  interface Window {
+    __pwaInstallPromptShown?: boolean;
+  }
+}
+
 export function PwaInstallPrompt() {
   const t = useTranslations('PWA');
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+  const didShowOnceRef = useRef(false);
+  const fadeTimerRef = useRef<number | null>(null);
+  const hideTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (
-      typeof window === 'undefined' ||
-      window.matchMedia('(display-mode: standalone)').matches ||
-      localStorage.getItem(STORAGE_KEY)
-    )
-      return;
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
+
+    // Initialize "show once" from localStorage once, then use the ref
+    // consistently inside the event handler.
+    try {
+      didShowOnceRef.current = Boolean(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      // If localStorage is blocked, fall back to in-memory only.
+      didShowOnceRef.current = Boolean(window.__pwaInstallPromptShown);
+    }
+
+    // If we've already shown it, don't attach listeners again.
+    if (didShowOnceRef.current || window.__pwaInstallPromptShown) return;
 
     const handler = (e: Event) => {
+      if (didShowOnceRef.current || window.__pwaInstallPromptShown) return;
       e.preventDefault();
       setPrompt(e as BeforeInstallPromptEvent);
+
+      didShowOnceRef.current = true;
+      try {
+        localStorage.setItem(STORAGE_KEY, '1');
+      } catch {
+        // Ignore if storage is blocked.
+      }
+      window.__pwaInstallPromptShown = true;
       setVisible(true);
     };
 
@@ -40,17 +67,71 @@ export function PwaInstallPrompt() {
     const { outcome } = await prompt.userChoice;
     if (outcome === 'accepted') setVisible(false);
     setPrompt(null);
+    // Mark as handled so it won't come back again.
+    didShowOnceRef.current = true;
+    try {
+      localStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+      // Ignore if storage is blocked.
+    }
+    window.__pwaInstallPromptShown = true;
   };
 
   const handleDismiss = () => {
-    localStorage.setItem(STORAGE_KEY, '1');
+    didShowOnceRef.current = true;
+    try {
+      localStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+      // Ignore if storage is blocked.
+    }
+    window.__pwaInstallPromptShown = true;
+    if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
+    if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    setIsFadingOut(false);
     setVisible(false);
   };
+
+  useEffect(() => {
+    if (!visible) return;
+
+    setIsFadingOut(false);
+
+    // Start fading out after 7 seconds.
+    fadeTimerRef.current = window.setTimeout(() => {
+      setIsFadingOut(true);
+    }, 7000);
+
+    // After the fade transition finishes, fully hide it.
+    hideTimerRef.current = window.setTimeout(() => {
+      // Ensure we never show it again, even if some other
+      // `beforeinstallprompt` edge-case tries to re-trigger it.
+      didShowOnceRef.current = true;
+      try {
+        localStorage.setItem(STORAGE_KEY, '1');
+      } catch {
+        // Ignore if storage is blocked.
+      }
+      window.__pwaInstallPromptShown = true;
+      setVisible(false);
+      setPrompt(null);
+    }, 7000 + 300);
+
+    return () => {
+      if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
+      if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    };
+  }, [visible]);
 
   if (!visible) return null;
 
   return (
-    <div className='fixed bottom-4 inset-x-4 z-50 mx-auto max-w-sm rounded-2xl border border-border bg-background p-4 shadow-lg'>
+    <div
+      className={[
+        'fixed bottom-4 inset-x-4 z-50 mx-auto max-w-sm rounded-2xl border border-border bg-background p-4 shadow-lg',
+        'transition-opacity duration-300',
+        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100',
+      ].join(' ')}
+    >
       <div className='flex items-start gap-3'>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

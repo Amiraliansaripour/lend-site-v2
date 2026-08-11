@@ -103,10 +103,10 @@ function RequestActionsCell({ request }: { request: Request }) {
   }
 
   return (
-    <div className='flex flex-wrap items-center gap-2'>
+    <div className='flex  items-center gap-2'>
       {showContinue && (
         <Button variant='outline' size='sm' asChild>
-          <Link href={`/requests/request-credit?id=${id}`}>ادامه درخواست</Link>
+          <Link href={`/requests/request-credit?id=${id}`}>ادامه</Link>
         </Button>
       )}
       {showResume && (
