@@ -23,17 +23,28 @@ interface LoanCalcProps {
   onNext?: (data: { requestId: string; planId: string; creditAmount: number }) => void;
   isEditMode?: boolean;
   existingRequests?: Request[];
+  existingRequestId?: string;
+  initialPlanId?: string;
+  initialCreditAmount?: number;
 }
 
-export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalcProps) {
+export function LoanCalc({
+  onNext,
+  isEditMode,
+  existingRequests = [],
+  existingRequestId,
+  initialPlanId,
+  initialCreditAmount,
+}: LoanCalcProps) {
   const router = useRouter();
   const userId = getUserId();
 
   const [selectedPlan, setSelectedPlan] = useState<PlanDetail | null>(null);
-  const [creditAmount, setCreditAmount] = useState(30000000);
+  const [creditAmount, setCreditAmount] = useState(initialCreditAmount || 30000000);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isForceDialogOpen, setIsForceDialogOpen] = useState(false);
   const [forceDialogMessage, setForceDialogMessage] = useState('');
+  const [hasHydratedFromPreview, setHasHydratedFromPreview] = useState(false);
 
   const { data: financierData, isLoading: isLoadingPlans } = useQuery({
     queryKey: ['financier-plans'],
@@ -96,12 +107,29 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
   }, [financierData]);
 
   useEffect(() => {
-    if (activePlans.length > 0 && !selectedPlan) {
-      const firstPlan = activePlans[activePlans.length - 1];
-      void setSelectedPlan(firstPlan);
-      void setCreditAmount(firstPlan.minAmount);
+    if (activePlans.length === 0 || hasHydratedFromPreview) return;
+
+    if (initialPlanId) {
+      const matchedPlan = activePlans.find(plan => plan.id === initialPlanId);
+      if (matchedPlan) {
+        setSelectedPlan(matchedPlan);
+        if (initialCreditAmount) {
+          setCreditAmount(initialCreditAmount);
+        } else {
+          setCreditAmount(matchedPlan.minAmount);
+        }
+        setHasHydratedFromPreview(true);
+        return;
+      }
     }
-  }, [activePlans, selectedPlan]);
+
+    if (!selectedPlan) {
+      const firstPlan = activePlans[activePlans.length - 1];
+      setSelectedPlan(firstPlan);
+      setCreditAmount(initialCreditAmount || firstPlan.minAmount);
+      setHasHydratedFromPreview(true);
+    }
+  }, [activePlans, selectedPlan, initialPlanId, initialCreditAmount, hasHydratedFromPreview]);
 
   const loanCalculation = useMemo(() => {
     // Prefer full plan details; fall back to list plan from GetPlanForLend
@@ -124,6 +152,20 @@ export function LoanCalc({ onNext, isEditMode, existingRequests = [] }: LoanCalc
     if (!userId) {
       toast.error('لطفا ابتدا وارد شوید');
       router.push('/login');
+      return;
+    }
+
+    // Continuing an existing request (back navigation / edit) — keep current plan selection
+    if (existingRequestId) {
+      if (onNext) {
+        onNext({
+          requestId: existingRequestId,
+          planId: selectedPlan.id,
+          creditAmount,
+        });
+      } else {
+        router.push(`/requests/request-credit?id=${existingRequestId}`);
+      }
       return;
     }
 

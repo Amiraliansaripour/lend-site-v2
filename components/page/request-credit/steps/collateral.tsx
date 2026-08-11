@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
 import { ChequeRegistration } from './cheque-registration';
+import type { RequestPreviewData } from '@/api/request';
 
 interface CollateralProps {
   requestId: string;
@@ -15,6 +16,7 @@ interface CollateralProps {
   onCancel?: () => void;
   isEditMode?: boolean;
   isReadOnly?: boolean;
+  previewData?: RequestPreviewData | null;
 }
 
 export function Collateral({
@@ -26,8 +28,11 @@ export function Collateral({
   onCancel,
   isEditMode = false,
   isReadOnly = false,
+  previewData,
 }: CollateralProps) {
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(
+    previewData?.chequeId || previewData?.chequeSayadId ? 'check' : null,
+  );
 
   const handleMethodSelect = (method: string) => {
     if (isReadOnly) return;
@@ -45,6 +50,7 @@ export function Collateral({
         onCancel={onCancel}
         isEditMode={isEditMode}
         isReadOnly={isReadOnly}
+        previewData={previewData}
       />
     );
   }

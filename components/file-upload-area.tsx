@@ -9,9 +9,10 @@ import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile } from '@/lib/image-file';
 import { toast } from 'sonner';
 
 interface UploadedFile {
-  file: File;
+  file?: File;
   preview: string;
   id?: string;
+  isExisting?: boolean;
 }
 
 interface UploadProgress {

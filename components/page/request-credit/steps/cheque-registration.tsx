@@ -11,7 +11,8 @@ import { toast } from 'sonner';
 import { Upload, X, FileCheck, Loader2, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRegisterCheque, useChangeRequestState } from '@/mutations/request';
-import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile } from '@/lib/image-file';
+import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile, previewImageToSrc } from '@/lib/image-file';
+import type { RequestPreviewData } from '@/api/request';
 
 interface ChequeRegistrationProps {
   requestId: string;
@@ -22,6 +23,7 @@ interface ChequeRegistrationProps {
   onCancel?: () => void;
   isEditMode?: boolean;
   isReadOnly?: boolean;
+  previewData?: RequestPreviewData | null;
 }
 
 interface ChequeFormData {
@@ -29,9 +31,10 @@ interface ChequeFormData {
 }
 
 interface UploadedFile {
-  file: File;
+  file?: File;
   preview: string;
   id?: string;
+  isExisting?: boolean;
 }
 
 interface UploadProgress {
@@ -108,7 +111,9 @@ const FileUploadArea = ({
                 className='object-contain rounded'
               />
             </div>
-            <p className='text-xs text-gray-600 truncate'>{uploadedFile.file.name}</p>
+            <p className='text-xs text-gray-600 truncate'>
+              {uploadedFile.file?.name || (uploadedFile.isExisting ? 'فایل موجود' : '')}
+            </p>
             <div className='flex items-center justify-center gap-2'>
               {uploadProgress?.status === 'uploading' && (
                 <>
@@ -161,12 +166,13 @@ export function ChequeRegistration({
   onCancel,
   isEditMode = false,
   isReadOnly = false,
+  previewData,
 }: ChequeRegistrationProps) {
   const registerChequeMutation = useRegisterCheque();
   const changeRequestStateMutation = useChangeRequestState();
 
   const [formData, setFormData] = useState<ChequeFormData>({
-    sayadId: '',
+    sayadId: previewData?.chequeSayadId || '',
   });
 
   const [uploadedFiles, setUploadedFiles] = useState<Partial<Record<FileKey, UploadedFile>>>({});
@@ -175,6 +181,7 @@ export function ChequeRegistration({
   );
   const [shake, setShake] = useState(false);
   const [showHelpText, setShowHelpText] = useState(false);
+  const [hasHydratedPreview, setHasHydratedPreview] = useState(false);
 
   const [accordionStates, setAccordionStates] = useState({
     cheque: true,
@@ -185,6 +192,34 @@ export function ChequeRegistration({
   const fileInputRefs = useRef<Partial<Record<FileKey, HTMLInputElement | null>>>({});
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    if (!previewData || hasHydratedPreview) return;
+
+    const nextFiles: Partial<Record<FileKey, UploadedFile>> = {};
+    const nextProgress: Partial<Record<FileKey, UploadProgress>> = {};
+
+    const map: Array<{ key: FileKey; value?: string | null }> = [
+      { key: 'chequeImage', value: previewData.chequeFileImage },
+      { key: 'chequeBackImage', value: previewData.chequeFileImageBack },
+      { key: 'promissoryImage', value: previewData.chequeFileImagePromissory },
+      { key: 'salaryDeductionImage', value: previewData.chequeFileImageDeductionSalary },
+    ];
+
+    for (const item of map) {
+      const src = previewImageToSrc(item.value);
+      if (!src) continue;
+      nextFiles[item.key] = { preview: src, isExisting: true };
+      nextProgress[item.key] = { status: 'success', message: 'فایل موجود' };
+    }
+
+    if (previewData.chequeSayadId) {
+      setFormData({ sayadId: previewData.chequeSayadId });
+    }
+    setUploadedFiles(nextFiles);
+    setUploadProgress(nextProgress);
+    setHasHydratedPreview(true);
+  }, [previewData, hasHydratedPreview]);
 
   const toggleAccordion = (section: keyof typeof accordionStates) => {
     setAccordionStates(prev => ({
@@ -446,6 +481,27 @@ export function ChequeRegistration({
         toast.error('لطفا تصویر سفته را آپلود کنید');
         return;
       }
+    }
+
+    const requiredKeys: FileKey[] = [];
+    if (guarantees.includes('چک')) {
+      requiredKeys.push('chequeImage', 'chequeBackImage');
+    }
+    if (guarantees.includes('کسر از حقوق')) {
+      requiredKeys.push('salaryDeductionImage');
+    }
+    if (guarantees.includes('سفته')) {
+      requiredKeys.push('promissoryImage');
+    }
+
+    const onlyExistingFiles =
+      requiredKeys.length > 0 && requiredKeys.every(key => uploadedFiles[key]?.isExisting);
+    const sayadUnchanged =
+      !guarantees.includes('چک') || formData.sayadId === (previewData?.chequeSayadId || '');
+
+    if (onlyExistingFiles && sayadUnchanged && previewData?.chequeId) {
+      if (onNext) onNext(formData);
+      return;
     }
 
     const payload = {

@@ -11,7 +11,8 @@ import { toast } from 'sonner';
 import { ZoomIn } from 'lucide-react';
 import { useCreateInvoice, useChangeRequestState } from '@/mutations/request';
 import { FileUploadArea } from '@/components/file-upload-area';
-import { isAllowedImageFile } from '@/lib/image-file';
+import { isAllowedImageFile, previewImageToSrc } from '@/lib/image-file';
+import type { RequestPreviewData } from '@/api/request';
 
 interface ProformaInvoiceProps {
   requestId: string;
@@ -20,12 +21,14 @@ interface ProformaInvoiceProps {
   onCancel?: () => void;
   isEditMode?: boolean;
   isReadOnly?: boolean;
+  previewData?: RequestPreviewData | null;
 }
 
 interface UploadedFile {
-  file: File;
+  file?: File;
   preview: string;
   id?: string;
+  isExisting?: boolean;
 }
 
 interface UploadProgress {
@@ -41,6 +44,7 @@ export function ProformaInvoice({
   onCancel,
   isEditMode = false,
   isReadOnly = false,
+  previewData,
 }: ProformaInvoiceProps) {
   const createInvoiceMutation = useCreateInvoice();
   const changeRequestStateMutation = useChangeRequestState();
@@ -49,8 +53,24 @@ export function ProformaInvoice({
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [attachmentId, setAttachmentId] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [hasHydratedPreview, setHasHydratedPreview] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!previewData || hasHydratedPreview) return;
+
+    const imageSrc = previewImageToSrc(previewData.invoiceFileImage);
+    if (imageSrc) {
+      setUploadedFile({
+        preview: imageSrc,
+        isExisting: true,
+      });
+      setUploadProgress({ status: 'success', message: 'فایل موجود' });
+      setAttachmentId(null);
+    }
+    setHasHydratedPreview(true);
+  }, [previewData, hasHydratedPreview]);
 
   const uploadToServer = useCallback(async (file: File) => {
     setUploadProgress({ status: 'uploading', message: 'در حال آپلود...', progress: 0 });
@@ -136,6 +156,12 @@ export function ProformaInvoice({
 
     if (!uploadedFile || uploadProgress?.status !== 'success') {
       toast.error('لطفا تصویر پیش‌فاکتور را آپلود کنید');
+      return;
+    }
+
+    // Existing invoice from preview — continue without re-creating
+    if (uploadedFile.isExisting && previewData?.invoiceId) {
+      if (onNext) onNext();
       return;
     }
 

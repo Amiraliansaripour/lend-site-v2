@@ -11,7 +11,9 @@ import { toast } from 'sonner';
 import { Upload, X, FileCheck, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCreateIncomeInfo } from '@/mutations/request';
-import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile } from '@/lib/image-file';
+import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile, previewImageToSrc } from '@/lib/image-file';
+import { getShopImageUrl } from '@/lib/shop-utils';
+import type { RequestPreviewData } from '@/api/request';
 
 interface IncomeInformationProps {
   requestId: string;
@@ -21,6 +23,7 @@ interface IncomeInformationProps {
   initialData?: IncomeFormData;
   isEditMode?: boolean;
   isReadOnly?: boolean;
+  previewData?: RequestPreviewData | null;
 }
 
 interface IncomeFormData {
@@ -29,9 +32,10 @@ interface IncomeFormData {
 }
 
 interface UploadedFile {
-  file: File;
+  file?: File;
   preview: string;
   id?: string;
+  isExisting?: boolean;
 }
 
 interface UploadProgress {
@@ -104,7 +108,9 @@ const FileUploadArea = ({
                 className='object-contain rounded'
               />
             </div>
-            <p className='text-xs text-gray-600 truncate'>{uploadedFile.file.name}</p>
+            <p className='text-xs text-gray-600 truncate'>
+              {uploadedFile.file?.name || (uploadedFile.isExisting ? 'فایل موجود' : '')}
+            </p>
             <div className='flex items-center justify-center gap-2'>
               {uploadProgress?.status === 'uploading' && (
                 <>
@@ -156,12 +162,20 @@ export function IncomeInformation({
   initialData,
   isEditMode = false,
   isReadOnly = false,
+  previewData,
 }: IncomeInformationProps) {
   const createIncomeInfoMutation = useCreateIncomeInfo();
 
+  const previewIncomeToman = previewData?.incomeInfoIncome
+    ? String(Math.round(Number(previewData.incomeInfoIncome) / 10) || '')
+    : '';
+  const previewPayAbilityToman = previewData?.incomeInfoPayAbility
+    ? String(Math.round(Number(previewData.incomeInfoPayAbility) / 10) || '')
+    : '';
+
   const [formData, setFormData] = useState<IncomeFormData>({
-    income: initialData?.income || '',
-    payAbility: initialData?.payAbility || '',
+    income: initialData?.income || previewIncomeToman,
+    payAbility: initialData?.payAbility || previewPayAbilityToman,
   });
 
   const [uploadedFiles, setUploadedFiles] = useState<Partial<Record<FileKey, UploadedFile>>>({});
@@ -169,8 +183,54 @@ export function IncomeInformation({
     {},
   );
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
+  const [hasExistingPreviewData, setHasExistingPreviewData] = useState(false);
+  const [hasHydratedPreview, setHasHydratedPreview] = useState(false);
 
   const fileInputRefs = useRef<Partial<Record<FileKey, HTMLInputElement | null>>>({});
+
+  useEffect(() => {
+    if (!previewData || hasHydratedPreview) return;
+
+    const nextForm: IncomeFormData = {
+      income: initialData?.income || previewIncomeToman,
+      payAbility: initialData?.payAbility || previewPayAbilityToman,
+    };
+
+    const nextFiles: Partial<Record<FileKey, UploadedFile>> = {};
+    const nextProgress: Partial<Record<FileKey, UploadProgress>> = {};
+    const nextAttachmentIds: string[] = [];
+
+    const fileKeys: FileKey[] = ['accountTurnover', 'salarySlip'];
+    const attachments = previewData.incomeInfoAttachments || [];
+
+    fileKeys.forEach((key, index) => {
+      const attachment = attachments[index];
+      if (!attachment) return;
+
+      const imageSrc =
+        previewImageToSrc(attachment.file) ||
+        previewImageToSrc(attachment.data) ||
+        getShopImageUrl(attachment.filePath);
+      if (!imageSrc) return;
+
+      nextFiles[key] = {
+        preview: imageSrc,
+        id: attachment.id,
+        isExisting: true,
+      };
+      nextProgress[key] = { status: 'success', message: 'فایل موجود' };
+      if (attachment.id) nextAttachmentIds.push(attachment.id);
+    });
+
+    setFormData(nextForm);
+    setUploadedFiles(nextFiles);
+    setUploadProgress(nextProgress);
+    setAttachmentIds(nextAttachmentIds);
+    setHasExistingPreviewData(
+      Boolean(nextForm.income && nextForm.payAbility && Object.keys(nextFiles).length > 0),
+    );
+    setHasHydratedPreview(true);
+  }, [previewData, hasHydratedPreview, initialData, previewIncomeToman, previewPayAbilityToman]);
 
   const formatNumber = (value: string): string => {
     if (!value) return '';
@@ -370,6 +430,20 @@ export function IncomeInformation({
         toast.error(`لطفا ${FILE_LABELS[key]} را آپلود کنید`);
         return;
       }
+    }
+
+    // Existing data from preview and no new uploads — continue without re-creating
+    const onlyExistingFiles = requiredFiles.every(key => uploadedFiles[key]?.isExisting);
+    const amountsUnchanged =
+      formData.income === previewIncomeToman && formData.payAbility === previewPayAbilityToman;
+    if (
+      hasExistingPreviewData &&
+      onlyExistingFiles &&
+      amountsUnchanged &&
+      previewData?.incomeInfoId
+    ) {
+      if (onNext) onNext(formData);
+      return;
     }
 
     createIncomeInfoMutation.mutate(

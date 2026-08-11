@@ -13,6 +13,8 @@ import { useUser } from '@/queries/users';
 import { useConfirmRequestByUser, useChangeRequestState } from '@/mutations/request';
 import { REQUEST_STATE_CANCELLED } from '@/utils/request-status';
 import { useRouter } from '@/i18n/navigation';
+import { previewImageToSrc } from '@/lib/image-file';
+import { getShopImageUrl } from '@/lib/shop-utils';
 
 interface AcceptByUserProps {
   requestId: string;
@@ -50,14 +52,15 @@ export function AcceptByUser({
 
   const loading = isLoadingRequest || isLoadingUser;
 
-  const formatAmount = (amount?: number): string => {
-    if (!amount || isNaN(amount)) return 'نامشخص';
-    const rounded = Math.round(Number(amount));
+  const formatAmount = (amount?: number | string | null): string => {
+    const numeric = typeof amount === 'string' ? Number(amount) : amount;
+    if (numeric === undefined || numeric === null || isNaN(Number(numeric))) return 'نامشخص';
+    const rounded = Math.round(Number(numeric));
     return `${rounded.toLocaleString('fa-IR')} ریال`;
   };
 
-  const createBase64ImageUrl = (base64String: string, mimeType = 'image/jpeg'): string => {
-    return `data:${mimeType};base64,${base64String}`;
+  const resolveImageSrc = (value?: string | null, filePath?: string | null): string | null => {
+    return previewImageToSrc(value) || getShopImageUrl(filePath);
   };
 
   const openImageModal = (imageSrc: string) => {
@@ -126,6 +129,41 @@ export function AcceptByUser({
         Math.floor((requestData.planFirstSystemFee || 0) + (requestData.planFirstBankFee || 0))
     : 0;
 
+  const incomeAttachments = requestData?.incomeInfoAttachments || [];
+  const incomeImages = incomeAttachments
+    .map(
+      attachment =>
+        previewImageToSrc(attachment.file) ||
+        previewImageToSrc(attachment.data) ||
+        getShopImageUrl(attachment.filePath),
+    )
+    .filter((src): src is string => Boolean(src));
+
+  const planGuaranteesLabel = requestData?.planGuarantees?.length
+    ? requestData.planGuarantees.join(' و ')
+    : null;
+
+  const chequeImageSrc = resolveImageSrc(
+    requestData?.chequeFileImage,
+    requestData?.chequeAttachmentFilePath,
+  );
+  const chequeBackImageSrc = resolveImageSrc(
+    requestData?.chequeFileImageBack,
+    requestData?.chequeAttachmentBackFilePath,
+  );
+  const promissoryImageSrc = resolveImageSrc(
+    requestData?.chequeFileImagePromissory,
+    requestData?.chequeAttachmentPromissoryFilePath,
+  );
+  const salaryDeductionImageSrc = resolveImageSrc(
+    requestData?.chequeFileImageDeductionSalary,
+    requestData?.chequeAttachmentDeductionSalaryFilePath,
+  );
+  const invoiceImageSrc = resolveImageSrc(
+    requestData?.invoiceFileImage,
+    requestData?.invoiceAttachmentFilePath,
+  );
+
   if (loading) {
     return (
       <Card>
@@ -177,20 +215,51 @@ export function AcceptByUser({
                   <span className='font-medium'>مدارک هویتی:</span>
                   <div className='flex flex-wrap gap-2 mt-2'>
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {userAttachments.map((attachment: any, index: number) => (
-                      <div
-                        key={index}
-                        className='relative w-24 h-24 cursor-pointer hover:opacity-80 transition-opacity'
-                        onClick={() => openImageModal(createBase64ImageUrl(attachment.file))}
-                      >
-                        <Image
-                          src={createBase64ImageUrl(attachment.file)}
-                          alt={`مدرک ${index + 1}`}
-                          fill
-                          className='object-cover rounded-md'
-                        />
-                      </div>
-                    ))}
+                    {userAttachments.map((attachment: any, index: number) => {
+                      const src =
+                        resolveImageSrc(attachment.file, attachment.filePath) ||
+                        getShopImageUrl(attachment.filePath);
+                      if (!src) return null;
+                      return (
+                        <div
+                          key={attachment.id || index}
+                          className='relative w-24 h-24 cursor-pointer hover:opacity-80 transition-opacity'
+                          onClick={() => openImageModal(src)}
+                        >
+                          <Image
+                            src={src}
+                            alt={`مدرک ${index + 1}`}
+                            fill
+                            className='object-cover rounded-md'
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {!userAttachments.length && requestData?.userFileImage?.length && (
+                <div>
+                  <span className='font-medium'>مدارک هویتی:</span>
+                  <div className='flex flex-wrap gap-2 mt-2'>
+                    {requestData.userFileImage.map((image, index) => {
+                      const src = previewImageToSrc(image);
+                      if (!src) return null;
+                      return (
+                        <div
+                          key={index}
+                          className='relative w-24 h-24 cursor-pointer hover:opacity-80 transition-opacity'
+                          onClick={() => openImageModal(src)}
+                        >
+                          <Image
+                            src={src}
+                            alt={`مدرک ${index + 1}`}
+                            fill
+                            className='object-cover rounded-md'
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -212,17 +281,15 @@ export function AcceptByUser({
                   <span>{requestData.chequeSayadId}</span>
                 </div>
               )}
-              {requestData?.chequeFileImage && (
+              {chequeImageSrc && (
                 <div className='flex justify-between items-center'>
                   <span className='font-medium'>تصویر چک صیادی:</span>
                   <div
                     className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() =>
-                      openImageModal(createBase64ImageUrl(requestData.chequeFileImage!))
-                    }
+                    onClick={() => openImageModal(chequeImageSrc)}
                   >
                     <Image
-                      src={createBase64ImageUrl(requestData.chequeFileImage)}
+                      src={chequeImageSrc}
                       alt='تصویر چک صیادی'
                       fill
                       className='object-cover rounded-md'
@@ -230,17 +297,15 @@ export function AcceptByUser({
                   </div>
                 </div>
               )}
-              {requestData?.chequeFileImageBack && (
+              {chequeBackImageSrc && (
                 <div className='flex justify-between items-center'>
                   <span className='font-medium'>تصویر پشت چک صیادی:</span>
                   <div
                     className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() =>
-                      openImageModal(createBase64ImageUrl(requestData.chequeFileImageBack!))
-                    }
+                    onClick={() => openImageModal(chequeBackImageSrc)}
                   >
                     <Image
-                      src={createBase64ImageUrl(requestData.chequeFileImageBack)}
+                      src={chequeBackImageSrc}
                       alt='تصویر پشت چک صیادی'
                       fill
                       className='object-cover rounded-md'
@@ -248,17 +313,15 @@ export function AcceptByUser({
                   </div>
                 </div>
               )}
-              {requestData?.chequeFileImagePromissory && (
+              {promissoryImageSrc && (
                 <div className='flex justify-between items-center'>
                   <span className='font-medium'>تصویر سفته:</span>
                   <div
                     className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() =>
-                      openImageModal(createBase64ImageUrl(requestData.chequeFileImagePromissory!))
-                    }
+                    onClick={() => openImageModal(promissoryImageSrc)}
                   >
                     <Image
-                      src={createBase64ImageUrl(requestData.chequeFileImagePromissory)}
+                      src={promissoryImageSrc}
                       alt='تصویر سفته'
                       fill
                       className='object-cover rounded-md'
@@ -266,19 +329,15 @@ export function AcceptByUser({
                   </div>
                 </div>
               )}
-              {requestData?.chequeFileImageDeductionSalary && (
+              {salaryDeductionImageSrc && (
                 <div className='flex justify-between items-center'>
                   <span className='font-medium'>تصویر گواهی کسر از حقوق:</span>
                   <div
                     className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() =>
-                      openImageModal(
-                        createBase64ImageUrl(requestData.chequeFileImageDeductionSalary!),
-                      )
-                    }
+                    onClick={() => openImageModal(salaryDeductionImageSrc)}
                   >
                     <Image
-                      src={createBase64ImageUrl(requestData.chequeFileImageDeductionSalary)}
+                      src={salaryDeductionImageSrc}
                       alt='تصویر گواهی کسر از حقوق'
                       fill
                       className='object-cover rounded-md'
@@ -290,7 +349,7 @@ export function AcceptByUser({
           </Card>
 
           {/* Income Information Card */}
-          {requestData?.incomeInfo && (
+          {(requestData?.incomeInfoIncome || requestData?.incomeInfoPayAbility) && (
             <Card className='lg:col-span-2 hover:scale-[1.02] transition-transform'>
               <CardHeader className='bg-gradient-to-br from-yellow-50 to-orange-50'>
                 <CardTitle className='flex items-center text-orange-700'>
@@ -302,33 +361,29 @@ export function AcceptByUser({
                 <div>
                   <span className='font-medium block mb-1'>مقدار درآمد:</span>
                   <span className='font-semibold'>
-                    {formatAmount(requestData.incomeInfo.income)}
+                    {formatAmount(requestData.incomeInfoIncome)}
                   </span>
                 </div>
                 <div>
                   <span className='font-medium block mb-1'>توانایی پرداخت قسط:</span>
                   <span className='font-semibold'>
-                    {formatAmount(requestData.incomeInfo.payAbility)}
+                    {formatAmount(requestData.incomeInfoPayAbility)}
                   </span>
                 </div>
                 <div>
                   <span className='font-medium block mb-1'>تصاویر اطلاعات درآمدی:</span>
                   <span className='flex flex-wrap gap-2'>
-                    {requestData.incomeInfo.incomeInfoFileImage &&
-                    requestData.incomeInfo.incomeInfoFileImage.length > 0
-                      ? requestData.incomeInfo.incomeInfoFileImage.map(
-                          (image: string, index: number) => (
-                            <a
-                              key={index}
-                              href={image}
-                              target='_blank'
-                              rel='noopener noreferrer'
-                              className='text-blue-600 hover:text-blue-800 hover:underline text-sm'
-                            >
-                              تصویر {index + 1}
-                            </a>
-                          ),
-                        )
+                    {incomeImages.length > 0
+                      ? incomeImages.map((src, index) => (
+                          <button
+                            key={incomeAttachments[index]?.id || index}
+                            type='button'
+                            onClick={() => openImageModal(src)}
+                            className='text-blue-600 hover:text-blue-800 hover:underline text-sm'
+                          >
+                            تصویر {index + 1}
+                          </button>
+                        ))
                       : 'تصویری وجود ندارد'}
                   </span>
                 </div>
@@ -337,7 +392,7 @@ export function AcceptByUser({
           )}
 
           {/* Plan Details Card */}
-          {requestData?.plan && (
+          {(requestData?.planName || requestData?.planPeriod || planGuaranteesLabel) && (
             <Card className='hover:scale-[1.02] transition-transform'>
               <CardHeader className='bg-gradient-to-br from-purple-50 to-pink-50'>
                 <CardTitle className='flex items-center text-purple-700'>
@@ -348,30 +403,28 @@ export function AcceptByUser({
               <CardContent className='space-y-3 pt-6'>
                 <div className='flex justify-between'>
                   <span className='font-medium'>نام طرح:</span>
-                  <span>{requestData.plan.planName || 'نامشخص'}</span>
+                  <span>{requestData?.planName || 'نامشخص'}</span>
                 </div>
                 <div className='flex justify-between'>
                   <span className='font-medium'>درصد سود:</span>
                   <span>
-                    {requestData.plan.planPercentage
-                      ? `${requestData.plan.planPercentage}%`
-                      : 'نامشخص'}
+                    {requestData?.planPercentage ? `${requestData.planPercentage}%` : 'نامشخص'}
                   </span>
                 </div>
                 <div className='flex justify-between'>
                   <span className='font-medium'>تعداد اقساط:</span>
-                  <span>{requestData.plan.planPeriod || 'نامشخص'}</span>
+                  <span>{requestData?.planPeriod || requestData?.period || 'نامشخص'}</span>
                 </div>
                 <div className='flex justify-between'>
                   <span className='font-medium'>ضمانت‌های طرح:</span>
-                  <span>{requestData.plan.planGuarantees || 'نامشخص'}</span>
+                  <span>{planGuaranteesLabel || 'نامشخص'}</span>
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Invoice / Proforma Card */}
-          {requestData?.planIsInvoiceRequired && requestData?.invoiceFileImage && (
+          {requestData?.planIsInvoiceRequired && invoiceImageSrc && (
             <Card className='hover:scale-[1.02] transition-transform'>
               <CardHeader className='bg-gradient-to-br from-amber-50 to-yellow-50'>
                 <CardTitle className='flex items-center text-amber-700'>
@@ -384,12 +437,10 @@ export function AcceptByUser({
                   <span className='font-medium'>تصویر:</span>
                   <div
                     className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() =>
-                      openImageModal(createBase64ImageUrl(requestData.invoiceFileImage!))
-                    }
+                    onClick={() => openImageModal(invoiceImageSrc)}
                   >
                     <Image
-                      src={createBase64ImageUrl(requestData.invoiceFileImage!)}
+                      src={invoiceImageSrc}
                       alt='تصویر پیش فاکتور'
                       fill
                       className='object-cover rounded-md'

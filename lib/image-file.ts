@@ -15,3 +15,17 @@ export function isAllowedImageFile(file: File): boolean {
 
   return true;
 }
+
+/** Normalize API preview image values (raw base64 or data URL) into a usable src. */
+export function previewImageToSrc(value?: string | null, mimeType = 'image/jpeg'): string | null {
+  if (!value) return null;
+  if (
+    value.startsWith('data:') ||
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('/')
+  ) {
+    return value;
+  }
+  return `data:${mimeType};base64,${value}`;
+}
