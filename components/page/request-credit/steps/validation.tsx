@@ -208,6 +208,7 @@ export function Validation({
   const [creditData, setCreditData] = useState<IcsFullProcessData | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [otp, setOtp] = useState('');
+  const [icsRequestId, setIcsRequestId] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const initializedRef = useRef(false);
@@ -255,6 +256,13 @@ export function Validation({
         }
 
         // Pending (or success) after SendOtpIc typically means the SMS was sent.
+        if (!data.requestId) {
+          setPhase('error');
+          setStatusMessage('شناسه درخواست اعتبارسنجی دریافت نشد. لطفاً دوباره تلاش کنید.');
+          return;
+        }
+
+        setIcsRequestId(data.requestId);
         setOtp('');
         setPhase('otp');
         if (showSuccessToast || data.message) {
@@ -317,12 +325,18 @@ export function Validation({
       return;
     }
 
+    if (!icsRequestId) {
+      toast.error('شناسه درخواست اعتبارسنجی موجود نیست. لطفاً کد را مجدداً دریافت کنید.');
+      return;
+    }
+
     try {
       setIsVerifying(true);
       const data = await icsFullProcess({
         lendRequestId: id,
         nationalCode,
         mobileNumber: normalizePhoneNo(mobileNumber),
+        requestId: icsRequestId,
         token: otp,
       });
       handleProcessResult(data);

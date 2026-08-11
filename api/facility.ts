@@ -76,6 +76,7 @@ export interface IcsFullProcessPayload {
   lendRequestId: string;
   nationalCode: string;
   mobileNumber: string;
+  requestId: string;
   token: string;
 }
 
