@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from '@/i18n/navigation';
-import { HelpCircle } from 'lucide-react';
+import { ExternalLink, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,9 +15,11 @@ import { calculateLoanSummary } from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
 import { getUserId } from '@/lib/auth/client/user-info';
 import { CreditModal } from '@/components/page/landing/credit-modal';
+import { ExternalLinkPlanPanel } from '@/components/external-link-plan-panel';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { canSubmitNewRequest } from '@/utils/request-status';
 import type { CreateRequestPayload } from '@/types/request-credit';
+import { cn } from '@/lib/utils';
 
 interface LoanCalcProps {
   onNext?: (data: { requestId: string; planId: string; creditAmount: number }) => void;
@@ -234,122 +236,128 @@ export function LoanCalc({
           <div>
             <h2 className='text-xl font-bold mb-2'>نمایشگر اقساط</h2>
             <p className='text-muted-foreground'>
-              لطفا مبلغ درخواستی و مدت بازپرداخت را انتخاب کنید.
+              {hasExternalLink
+                ? 'این طرح از طریق لینک اختصاصی ادامه پیدا می‌کند؛ مبلغ و اقساط در این صفحه نمایش داده نمی‌شود.'
+                : 'لطفا مبلغ درخواستی و مدت بازپرداخت را انتخاب کنید.'}
             </p>
           </div>
 
-          <div className='bg-accent/50 rounded-lg p-6 space-y-6'>
-            <div>
-              <label className='text-sm text-muted-foreground mb-4 block'>مبلغ مورد نظر</label>
-              <div className='space-y-4'>
-                <div className='text-center'>
-                  <span className='text-2xl font-bold text-primary'>
-                    {formatNumber(creditAmount)} ریال
-                  </span>
-                </div>
-                <Slider
-                  dir='ltr'
-                  value={[creditAmount]}
-                  onValueChange={value => setCreditAmount(value[0])}
-                  min={minValue}
-                  max={maxValue}
-                  step={1000000}
-                  className='w-full'
-                />
-                <div className='flex justify-between text-sm text-muted-foreground'>
-                  <span>{formatNumber(maxValue)}</span>
-                  <span>{formatNumber(minValue)}</span>
+          {!hasExternalLink && (
+            <div className='bg-accent/50 rounded-lg p-6 space-y-6'>
+              <div>
+                <label className='text-sm text-muted-foreground mb-4 block'>مبلغ مورد نظر</label>
+                <div className='space-y-4'>
+                  <div className='text-center'>
+                    <span className='text-2xl font-bold text-primary'>
+                      {formatNumber(creditAmount)} ریال
+                    </span>
+                  </div>
+                  <Slider
+                    dir='ltr'
+                    value={[creditAmount]}
+                    onValueChange={value => setCreditAmount(value[0])}
+                    min={minValue}
+                    max={maxValue}
+                    step={1000000}
+                    className='w-full'
+                  />
+                  <div className='flex justify-between text-sm text-muted-foreground'>
+                    <span>{formatNumber(maxValue)}</span>
+                    <span>{formatNumber(minValue)}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className='bg-accent/50 rounded-lg p-6'>
             <label className='text-sm text-muted-foreground mb-3 block'>طرح ها</label>
             <div className='flex flex-wrap gap-2'>
-              {activePlans.map(plan => (
-                <Button
-                  key={plan.id}
-                  variant={selectedPlan?.id === plan.id ? 'default' : 'outline'}
-                  size='sm'
-                  onClick={() => handlePlanSelect(plan)}
-                >
-                  {plan.name}
-                </Button>
-              ))}
+              {activePlans.map(plan => {
+                const isLinked = Boolean(plan.hasLink && plan.link);
+                return (
+                  <Button
+                    key={plan.id}
+                    variant={selectedPlan?.id === plan.id ? 'default' : 'outline'}
+                    size='sm'
+                    onClick={() => handlePlanSelect(plan)}
+                    className={cn(isLinked && 'gap-1.5')}
+                  >
+                    {plan.name}
+                    {isLinked && <ExternalLink className='size-3 opacity-70' aria-hidden />}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        <div className='bg-card rounded-2xl shadow-lg p-6 h-fit'>
-          <div className='mb-8 flex items-center gap-2'>
-            <h3 className='text-lg font-bold'>جزئیات وام</h3>
-            {!!planGuarantees?.length && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type='button'
-                    className='inline-flex text-muted-foreground hover:text-primary transition-colors'
-                    aria-label='اطلاعات تکمیلی طرح'
-                  >
-                    <HelpCircle className='size-4' />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side='bottom' className='max-w-xs text-right'>
-                  <p className='mb-1 font-medium'>ضمانت‌های طرح</p>
-                  <ul className='list-disc space-y-1 pr-4 text-xs'>
-                    {planGuarantees.map(guarantee => (
-                      <li key={guarantee}>{guarantee}</li>
-                    ))}
-                  </ul>
-                </TooltipContent>
-              </Tooltip>
+        {hasExternalLink ? (
+          <ExternalLinkPlanPanel
+            planName={selectedPlan?.name}
+            onContinue={handleExternalLinkRedirect}
+            variant='request'
+          />
+        ) : (
+          <div className='bg-card rounded-2xl shadow-lg p-6 h-fit'>
+            <div className='mb-8 flex items-center gap-2'>
+              <h3 className='text-lg font-bold'>جزئیات وام</h3>
+              {!!planGuarantees?.length && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type='button'
+                      className='inline-flex text-muted-foreground hover:text-primary transition-colors'
+                      aria-label='اطلاعات تکمیلی طرح'
+                    >
+                      <HelpCircle className='size-4' />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side='bottom' className='max-w-xs text-right'>
+                    <p className='mb-1 font-medium'>ضمانت‌های طرح</p>
+                    <ul className='list-disc space-y-1 pr-4 text-xs'>
+                      {planGuarantees.map(guarantee => (
+                        <li key={guarantee}>{guarantee}</li>
+                      ))}
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+
+            {loanCalculation && (
+              <div className='space-y-4'>
+                <div className='flex justify-between items-center py-3 border-b'>
+                  <span className='text-muted-foreground'>مبلغ قسط ماهانه</span>
+                  <span className='font-bold text-lg'>
+                    {formatNumber(loanCalculation.monthlyInstallment)} ریال
+                  </span>
+                </div>
+
+                <div className='flex justify-between items-center py-3 border-b'>
+                  <span className='text-muted-foreground'>اعتبار دریافتی شما</span>
+                  <span className='font-medium'>
+                    {formatNumber(loanCalculation.netReceived)} ریال
+                  </span>
+                </div>
+
+                <div className='flex justify-between items-center py-3 border-b'>
+                  <span className='text-muted-foreground'>سود پرداختی</span>
+                  <span className='font-medium'>
+                    {formatNumber(loanCalculation.totalInterest)} ریال
+                  </span>
+                </div>
+
+                <div className='flex justify-between items-center py-3'>
+                  <span className='font-bold'>جمع کل اقساط</span>
+                  <span className='font-bold text-lg'>
+                    {formatNumber(loanCalculation.totalRepayment)} ریال
+                  </span>
+                </div>
+              </div>
             )}
           </div>
-
-          {!hasExternalLink && loanCalculation && (
-            <div className='space-y-4'>
-              <div className='flex justify-between items-center py-3 border-b'>
-                <span className='text-muted-foreground'>مبلغ قسط ماهانه</span>
-                <span className='font-bold text-lg'>
-                  {formatNumber(loanCalculation.monthlyInstallment)} ریال
-                </span>
-              </div>
-
-              <div className='flex justify-between items-center py-3 border-b'>
-                <span className='text-muted-foreground'>اعتبار دریافتی شما</span>
-                <span className='font-medium'>
-                  {formatNumber(loanCalculation.netReceived)} ریال
-                </span>
-              </div>
-
-              <div className='flex justify-between items-center py-3 border-b'>
-                <span className='text-muted-foreground'>سود پرداختی</span>
-                <span className='font-medium'>
-                  {formatNumber(loanCalculation.totalInterest)} ریال
-                </span>
-              </div>
-
-              <div className='flex justify-between items-center py-3'>
-                <span className='font-bold'>جمع کل اقساط</span>
-                <span className='font-bold text-lg'>
-                  {formatNumber(loanCalculation.totalRepayment)} ریال
-                </span>
-              </div>
-            </div>
-          )}
-
-          {hasExternalLink && (
-            <div className='mt-6'>
-              <p className='text-muted-foreground text-sm mb-3'>
-                با انتخاب این طرح، به صفحه دریافت اعتبار منتقل می‌شوید.
-              </p>
-              <Button className='w-full' size='lg' onClick={handleExternalLinkRedirect}>
-                دریافت اعتبار
-              </Button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       <div className='flex justify-center gap-4 mt-8'>
