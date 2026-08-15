@@ -7,6 +7,7 @@ import { X, Menu, User, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
 import { getUserInfo } from '@/lib/auth/client/user-info';
+import { useSiteTemplate } from '@/providers/site-template';
 
 type Href = `/${string}`;
 
@@ -29,6 +30,8 @@ export function Header() {
   const pathname = usePathname() as Href;
   const inverted = WITH_INVERTED_HEADERS.has(pathname);
   const transparent = !inverted;
+  const { brandName, getImageUrl } = useSiteTemplate();
+  const logoUrl = getImageUrl(inverted ? 'darkLogo' : 'lightLogo') || getImageUrl('logo');
 
   const [visible, setVisible] = useState<boolean>(true);
   const [hasScrolled, setHasScrolled] = useState<boolean>(false);
@@ -114,23 +117,17 @@ export function Header() {
 
           {/* Logo */}
           <Link href='/' className='h-6 flex-shrink-0 lg:order-first'>
-            {inverted ? (
+            {logoUrl ? (
               <Image
-                src='/logos/logo.png'
-                alt='logo'
+                src={logoUrl}
+                alt={brandName}
                 width={120}
                 height={24}
                 className='h-full w-auto'
+                unoptimized
+                priority
               />
-            ) : (
-              <Image
-                src='/logos/logo.png'
-                alt='logo'
-                width={120}
-                height={24}
-                className='h-full w-auto'
-              />
-            )}
+            ) : null}
           </Link>
 
           {/* Desktop Navigation */}

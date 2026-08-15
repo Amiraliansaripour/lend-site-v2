@@ -19,6 +19,7 @@ import { getWalletUser, createCashWallet, getPaymentToken } from '@/api/wallet';
 import { toast } from 'sonner';
 import type { Request } from './request-types';
 import type { WalletInfo } from '@/api/wallet';
+import { useSiteTemplate } from '@/providers/site-template';
 
 type RequestsCardsProps = {
   walletInfo: WalletInfo | null;
@@ -33,6 +34,8 @@ export function RequestsCards({
   isLoading,
   onWalletUpdate,
 }: RequestsCardsProps) {
+  const { brandName, getImageUrl } = useSiteTemplate();
+  const lightLogoUrl = getImageUrl('lightLogo') || getImageUrl('logo');
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [chargeAmount, setChargeAmount] = useState('');
@@ -146,13 +149,16 @@ export function RequestsCards({
         <WalletCard>
           <WalletCard.Front>
             <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-              <Image
-                src='/logos/white-logo.png'
-                alt='wallet'
-                width={86}
-                height={86}
-                className='w-28'
-              />
+              {lightLogoUrl ? (
+                <Image
+                  src={lightLogoUrl}
+                  alt={brandName}
+                  width={86}
+                  height={86}
+                  className='w-28'
+                  unoptimized
+                />
+              ) : null}
             </div>
 
             <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
@@ -179,13 +185,16 @@ export function RequestsCards({
         <WalletCard>
           <WalletCard.Front>
             <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-              <Image
-                src='/logos/white-logo.png'
-                alt='wallet'
-                width={86}
-                height={86}
-                className='w-28'
-              />
+              {lightLogoUrl ? (
+                <Image
+                  src={lightLogoUrl}
+                  alt={brandName}
+                  width={86}
+                  height={86}
+                  className='w-28'
+                  unoptimized
+                />
+              ) : null}
             </div>
 
             <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>

@@ -1,17 +1,13 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '../../ui/card';
+'use client';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 
 import StepHelpImage1 from '@/assets/images/illustrations/step1help.png';
 import StepHelpImage2 from '@/assets/images/illustrations/step2help.png';
 import StepHelpImage3 from '@/assets/images/illustrations/step3help.png';
 import StepHelpImage4 from '@/assets/images/illustrations/step4help.png';
 import Image from 'next/image';
+import { useSiteTemplate } from '@/providers/site-template';
 
 const STEPS = [
   {
@@ -37,10 +33,14 @@ const STEPS = [
 ] as const;
 
 export function LoanRequestSteps() {
+  const { withBrand } = useSiteTemplate();
+
   return (
     <section className='container'>
       <hgroup className='flex flex-col items-center gap-y-4 mb-10'>
-        <h3 className='text-lg text-center font-semibold'>مراحل دریافت وام از کارالند</h3>
+        <h3 className='text-lg text-center font-semibold'>
+          {withBrand('مراحل دریافت وام از کارالند')}
+        </h3>
         <p className='max-w-md text-center leading-7 text-pretty'>
           با طی کردن چند مرحله ساده، می‌توانید وام مورد نیاز خود را به‌سرعت دریافت کنید و از مزایای
           خرید اعتباری بهره‌مند شوید.

@@ -11,10 +11,13 @@ import { useWalletInfo } from '@/queries/wallet';
 import { formatNumber } from '@/utils/format';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import Image from 'next/image';
+import { useSiteTemplate } from '@/providers/site-template';
 
 export default function DashboardPage() {
   const breadcrumbs: Breadcrumbs = [{ label: 'داشبورد', href: '/dashboard' }];
   const userId = getUserId();
+  const { brandName, getImageUrl } = useSiteTemplate();
+  const lightLogoUrl = getImageUrl('lightLogo') || getImageUrl('logo');
 
   // Fetch and update user info on dashboard load
   useUserWithStore(userId || '');
@@ -27,7 +30,9 @@ export default function DashboardPage() {
           <WalletCard isFlippable>
             <WalletCard.Front>
               <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                <Image src='/logos/white-logo.png' width={86} height={86} alt='' />
+                {lightLogoUrl ? (
+                  <Image src={lightLogoUrl} width={86} height={86} alt={brandName} unoptimized />
+                ) : null}
               </div>
 
               <div className='absolute bottom-0'>
@@ -59,7 +64,9 @@ export default function DashboardPage() {
           <WalletCard isFlippable>
             <WalletCard.Front>
               <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                <Image src='/logos/white-logo.png' width={86} height={86} alt='' />
+                {lightLogoUrl ? (
+                  <Image src={lightLogoUrl} width={86} height={86} alt={brandName} unoptimized />
+                ) : null}
               </div>
 
               <div className='absolute bottom-0'>

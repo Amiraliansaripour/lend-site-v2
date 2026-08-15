@@ -1,7 +1,11 @@
+'use client';
+
 import Image, { StaticImageData } from 'next/image';
+
 import shopWallet from '@/assets/images/illustrations/shopWallet.png';
 import shopStore from '@/assets/images/illustrations/shopStore.png';
 import shopPayment from '@/assets/images/illustrations/shopPayment.png';
+import { useSiteTemplate } from '@/providers/site-template';
 
 type Step = {
   img: StaticImageData;
@@ -19,17 +23,19 @@ type StepItemProps = {
 };
 
 function StepItem({ step }: StepItemProps) {
+  const { withBrand } = useSiteTemplate();
+
   return (
     <div className='flex flex-col items-center justify-center'>
       <Image
         src={step.img}
         className='w-full h-full object-cover max-w-72'
-        alt={step.text}
+        alt={withBrand(step.text)}
         width={288}
         height={288}
       />
       <p className='text-center text-xs lg:text-xl font-medium text-purple-primary pt-6'>
-        {step.text}
+        {withBrand(step.text)}
       </p>
     </div>
   );

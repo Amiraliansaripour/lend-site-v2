@@ -10,6 +10,7 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion';
 import { ReactNode } from 'react';
+import { useSiteTemplate } from '@/providers/site-template';
 
 type QuestionItem = {
   category: string;
@@ -112,9 +113,13 @@ const QUESTIONS: QuestionItem[] = [
 ];
 
 export function HelpQuestions() {
+  const { withBrand } = useSiteTemplate();
   const loanInfoQuestions = QUESTIONS.filter(q => q.category === 'loan-info');
   const loanProcessQuestions = QUESTIONS.filter(q => q.category === 'loan-process');
   const repaymentQuestions = QUESTIONS.filter(q => q.category === 'repayment');
+
+  const renderTitle = (title: string) => withBrand(title);
+  const renderDesc = (desc: string) => withBrand(desc);
 
   return (
     <div className='mb-10 pb-2 md:mb-36 mt-28 md:mt-28'>
@@ -150,10 +155,10 @@ export function HelpQuestions() {
                 className='border border-[#a9a9a9] rounded'
               >
                 <AccordionTrigger className='px-3 py-4 hover:no-underline text-right'>
-                  <span className='text-sm md:text-base flex-1'>{item.title}</span>
+                  <span className='text-sm md:text-base flex-1'>{renderTitle(item.title)}</span>
                 </AccordionTrigger>
                 <AccordionContent className='px-3 pb-4'>
-                  <p className='text-xs md:text-base text-darker-text'>{item.desc}</p>
+                  <p className='text-xs md:text-base text-darker-text'>{renderDesc(item.desc)}</p>
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -169,10 +174,10 @@ export function HelpQuestions() {
                 className='border border-[#a9a9a9] rounded'
               >
                 <AccordionTrigger className='px-3 py-4 hover:no-underline text-right'>
-                  <span className='text-sm md:text-base flex-1'>{item.title}</span>
+                  <span className='text-sm md:text-base flex-1'>{renderTitle(item.title)}</span>
                 </AccordionTrigger>
                 <AccordionContent className='px-3 pb-4'>
-                  <p className='text-xs md:text-base text-darker-text'>{item.desc}</p>
+                  <p className='text-xs md:text-base text-darker-text'>{renderDesc(item.desc)}</p>
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -188,10 +193,10 @@ export function HelpQuestions() {
                 className='border border-[#a9a9a9] rounded'
               >
                 <AccordionTrigger className='px-3 py-4 hover:no-underline text-right'>
-                  <span className='text-sm md:text-base flex-1'>{item.title}</span>
+                  <span className='text-sm md:text-base flex-1'>{renderTitle(item.title)}</span>
                 </AccordionTrigger>
                 <AccordionContent className='px-3 pb-4'>
-                  <p className='text-xs md:text-base text-darker-text'>{item.desc}</p>
+                  <p className='text-xs md:text-base text-darker-text'>{renderDesc(item.desc)}</p>
                 </AccordionContent>
               </AccordionItem>
             ))}

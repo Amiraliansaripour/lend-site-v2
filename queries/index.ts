@@ -19,3 +19,4 @@ export * from './wallet';
 export * from './installments';
 export * from './request';
 export * from './users';
+export * from './site-template';

@@ -11,9 +11,7 @@ import { cn } from '@/lib/utils';
 import { dirFor } from '@/i18n/routing';
 
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
-
-import CashCard from '@/assets/images/cashcard.png';
-import CreditCard from '@/assets/images/creditcard.png';
+import { useSiteTemplate } from '@/providers/site-template';
 
 type PageParams = Awaited<PageProps<'/[locale]'>['params']>;
 
@@ -23,6 +21,9 @@ const BACK_CARD =
 export function WalletsDescription() {
   const { locale } = useParams<PageParams>();
   const dir = dirFor(locale);
+  const { getImageUrl } = useSiteTemplate();
+  const creditCardUrl = getImageUrl('creditCard');
+  const cashCardUrl = getImageUrl('cashCard');
 
   const [tab, setTab] = useState('credit');
   const index = tab === 'credit' ? 0 : 1;
@@ -77,14 +78,16 @@ export function WalletsDescription() {
               index === 0 ? 'z-10' : BACK_CARD,
             )}
           >
-            <Image
-              alt='credit card'
-              width={200}
-              height={400}
-              src={CreditCard}
-              unoptimized
-              className='size-full object-cover select-none pointer-events-none'
-            />
+            {creditCardUrl ? (
+              <Image
+                alt='credit card'
+                width={200}
+                height={400}
+                src={creditCardUrl}
+                unoptimized
+                className='size-full object-cover select-none pointer-events-none'
+              />
+            ) : null}
           </div>
           <div
             onClick={() => setTab('cash')}
@@ -93,14 +96,16 @@ export function WalletsDescription() {
               index === 1 ? 'z-10' : BACK_CARD,
             )}
           >
-            <Image
-              alt='cash card'
-              width={200}
-              height={400}
-              src={CashCard}
-              unoptimized
-              className='size-full object-cover select-none pointer-events-none'
-            />
+            {cashCardUrl ? (
+              <Image
+                alt='cash card'
+                width={200}
+                height={400}
+                src={cashCardUrl}
+                unoptimized
+                className='size-full object-cover select-none pointer-events-none'
+              />
+            ) : null}
           </div>
         </section>
       </section>
