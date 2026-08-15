@@ -45,7 +45,7 @@ export function ExternalLinkPlanPanel({
         <div className='mb-6 sm:mb-8 flex items-center justify-between gap-3'>
           <span className='inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-medium text-primary'>
             <Sparkles className='size-3.5' />
-            طرح لینک‌دار
+            لینک اختصاصی
           </span>
           {planName && (
             <span className='truncate max-w-[55%] text-xs sm:text-sm text-muted-foreground'>
@@ -80,18 +80,34 @@ export function ExternalLinkPlanPanel({
 
           <ol className='w-full max-w-sm space-y-2.5 text-right mb-8 sm:mb-10'>
             {[
-              'طرح لینک‌دار را انتخاب کرده‌اید',
-              'با یک کلیک به صفحه اختصاصی می‌روید',
-              'فرآیند دریافت اعتبار را آنجا تکمیل می‌کنید',
+              {
+                key: 'selected',
+                content: planName ? (
+                  <>
+                    طرح <span className='font-bold text-primary'>{planName}</span> را انتخاب
+                    کرده‌اید
+                  </>
+                ) : (
+                  'این طرح را انتخاب کرده‌اید'
+                ),
+              },
+              {
+                key: 'redirect',
+                content: 'با یک کلیک به صفحه اختصاصی می‌روید',
+              },
+              {
+                key: 'complete',
+                content: 'فرآیند دریافت اعتبار را آنجا تکمیل می‌کنید',
+              },
             ].map((step, index) => (
               <li
-                key={step}
+                key={step.key}
                 className='flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-2.5 text-xs sm:text-sm'
               >
                 <span className='flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground'>
                   {index + 1}
                 </span>
-                <span className='text-foreground/85'>{step}</span>
+                <span className='text-foreground/85 leading-6'>{step.content}</span>
               </li>
             ))}
           </ol>
