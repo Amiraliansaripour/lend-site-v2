@@ -75,12 +75,12 @@ export function RequestSummaryBar({
 
     if (!creditAmount || !planName) return null;
 
-    const planForCalc = planData ?? {
-      percentage: previewData?.planPercentage
-        ? Number(previewData.planPercentage)
-        : planData?.percentage,
-      firstBankFee: previewData?.planFirstBankFee ?? planData?.firstBankFee,
-      firstSystemFee: previewData?.planFirstSystemFee ?? planData?.firstSystemFee,
+    const planForCalc = {
+      percentage:
+        planData?.percentage ??
+        (previewData?.planPercentage ? Number(previewData.planPercentage) : 0),
+      firstBankFee: planData?.firstBankFee ?? previewData?.planFirstBankFee,
+      firstSystemFee: planData?.firstSystemFee ?? previewData?.planFirstSystemFee,
       period: period ?? planData?.period,
     };
 
