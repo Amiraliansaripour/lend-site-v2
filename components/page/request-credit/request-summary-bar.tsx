@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
-import { CalendarClock, Landmark, Percent, Receipt, Wallet } from 'lucide-react';
+import { useMemo } from 'react';
+import { Banknote, CalendarClock, Coins, Percent, Receipt, Wallet } from 'lucide-react';
 import type { PlanDetail } from '@/api/plan';
 import type { RequestPreviewData } from '@/api/request';
 import { calculateLoanSummary } from '@/utils/loan-calculator';
@@ -13,13 +13,9 @@ type RequestLike = {
   planName?: string | null;
   period?: number | null;
   planPeriod?: string | null;
-  planFinancierName?: string | null;
-  financierName?: string | null;
-  planPercentage?: string | null;
-  totalRefundAmount?: number | null;
   loanDetailAmount?: number | null;
   feeAmount?: number | null;
-  planId?: string | null;
+  totalRefundAmount?: number | null;
 };
 
 interface RequestSummaryBarProps {
@@ -30,30 +26,45 @@ interface RequestSummaryBarProps {
 }
 
 type SummaryItem = {
-  key: string;
+  key: 'amount' | 'installment' | 'received' | 'interest' | 'total' | 'period';
   label: string;
   value: string;
-  icon: ReactNode;
   featured?: boolean;
 };
+
+function firstPositiveAmount(...values: Array<number | null | undefined>): number | null {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
+  }
+  return null;
+}
 
 function resolvePeriod(
   preview?: RequestPreviewData | null,
   request?: RequestLike | null,
   plan?: PlanDetail | null,
 ) {
-  if (preview?.period) return preview.period;
-  if (request?.period) return request.period;
-  if (plan?.period) return plan.period;
-  const fromPlanPeriod = preview?.planPeriod || request?.planPeriod;
-  if (fromPlanPeriod) {
-    const parsed = parseInt(String(fromPlanPeriod), 10);
-    if (Number.isFinite(parsed) && parsed > 0) return parsed;
-  }
-  return null;
+  return firstPositiveAmount(
+    preview?.period,
+    request?.period,
+    plan?.period,
+    preview?.planPeriod ? Number(preview.planPeriod) : null,
+    request?.planPeriod ? Number(request.planPeriod) : null,
+  );
 }
 
-const iconClass = 'size-3.5 shrink-0';
+function formatRial(value: number) {
+  return `${formatNumber(value)} ریال`;
+}
+
+const STAT_ICONS = {
+  amount: Wallet,
+  installment: Receipt,
+  received: Banknote,
+  interest: Percent,
+  total: Coins,
+  period: CalendarClock,
+} as const;
 
 export function RequestSummaryBar({
   previewData,
@@ -62,53 +73,72 @@ export function RequestSummaryBar({
   className,
 }: RequestSummaryBarProps) {
   const summary = useMemo(() => {
-    const creditAmount = previewData?.creditAmount ?? requestData?.creditAmount ?? null;
-    const planName = previewData?.planName ?? requestData?.planName ?? planData?.name ?? null;
-    const financierName =
-      previewData?.planFinancierName ??
-      previewData?.financierName ??
-      requestData?.planFinancierName ??
-      requestData?.financierName ??
-      planData?.financierName ??
-      null;
+    const planName = previewData?.planName || requestData?.planName || planData?.name || null;
+    const creditAmount = firstPositiveAmount(previewData?.creditAmount, requestData?.creditAmount);
     const period = resolvePeriod(previewData, requestData, planData);
 
-    if (!creditAmount || !planName) return null;
+    // Same calculator as the previous step, only when full plan data exists
+    const calc = creditAmount && planData ? calculateLoanSummary(creditAmount, planData) : null;
 
-    const planForCalc = {
-      percentage:
-        planData?.percentage ??
-        (previewData?.planPercentage ? Number(previewData.planPercentage) : 0),
-      firstBankFee: planData?.firstBankFee ?? previewData?.planFirstBankFee,
-      firstSystemFee: planData?.firstSystemFee ?? previewData?.planFirstSystemFee,
-      period: period ?? planData?.period,
-    };
+    const monthlyInstallment = firstPositiveAmount(
+      calc?.monthlyInstallment,
+      previewData?.loanDetailAmount,
+      requestData?.loanDetailAmount,
+    );
+    const netReceived = firstPositiveAmount(calc?.netReceived);
+    const totalInterest = firstPositiveAmount(
+      calc?.totalInterest,
+      previewData?.feeAmount,
+      requestData?.feeAmount,
+    );
+    const totalRepayment = firstPositiveAmount(
+      calc?.totalRepayment,
+      previewData?.totalRefundAmount,
+      requestData?.totalRefundAmount,
+    );
 
-    const calc = calculateLoanSummary(creditAmount, planForCalc);
-    const monthlyInstallment =
-      calc?.monthlyInstallment ??
-      previewData?.loanDetailAmount ??
-      requestData?.loanDetailAmount ??
-      null;
-    const totalInterest =
-      calc?.totalInterest ?? previewData?.feeAmount ?? requestData?.feeAmount ?? null;
+    if (!planName && !creditAmount) return null;
 
-    const stats: SummaryItem[] = [
-      {
+    const stats: SummaryItem[] = [];
+
+    if (creditAmount) {
+      stats.push({
         key: 'amount',
         label: 'مبلغ درخواستی',
-        value: `${formatNumber(creditAmount)} ریال`,
-        icon: <Wallet className={iconClass} />,
-      },
-    ];
+        value: formatRial(creditAmount),
+      });
+    }
 
-    if (monthlyInstallment != null && monthlyInstallment > 0) {
+    if (monthlyInstallment) {
       stats.push({
         key: 'installment',
         label: 'قسط ماهانه',
-        value: `${formatNumber(monthlyInstallment)} ریال`,
-        icon: <Receipt className={iconClass} />,
+        value: formatRial(monthlyInstallment),
         featured: true,
+      });
+    }
+
+    if (netReceived && netReceived !== creditAmount) {
+      stats.push({
+        key: 'received',
+        label: 'اعتبار دریافتی',
+        value: formatRial(netReceived),
+      });
+    }
+
+    if (totalInterest) {
+      stats.push({
+        key: 'interest',
+        label: 'سود پرداختی',
+        value: formatRial(totalInterest),
+      });
+    }
+
+    if (totalRepayment) {
+      stats.push({
+        key: 'total',
+        label: 'جمع کل اقساط',
+        value: formatRial(totalRepayment),
       });
     }
 
@@ -117,27 +147,10 @@ export function RequestSummaryBar({
         key: 'period',
         label: 'مدت بازپرداخت',
         value: `${formatNumber(period)} ماه`,
-        icon: <CalendarClock className={iconClass} />,
       });
     }
 
-    if (totalInterest != null && totalInterest > 0) {
-      stats.push({
-        key: 'interest',
-        label: 'سود پرداختی',
-        value: `${formatNumber(totalInterest)} ریال`,
-        icon: <Percent className={iconClass} />,
-      });
-    }
-
-    if (financierName) {
-      stats.push({
-        key: 'financier',
-        label: 'تامین‌کننده',
-        value: financierName,
-        icon: <Landmark className={iconClass} />,
-      });
-    }
+    if (!planName && stats.length === 0) return null;
 
     return { planName, stats };
   }, [previewData, requestData, planData]);
@@ -147,62 +160,54 @@ export function RequestSummaryBar({
   return (
     <section
       aria-label='خلاصه درخواست'
-      className={cn(
-        'relative mb-8 overflow-hidden rounded-2xl border border-border/70 bg-muted/30',
-        className,
-      )}
+      className={cn('relative mb-8 rounded-2xl border border-border/70 bg-muted/30', className)}
     >
-      <div
-        aria-hidden
-        className='pointer-events-none absolute inset-y-0 left-0 w-24 bg-linear-to-r from-foreground/4 to-transparent'
-      />
       <div
         aria-hidden
         className='pointer-events-none absolute -right-10 -top-12 size-32 rounded-full bg-foreground/4 blur-3xl'
       />
 
-      <div className='relative flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-stretch lg:gap-0'>
-        <div className='flex min-w-0 items-center gap-3 lg:w-55 lg:shrink-0 lg:pl-1 lg:pr-6'>
+      <div className='relative flex items-center gap-4 overflow-x-auto p-4 sm:p-5'>
+        <div className='flex shrink-0 items-center gap-3 pl-1'>
           <div className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-foreground text-background shadow-sm'>
             <span className='text-sm font-bold leading-none'>طرح</span>
           </div>
-          <div className='min-w-0'>
+          <div className='max-w-44'>
             <div className='text-[11px] text-muted-foreground mb-0.5'>طرح انتخاب‌شده</div>
-            <div className='truncate text-base font-bold tracking-tight' title={summary.planName}>
-              {summary.planName}
+            <div
+              className='truncate text-sm font-bold tracking-tight'
+              title={summary.planName ?? undefined}
+            >
+              {summary.planName || '—'}
             </div>
           </div>
         </div>
 
-        <div className='hidden w-px bg-border/80 lg:block' />
-        <div className='h-px bg-border/80 lg:hidden' />
+        <div className='h-10 w-px shrink-0 bg-border/80' />
 
-        <div className='grid min-w-0 flex-1 grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-none lg:flex lg:items-stretch'>
-          {summary.stats.map(item => (
-            <div
-              key={item.key}
-              className={cn(
-                'min-w-0 rounded-xl px-3 py-2.5 lg:flex-1 lg:rounded-none lg:px-4 lg:py-0 lg:flex lg:flex-col lg:justify-center',
-                item.featured
-                  ? 'bg-background/80 ring-1 ring-foreground/8 lg:bg-transparent lg:ring-0'
-                  : 'bg-transparent',
-              )}
-            >
-              <div className='mb-1 flex items-center gap-1.5 text-[11px] text-muted-foreground'>
-                <span className='opacity-70'>{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
+        <div className='flex min-w-0 flex-1 items-center justify-between'>
+          {summary.stats.map((item, index) => {
+            const Icon = STAT_ICONS[item.key];
+            return (
               <div
-                className={cn(
-                  'truncate text-sm leading-6',
-                  item.featured ? 'font-bold text-foreground' : 'font-medium text-foreground/90',
-                )}
-                title={item.value}
+                key={item.key}
+                className={cn('min-w-0 flex-1 px-4', index > 0 && 'border-r border-border/70')}
               >
-                {item.value}
+                <div className='mb-1 flex items-center gap-1.5 text-[11px] text-muted-foreground'>
+                  <Icon className='size-3.5 shrink-0 opacity-70' />
+                  <span className='truncate'>{item.label}</span>
+                </div>
+                <div
+                  className={cn(
+                    'text-sm leading-6 whitespace-nowrap',
+                    item.featured ? 'font-bold text-foreground' : 'font-medium text-foreground/90',
+                  )}
+                >
+                  {item.value}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

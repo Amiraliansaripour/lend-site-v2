@@ -53,12 +53,13 @@ export default function RequestCreditPage() {
   const [correctionStepIndex, setCorrectionStepIndex] = useState(0);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isBackToPaymentDialogOpen, setIsBackToPaymentDialogOpen] = useState(false);
+  const [createdRequestId, setCreatedRequestId] = useState<string | null>(null);
 
   const activeStepRef = useRef<HTMLDivElement>(null);
 
   const { data: user } = useUserWithStore(userId || '');
 
-  const id = searchParams.get('id');
+  const id = searchParams.get('id') || createdRequestId;
   const editMode = searchParams.get('editMode') === 'true';
 
   const { data: requestData } = useRequestWithPlanData(id || '');
@@ -141,7 +142,7 @@ export default function RequestCreditPage() {
         filteredSteps = filteredSteps.filter(step => step.key !== 3);
       }
       setStepsToShow(filteredSteps);
-      setCurrentStep(normalizedStep);
+      setCurrentStep(prev => (prev > 1 ? Math.max(prev, normalizedStep) : normalizedStep));
       setIsStepsLoaded(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,6 +196,8 @@ export default function RequestCreditPage() {
     const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
     if (currentIndex !== -1 && currentIndex < stepsToShow.length - 1) {
       setCurrentStep(stepsToShow[currentIndex + 1].key);
+    } else if (currentStep < 8) {
+      setCurrentStep(currentStep + 1);
     } else {
       router.push('/requests');
     }
@@ -367,7 +370,13 @@ export default function RequestCreditPage() {
             {(!isStepsLoaded || stepsToShow.find(step => step.key === 1)) && currentStep === 1 && (
               <div key='step1'>
                 <LoanCalc
-                  onNext={() => handleNext()}
+                  onNext={data => {
+                    if (data?.requestId) {
+                      setCreatedRequestId(data.requestId);
+                      router.replace(`/requests/request-credit?id=${data.requestId}`);
+                    }
+                    handleNext();
+                  }}
                   isEditMode={isEditMode}
                   existingRequests={userRequests}
                   existingRequestId={id || undefined}

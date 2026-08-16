@@ -140,7 +140,12 @@ export async function createRequest(payload: CreateRequestPayload) {
     throw new Error(data?.message || 'خطا در ایجاد درخواست');
   }
 
-  return data.data;
+  const created = data.data as CreateRequestResponse | undefined;
+  if (!created?.id) {
+    throw new Error(data?.message || 'درخواست ثبت شد اما شناسه دریافت نشد');
+  }
+
+  return created;
 }
 
 export async function changeRequestState(payload: RequestStateChangePayload) {

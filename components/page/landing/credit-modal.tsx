@@ -53,17 +53,17 @@ export function CreditModal({
     ? !checkedFee || !checkNational
     : !checkedTerms || !checkedFee || !checkNational;
 
-  const boxClass = 'p-5 text-black bg-[#EDEDED] rounded-[4px] text-sm lg:text-base';
+  const boxClass = 'p-5 text-black bg-[#EDEDED] rounded-[4px] text-sm lg:text-base text-center';
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className='min-w-2xl'>
-          <DialogHeader>
+          <DialogHeader className='text-center sm:text-center'>
             <DialogTitle className='text-base lg:text-xl font-semibold text-center'>
               نکات قابل توجه جهت درخواست اعتبار (کیف پول اعتباری)
             </DialogTitle>
-            <DialogDescription className='text-[#454545] text-sm lg:text-base'>
+            <DialogDescription className='text-[#454545] text-sm lg:text-base text-center'>
               پیش از ثبت درخواست خود بهتر است به موارد زیر توجه کنید:
             </DialogDescription>
           </DialogHeader>

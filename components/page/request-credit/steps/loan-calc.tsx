@@ -80,21 +80,28 @@ export function LoanCalc({
   const createRequestMutation = useMutation({
     mutationFn: (payload: CreateRequestPayload) => createRequest(payload),
     onSuccess: response => {
-      if (response && response.id) {
-        setIsForceDialogOpen(false);
-        toast.success('درخواست با موفقیت ایجاد شد');
-        localStorage.setItem('requestId', response.id);
-        localStorage.setItem('planId', selectedPlan!.id);
-        if (isEditMode && onNext) {
-          onNext({
-            requestId: response.id,
-            planId: selectedPlan!.id,
-            creditAmount,
-          });
-        } else {
-          router.push(`/requests/request-credit?id=${response.id}`);
-        }
+      const nextId = response?.id;
+      if (!nextId) {
+        toast.error('درخواست ثبت شد اما شناسه دریافت نشد');
+        return;
       }
+
+      setIsForceDialogOpen(false);
+      setIsModalOpen(false);
+      toast.success('درخواست با موفقیت ایجاد شد');
+      localStorage.setItem('requestId', nextId);
+      localStorage.setItem('planId', selectedPlan!.id);
+
+      if (onNext) {
+        onNext({
+          requestId: nextId,
+          planId: selectedPlan!.id,
+          creditAmount,
+        });
+        return;
+      }
+
+      router.replace(`/requests/request-credit?id=${nextId}`);
     },
     onError: (error: Error) => {
       // Backend statusCode 8: existing incomplete request — confirm, then retry with force=true
