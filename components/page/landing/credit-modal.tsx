@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatNumber } from '@/utils/format';
 import { beginingText, entireText } from './text';
+import { useSiteTemplate } from '@/providers/site-template';
 
 interface CreditModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export function CreditModal({
   onConfirm,
   isCheckRequired = false,
 }: CreditModalProps) {
+  const { withBrand } = useSiteTemplate();
   const [checkedTerms, setCheckedTerms] = useState(false);
   const [checkNational, setCheckedNational] = useState(false);
   const [checkedFee, setCheckedFee] = useState(false);
@@ -176,7 +178,7 @@ export function CreditModal({
           <ScrollArea className='max-h-[60vh]'>
             <div className='text-sm lg:text-base text-gray-700 leading-7 space-y-4 pr-4'>
               <div className='bg-blue-50 p-4 rounded-lg border-r-4 border-blue-400'>
-                <p className='text-justify'>{beginingText}</p>
+                <p className='text-justify'>{withBrand(beginingText)}</p>
               </div>
 
               <div className='space-y-4'>
@@ -184,7 +186,7 @@ export function CreditModal({
                   (paragraph, index) =>
                     paragraph.trim() && (
                       <p key={index} className='text-justify leading-relaxed'>
-                        {paragraph.trim()}
+                        {withBrand(paragraph.trim())}
                       </p>
                     ),
                 )}

@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Home,
   Store,
@@ -21,6 +23,7 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
+import { useSiteTemplate } from '@/providers/site-template';
 
 const items = [
   { title: 'داشبورد', url: '/dashboard', icon: Home },
@@ -33,6 +36,9 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const { brandName, getImageUrl } = useSiteTemplate();
+  const logoUrl = getImageUrl('logo');
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -41,7 +47,7 @@ export function AppSidebar() {
             href='/'
             className='flex justify-center items-center mb-3 border-b border-gray-200 w-full py-4'
           >
-            <img src='/logos/logo.png' className='w-44  mx-auto' />
+            {logoUrl ? <img src={logoUrl} alt={brandName} className='w-44 mx-auto' /> : null}
           </Link>
           <SidebarGroupContent>
             <SidebarMenu>

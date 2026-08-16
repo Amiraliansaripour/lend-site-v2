@@ -28,6 +28,7 @@ import { base64ToDataUrl } from '@/utils/convert';
 
 // * cookies
 import { accessToken } from '@/lib/auth/client/cookies';
+import { BrandName } from '@/components/brand-text';
 
 // * components
 import { useAppForm } from './form';
@@ -194,7 +195,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
     <Card className='lg:w-100'>
       <CardHeader>
         <div className='text-center mb-4'>
-          <span className='text-2xl font-bold text-brand'>Karalend</span>
+          <span className='text-2xl font-bold text-brand'>
+            <BrandName />
+          </span>
         </div>
         <CardTitle>ورود به حساب کاربری</CardTitle>
         <CardDescription className='mt-2'>

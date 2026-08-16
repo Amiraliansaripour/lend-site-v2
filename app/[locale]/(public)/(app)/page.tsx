@@ -1,23 +1,25 @@
+'use client';
+
 import { Lightbulb, MapPin, CreditCard, ShoppingCart, Calendar, FileSearch } from 'lucide-react';
+import { JSX } from 'react';
 
 import { Faq } from '@/components/faq';
 import { Banner } from '@/components/page/landing/banner';
 import { WhyUs } from '@/components/page/landing/why-us';
-import { ScrollIcon } from '@/components/scroll-icon';
 import { LoanRequestSteps } from '@/components/page/landing/loan-request-steps';
 import { WalletsDescription } from '@/components/page/landing/wallets-description';
-
-import LandingBanner from '@/assets/images/banners/landing.webp';
-
-import { JSX } from 'react';
 import { Calculator } from '@/components/page/landing';
+import { useSiteTemplate } from '@/providers/site-template';
 
-export default async function IndexPage() {
+export default function IndexPage() {
+  const { withBrand } = useSiteTemplate();
+
   type QuestionItem = {
     question: string;
     answer: string;
     icon: JSX.Element;
   };
+
   const QUESTIONS: QuestionItem[] = [
     {
       question: 'برای دریافت وام چه مدارکی لازم است؟',
@@ -32,15 +34,17 @@ export default async function IndexPage() {
       icon: <MapPin />,
     },
     {
-      question: 'سقف مبلغ وام در کارالند چقدر است؟',
-      answer:
+      question: withBrand('سقف مبلغ وام در کارالند چقدر است؟'),
+      answer: withBrand(
         'سقف مبلغ وامی که می‌توانید از طریق کارالند دریافت کنید براساس رتبه‌ی اعتباری شما متفاوت خواهد بود اما در حال حاضر بالاترین سقف 100 میلیون تومان است.',
+      ),
       icon: <CreditCard />,
     },
     {
       question: 'چه کالاهایی را می توان با تسهیلات خریداری کرد؟',
-      answer:
+      answer: withBrand(
         'شما می توانید با مراجعه به سایت هر یک از فروشگاه‌های آنلاین طرف قرارداد با کارالند، هر کالایی را خریداری کنید و در هنگام پرداخت، گزینه پرداخت با کارالند را انتخاب کنید.',
+      ),
       icon: <ShoppingCart />,
     },
     {
@@ -55,6 +59,7 @@ export default async function IndexPage() {
       icon: <FileSearch />,
     },
   ];
+
   return (
     <div className='space-y-32'>
       <Banner />

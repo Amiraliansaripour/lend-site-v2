@@ -1,9 +1,14 @@
+'use client';
+
 import Image from 'next/image';
+
 import type { ProcessStep } from './merchant-signup-types';
+import { useSiteTemplate } from '@/providers/site-template';
 import StepHelpImage1 from '@/assets/images/illustrations/step1help.png';
 import StepHelpImage2 from '@/assets/images/illustrations/step2help.png';
 import StepHelpImage3 from '@/assets/images/illustrations/step3help.png';
 import StepHelpImage4 from '@/assets/images/illustrations/step4help.png';
+
 const PROCESS_STEPS: ProcessStep[] = [
   {
     step: 1,
@@ -33,6 +38,8 @@ const PROCESS_STEPS: ProcessStep[] = [
 ];
 
 export function MerchantSignupProcess() {
+  const { withBrand } = useSiteTemplate();
+
   return (
     <div className='w-full'>
       <div className='flex flex-col justify-center w-full items-center px-7 mb-[63px] pt-14'>
@@ -67,7 +74,7 @@ export function MerchantSignupProcess() {
               </div>
               <h3 className='text-lg font-bold text-zinc-800'>{step.title}</h3>
               <p className='text-sm font-normal text-zinc-600 leading-loose tracking-tight mt-2 max-w-xs'>
-                {step.description}
+                {withBrand(step.description)}
               </p>
             </div>
           ))}

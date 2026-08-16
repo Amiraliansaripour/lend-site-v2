@@ -1,9 +1,14 @@
+'use client';
+
 import { User } from 'lucide-react';
 
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
+import { useSiteTemplate } from '@/providers/site-template';
 
 export function MembershipBanner() {
+  const { withBrand } = useSiteTemplate();
+
   return (
     <div className='stack isolate rounded-lg overflow-hidden'>
       <div className='bg-linear-to-t from-[#9c27b0] via-[#4a148c] to-[#2c034b] relative z-0'>
@@ -20,7 +25,7 @@ export function MembershipBanner() {
 
         <hgroup className='text-white space-y-4'>
           <h4 className='text-lg lg:text-xl font-bold'>
-            شما هم بخشی از خانواده بزرگ کارالند باشید.
+            {withBrand('شما هم بخشی از خانواده بزرگ کارالند باشید.')}
           </h4>
           <p className='text-sm lg:text-base leading-7'>
             بیش از ۶۰۰ کاربر فعال به ما اعتماد کرده اند، الان نوبت شماست.
