@@ -126,18 +126,18 @@ export class ExistingRequestError extends Error {
 }
 
 export async function createRequest(payload: CreateRequestPayload) {
-  const { data, resp } = await api.post<CreateRequestPayload, APIResult<CreateRequestResponse>>(
+  const { data } = await api.post<CreateRequestPayload, APIResult<CreateRequestResponse>>(
     '/Request/Create',
     payload,
     { suppressErrorToast: true },
   );
 
-  if (data.statusCode === REQUEST_CREATE_EXISTING_REQUEST_STATUS) {
-    throw new ExistingRequestError(data.message);
+  if (data?.statusCode === REQUEST_CREATE_EXISTING_REQUEST_STATUS) {
+    throw new ExistingRequestError(data.message || 'درخواست قبلی شما هنوز تکمیل نشده است');
   }
 
-  if (!data.isSuccess) {
-    throw new Error(data.message || 'خطا در ایجاد درخواست');
+  if (!data?.isSuccess) {
+    throw new Error(data?.message || 'خطا در ایجاد درخواست');
   }
 
   return data.data;

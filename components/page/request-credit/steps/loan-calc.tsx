@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from '@/i18n/navigation';
 import { ExternalLink, HelpCircle } from 'lucide-react';
@@ -9,7 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFinancierPlans, getPlan, type PlanDetail } from '@/api/plan';
 import { createRequest, ExistingRequestError } from '@/api/facility';
-import { getUserRequests, type Request } from '@/api/request';
+import { type Request } from '@/api/request';
 import { toast } from 'sonner';
 import { calculateLoanSummary } from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
@@ -17,7 +17,6 @@ import { getUserId } from '@/lib/auth/client/user-info';
 import { CreditModal } from '@/components/page/landing/credit-modal';
 import { ExternalLinkPlanPanel } from '@/components/external-link-plan-panel';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { canSubmitNewRequest } from '@/utils/request-status';
 import type { CreateRequestPayload } from '@/types/request-credit';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +32,6 @@ interface LoanCalcProps {
 export function LoanCalc({
   onNext,
   isEditMode,
-  existingRequests = [],
   existingRequestId,
   initialPlanId,
   initialCreditAmount,
@@ -41,17 +39,37 @@ export function LoanCalc({
   const router = useRouter();
   const userId = getUserId();
 
-  const [selectedPlan, setSelectedPlan] = useState<PlanDetail | null>(null);
-  const [creditAmount, setCreditAmount] = useState(initialCreditAmount || 30000000);
+  const [userSelectedPlan, setUserSelectedPlan] = useState<PlanDetail | null>(null);
+  const [creditAmountOverride, setCreditAmountOverride] = useState<number | null>(
+    initialCreditAmount ?? null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isForceDialogOpen, setIsForceDialogOpen] = useState(false);
   const [forceDialogMessage, setForceDialogMessage] = useState('');
-  const [hasHydratedFromPreview, setHasHydratedFromPreview] = useState(false);
 
   const { data: financierData, isLoading: isLoadingPlans } = useQuery({
     queryKey: ['financier-plans'],
     queryFn: getFinancierPlans,
   });
+
+  const activePlans = useMemo(() => {
+    return financierData?.plans.filter(p => p.isActive) || [];
+  }, [financierData]);
+
+  const selectedPlan = useMemo(() => {
+    if (userSelectedPlan) {
+      return activePlans.find(plan => plan.id === userSelectedPlan.id) ?? userSelectedPlan;
+    }
+    if (initialPlanId) {
+      const matchedPlan = activePlans.find(plan => plan.id === initialPlanId);
+      if (matchedPlan) return matchedPlan;
+    }
+    if (activePlans.length === 0) return null;
+    return activePlans[activePlans.length - 1];
+  }, [userSelectedPlan, activePlans, initialPlanId]);
+
+  const creditAmount =
+    creditAmountOverride ?? initialCreditAmount ?? selectedPlan?.minAmount ?? 30000000;
 
   const { data: planDetails } = useQuery({
     queryKey: ['plan-detail', selectedPlan?.id],
@@ -60,15 +78,7 @@ export function LoanCalc({
   });
 
   const createRequestMutation = useMutation({
-    mutationFn: async (payload: CreateRequestPayload) => {
-      const requests = await getUserRequests(payload.userId);
-
-      if (!canSubmitNewRequest(requests)) {
-        throw new Error('BLOCKED_BY_STATUS');
-      }
-
-      return createRequest(payload);
-    },
+    mutationFn: (payload: CreateRequestPayload) => createRequest(payload),
     onSuccess: response => {
       if (response && response.id) {
         setIsForceDialogOpen(false);
@@ -87,51 +97,17 @@ export function LoanCalc({
       }
     },
     onError: (error: Error) => {
-      if (error.message === 'BLOCKED_BY_STATUS') {
-        toast.error(
-          'به‌دلیل وجود درخواست در حال بررسی، امکان ثبت درخواست جدید وجود ندارد. ابتدا درخواست فعلی را لغو کنید.',
-        );
-        return;
-      }
-
+      // Backend statusCode 8: existing incomplete request — confirm, then retry with force=true
       if (error instanceof ExistingRequestError) {
         setForceDialogMessage(error.message);
         setIsForceDialogOpen(true);
         return;
       }
 
+      // Any other backend rejection (e.g. request under review) — stay on this step
       toast.error(error.message || 'خطا در ایجاد درخواست');
     },
   });
-
-  const activePlans = useMemo(() => {
-    return financierData?.plans.filter(p => p.isActive) || [];
-  }, [financierData]);
-
-  useEffect(() => {
-    if (activePlans.length === 0 || hasHydratedFromPreview) return;
-
-    if (initialPlanId) {
-      const matchedPlan = activePlans.find(plan => plan.id === initialPlanId);
-      if (matchedPlan) {
-        setSelectedPlan(matchedPlan);
-        if (initialCreditAmount) {
-          setCreditAmount(initialCreditAmount);
-        } else {
-          setCreditAmount(matchedPlan.minAmount);
-        }
-        setHasHydratedFromPreview(true);
-        return;
-      }
-    }
-
-    if (!selectedPlan) {
-      const firstPlan = activePlans[activePlans.length - 1];
-      setSelectedPlan(firstPlan);
-      setCreditAmount(initialCreditAmount || firstPlan.minAmount);
-      setHasHydratedFromPreview(true);
-    }
-  }, [activePlans, selectedPlan, initialPlanId, initialCreditAmount, hasHydratedFromPreview]);
 
   const loanCalculation = useMemo(() => {
     // Prefer full plan details; fall back to list plan from GetPlanForLend
@@ -141,8 +117,8 @@ export function LoanCalc({
   }, [planDetails, selectedPlan, creditAmount]);
 
   const handlePlanSelect = (plan: PlanDetail) => {
-    setSelectedPlan(plan);
-    setCreditAmount(plan.minAmount);
+    setUserSelectedPlan(plan);
+    setCreditAmountOverride(plan.minAmount);
   };
 
   const handleSubmit = () => {
@@ -168,13 +144,6 @@ export function LoanCalc({
       } else {
         router.push(`/requests/request-credit?id=${existingRequestId}`);
       }
-      return;
-    }
-
-    if (!canSubmitNewRequest(existingRequests)) {
-      toast.error(
-        'به‌دلیل وجود درخواست در حال بررسی، امکان ثبت درخواست جدید وجود ندارد. ابتدا درخواست فعلی را لغو کنید.',
-      );
       return;
     }
 
@@ -255,7 +224,7 @@ export function LoanCalc({
                   <Slider
                     dir='ltr'
                     value={[creditAmount]}
-                    onValueChange={value => setCreditAmount(value[0])}
+                    onValueChange={value => setCreditAmountOverride(value[0])}
                     min={minValue}
                     max={maxValue}
                     step={1000000}

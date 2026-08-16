@@ -15,6 +15,7 @@ import {
   Collateral,
   AcceptByUser,
 } from '@/components/page/request-credit';
+import { RequestSummaryBar } from '@/components/page/request-credit/request-summary-bar';
 import { getUserId } from '@/lib/auth/client/user-info';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 
@@ -346,6 +347,14 @@ export default function RequestCreditPage() {
       <PageContent title='مراحل ثبت درخواست'>
         <div className='rounded-2xl bg-card p-6 shadow-lg'>
           {renderProgressBar()}
+
+          {currentStep > 1 && (
+            <RequestSummaryBar
+              previewData={previewData}
+              requestData={requestData}
+              planData={planData}
+            />
+          )}
 
           {isReadOnly && (
             <div className='mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>

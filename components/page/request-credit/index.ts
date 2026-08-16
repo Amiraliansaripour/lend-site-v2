@@ -9,3 +9,4 @@ export { Collateral } from './steps/collateral';
 export { ChequeRegistration } from './steps/cheque-registration';
 export { ProformaInvoice } from './steps/proforma-invoice';
 export { AcceptByUser } from './steps/accept-by-user';
+export { RequestSummaryBar } from './request-summary-bar';
