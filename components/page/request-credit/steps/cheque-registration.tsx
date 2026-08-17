@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,7 @@ import { Upload, X, FileCheck, Loader2, HelpCircle, ChevronDown, ChevronUp } fro
 import { cn } from '@/lib/utils';
 import { useRegisterCheque, useChangeRequestState } from '@/mutations/request';
 import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile, previewImageToSrc } from '@/lib/image-file';
+import { getShopImageUrl } from '@/lib/shop-utils';
 import type { RequestPreviewData } from '@/api/request';
 
 interface ChequeRegistrationProps {
@@ -59,6 +59,13 @@ const FILE_LABELS: Record<FileKey, string> = {
   salaryDeductionImage: 'تصویر مدرک کسر از حقوق',
 };
 
+function attachmentIdFromFilePath(filePath?: string | null): string | undefined {
+  if (!filePath) return undefined;
+  const filename = filePath.split(/[\\/]/).pop() || filePath;
+  const id = filename.replace(/\.[^.]+$/, '');
+  return id || undefined;
+}
+
 interface FileUploadAreaProps {
   fileKey: FileKey;
   uploadedFile?: UploadedFile;
@@ -104,11 +111,11 @@ const FileUploadArea = ({
         {uploadedFile ? (
           <div className='relative z-10 space-y-2'>
             <div className='relative w-full h-32'>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={uploadedFile.preview}
                 alt={FILE_LABELS[fileKey]}
-                fill
-                className='object-contain rounded'
+                className='h-32 w-full rounded object-contain'
               />
             </div>
             <p className='text-xs text-gray-600 truncate'>
@@ -199,17 +206,37 @@ export function ChequeRegistration({
     const nextFiles: Partial<Record<FileKey, UploadedFile>> = {};
     const nextProgress: Partial<Record<FileKey, UploadProgress>> = {};
 
-    const map: Array<{ key: FileKey; value?: string | null }> = [
-      { key: 'chequeImage', value: previewData.chequeFileImage },
-      { key: 'chequeBackImage', value: previewData.chequeFileImageBack },
-      { key: 'promissoryImage', value: previewData.chequeFileImagePromissory },
-      { key: 'salaryDeductionImage', value: previewData.chequeFileImageDeductionSalary },
+    const map: Array<{ key: FileKey; value?: string | null; filePath?: string | null }> = [
+      {
+        key: 'chequeImage',
+        value: previewData.chequeFileImage,
+        filePath: previewData.chequeAttachmentFilePath,
+      },
+      {
+        key: 'chequeBackImage',
+        value: previewData.chequeFileImageBack,
+        filePath: previewData.chequeAttachmentBackFilePath,
+      },
+      {
+        key: 'promissoryImage',
+        value: previewData.chequeFileImagePromissory,
+        filePath: previewData.chequeAttachmentPromissoryFilePath,
+      },
+      {
+        key: 'salaryDeductionImage',
+        value: previewData.chequeFileImageDeductionSalary,
+        filePath: previewData.chequeAttachmentDeductionSalaryFilePath,
+      },
     ];
 
     for (const item of map) {
-      const src = previewImageToSrc(item.value);
+      const src = previewImageToSrc(item.value) || getShopImageUrl(item.filePath);
       if (!src) continue;
-      nextFiles[item.key] = { preview: src, isExisting: true };
+      nextFiles[item.key] = {
+        preview: src,
+        isExisting: true,
+        id: attachmentIdFromFilePath(item.filePath),
+      };
       nextProgress[item.key] = { status: 'success', message: 'فایل موجود' };
     }
 
@@ -345,12 +372,15 @@ export function ChequeRegistration({
   const handleRemoveFile = useCallback(
     async (key: FileKey) => {
       const fileData = uploadedFiles[key];
-      if (fileData?.id) {
+      const attachmentId = fileData?.id;
+
+      if (attachmentId) {
         try {
-          await deleteAttachment(fileData.id);
+          await deleteAttachment(attachmentId);
           toast.success('فایل حذف شد');
         } catch {
           toast.error('خطا در حذف فایل');
+          return;
         }
       }
 

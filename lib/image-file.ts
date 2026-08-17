@@ -42,9 +42,11 @@ export function previewImageToSrc(value?: string | null, mimeType = 'image/jpeg'
 }
 
 function isProbablyFilePath(value: string): boolean {
-  if (/\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(value)) return true;
-  if (value.includes('\\') || value.includes('/') || value.includes(' ')) return true;
-  return false;
+  // Raw image base64 (JPEG starts with /9j and contains "/" characters).
+  if (/^(\/9j|iVBOR|UklGR|R0lGOD)/.test(value)) return false;
+  if (value.length > 200) return false;
+
+  return /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(value) || value.includes('\\');
 }
 
 export function resolveAttachmentImageSrc(

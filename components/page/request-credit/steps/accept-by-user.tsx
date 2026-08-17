@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,6 +14,7 @@ import { REQUEST_STATE_CANCELLED } from '@/utils/request-status';
 import { useRouter } from '@/i18n/navigation';
 import { previewImageToSrc, resolveAttachmentImageSrc } from '@/lib/image-file';
 import { getShopImageUrl } from '@/lib/shop-utils';
+import type { RequestPreviewAttachment } from '@/api/request';
 
 interface AcceptByUserProps {
   requestId: string;
@@ -24,6 +24,28 @@ interface AcceptByUserProps {
   onBack?: () => void;
   onCancel?: () => void;
   isReadOnly?: boolean;
+}
+
+function PreviewThumb({
+  src,
+  alt,
+  onOpen,
+}: {
+  src: string;
+  alt: string;
+  onOpen: (src: string) => void;
+}) {
+  return (
+    <button
+      type='button'
+      className='relative h-24 w-24 overflow-hidden rounded-md hover:opacity-80'
+      onClick={() => onOpen(src)}
+      title='برای مشاهده تصویر کامل کلیک کنید'
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} className='h-full w-full object-cover' />
+    </button>
+  );
 }
 
 export function AcceptByUser({
@@ -46,9 +68,11 @@ export function AcceptByUser({
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  // Derive user attachments from userData
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const userAttachments = (userData as any)?.attachments || [];
+  const userAttachments: RequestPreviewAttachment[] =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ((userData as any)?.attachments as RequestPreviewAttachment[] | undefined) ||
+    requestData?.userAttachments ||
+    [];
 
   const loading = isLoadingRequest || isLoadingUser;
 
@@ -83,7 +107,6 @@ export function AcceptByUser({
 
     confirmRequestMutation.mutate(requestId, {
       onSuccess: result => {
-        console.log(result);
         if (result.isSuccess) {
           toast.success('درخواست شما با موفقیت تایید شد');
           router.push('/requests');
@@ -129,13 +152,23 @@ export function AcceptByUser({
         Math.floor((requestData.planFirstSystemFee || 0) + (requestData.planFirstBankFee || 0))
     : 0;
 
+  const identityImages = [
+    ...userAttachments
+      .map(attachment => resolveAttachmentImageSrc(attachment, null, getShopImageUrl))
+      .filter((src): src is string => Boolean(src)),
+    ...(requestData?.userFileImage || [])
+      .map(image => previewImageToSrc(image))
+      .filter((src): src is string => Boolean(src)),
+  ].filter((src, index, all) => all.indexOf(src) === index);
+
   const incomeAttachments = requestData?.incomeInfoAttachments || [];
   const incomeFileImages = requestData?.incomeInfoFileImage || [];
-  const incomeImages = incomeAttachments
-    .map((attachment, index) =>
+  const incomeImages = [
+    ...incomeAttachments.map((attachment, index) =>
       resolveAttachmentImageSrc(attachment, incomeFileImages[index], getShopImageUrl),
-    )
-    .filter((src): src is string => Boolean(src));
+    ),
+    ...incomeFileImages.map(image => previewImageToSrc(image)),
+  ].filter((src, index, all): src is string => Boolean(src) && all.indexOf(src) === index);
 
   const planGuaranteesLabel = requestData?.planGuarantees?.length
     ? requestData.planGuarantees.join(' و ')
@@ -187,7 +220,6 @@ export function AcceptByUser({
         </div>
 
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-          {/* User Information Card */}
           <Card className='hover:scale-[1.02] transition-transform'>
             <CardHeader className='bg-gradient-to-br from-blue-50 to-indigo-50'>
               <CardTitle className='flex items-center text-blue-700'>
@@ -208,63 +240,26 @@ export function AcceptByUser({
                 <span className='font-medium'>کد ملی:</span>
                 <span>{requestData?.userNationalCode || 'نامشخص'}</span>
               </div>
-              {userAttachments.length > 0 && (
-                <div>
-                  <span className='font-medium'>مدارک هویتی:</span>
-                  <div className='flex flex-wrap gap-2 mt-2'>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {userAttachments.map((attachment: any, index: number) => {
-                      const src =
-                        resolveImageSrc(attachment.file, attachment.filePath) ||
-                        getShopImageUrl(attachment.filePath);
-                      if (!src) return null;
-                      return (
-                        <div
-                          key={attachment.id || index}
-                          className='relative w-24 h-24 cursor-pointer hover:opacity-80 transition-opacity'
-                          onClick={() => openImageModal(src)}
-                        >
-                          <Image
-                            src={src}
-                            alt={`مدرک ${index + 1}`}
-                            fill
-                            className='object-cover rounded-md'
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
+              <div>
+                <span className='font-medium'>مدارک هویتی:</span>
+                <div className='mt-2 flex flex-wrap gap-2'>
+                  {identityImages.length > 0 ? (
+                    identityImages.map((src, index) => (
+                      <PreviewThumb
+                        key={`${src.slice(0, 24)}-${index}`}
+                        src={src}
+                        alt={`مدرک ${index + 1}`}
+                        onOpen={openImageModal}
+                      />
+                    ))
+                  ) : (
+                    <span className='text-sm text-muted-foreground'>تصویری وجود ندارد</span>
+                  )}
                 </div>
-              )}
-              {!userAttachments.length && requestData?.userFileImage?.length && (
-                <div>
-                  <span className='font-medium'>مدارک هویتی:</span>
-                  <div className='flex flex-wrap gap-2 mt-2'>
-                    {requestData.userFileImage.map((image, index) => {
-                      const src = previewImageToSrc(image);
-                      if (!src) return null;
-                      return (
-                        <div
-                          key={index}
-                          className='relative w-24 h-24 cursor-pointer hover:opacity-80 transition-opacity'
-                          onClick={() => openImageModal(src)}
-                        >
-                          <Image
-                            src={src}
-                            alt={`مدرک ${index + 1}`}
-                            fill
-                            className='object-cover rounded-md'
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Cheque & Guarantee Information Card */}
           <Card className='hover:scale-[1.02] transition-transform'>
             <CardHeader className='bg-gradient-to-br from-green-50 to-teal-50'>
               <CardTitle className='flex items-center text-green-700'>
@@ -280,73 +275,40 @@ export function AcceptByUser({
                 </div>
               )}
               {chequeImageSrc && (
-                <div className='flex justify-between items-center'>
+                <div className='flex items-center justify-between'>
                   <span className='font-medium'>تصویر چک صیادی:</span>
-                  <div
-                    className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() => openImageModal(chequeImageSrc)}
-                  >
-                    <Image
-                      src={chequeImageSrc}
-                      alt='تصویر چک صیادی'
-                      fill
-                      className='object-cover rounded-md'
-                    />
-                  </div>
+                  <PreviewThumb src={chequeImageSrc} alt='تصویر چک صیادی' onOpen={openImageModal} />
                 </div>
               )}
               {chequeBackImageSrc && (
-                <div className='flex justify-between items-center'>
+                <div className='flex items-center justify-between'>
                   <span className='font-medium'>تصویر پشت چک صیادی:</span>
-                  <div
-                    className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() => openImageModal(chequeBackImageSrc)}
-                  >
-                    <Image
-                      src={chequeBackImageSrc}
-                      alt='تصویر پشت چک صیادی'
-                      fill
-                      className='object-cover rounded-md'
-                    />
-                  </div>
+                  <PreviewThumb
+                    src={chequeBackImageSrc}
+                    alt='تصویر پشت چک صیادی'
+                    onOpen={openImageModal}
+                  />
                 </div>
               )}
               {promissoryImageSrc && (
-                <div className='flex justify-between items-center'>
+                <div className='flex items-center justify-between'>
                   <span className='font-medium'>تصویر سفته:</span>
-                  <div
-                    className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() => openImageModal(promissoryImageSrc)}
-                  >
-                    <Image
-                      src={promissoryImageSrc}
-                      alt='تصویر سفته'
-                      fill
-                      className='object-cover rounded-md'
-                    />
-                  </div>
+                  <PreviewThumb src={promissoryImageSrc} alt='تصویر سفته' onOpen={openImageModal} />
                 </div>
               )}
               {salaryDeductionImageSrc && (
-                <div className='flex justify-between items-center'>
+                <div className='flex items-center justify-between'>
                   <span className='font-medium'>تصویر گواهی کسر از حقوق:</span>
-                  <div
-                    className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() => openImageModal(salaryDeductionImageSrc)}
-                  >
-                    <Image
-                      src={salaryDeductionImageSrc}
-                      alt='تصویر گواهی کسر از حقوق'
-                      fill
-                      className='object-cover rounded-md'
-                    />
-                  </div>
+                  <PreviewThumb
+                    src={salaryDeductionImageSrc}
+                    alt='تصویر گواهی کسر از حقوق'
+                    onOpen={openImageModal}
+                  />
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Income Information Card */}
           {(requestData?.incomeInfoIncome || requestData?.incomeInfoPayAbility) && (
             <Card className='lg:col-span-2 hover:scale-[1.02] transition-transform'>
               <CardHeader className='bg-gradient-to-br from-yellow-50 to-orange-50'>
@@ -357,39 +319,38 @@ export function AcceptByUser({
               </CardHeader>
               <CardContent className='grid grid-cols-1 md:grid-cols-3 gap-4 pt-6'>
                 <div>
-                  <span className='font-medium block mb-1'>مقدار درآمد:</span>
+                  <span className='font-medium mb-1 block'>مقدار درآمد:</span>
                   <span className='font-semibold'>
                     {formatAmount(requestData.incomeInfoIncome)}
                   </span>
                 </div>
                 <div>
-                  <span className='font-medium block mb-1'>توانایی پرداخت قسط:</span>
+                  <span className='font-medium mb-1 block'>توانایی پرداخت قسط:</span>
                   <span className='font-semibold'>
                     {formatAmount(requestData.incomeInfoPayAbility)}
                   </span>
                 </div>
                 <div>
-                  <span className='font-medium block mb-1'>تصاویر اطلاعات درآمدی:</span>
-                  <span className='flex flex-wrap gap-2'>
-                    {incomeImages.length > 0
-                      ? incomeImages.map((src, index) => (
-                          <button
-                            key={incomeAttachments[index]?.id || index}
-                            type='button'
-                            onClick={() => openImageModal(src)}
-                            className='text-blue-600 hover:text-blue-800 hover:underline text-sm'
-                          >
-                            تصویر {index + 1}
-                          </button>
-                        ))
-                      : 'تصویری وجود ندارد'}
-                  </span>
+                  <span className='font-medium mb-1 block'>تصاویر اطلاعات درآمدی:</span>
+                  <div className='mt-2 flex flex-wrap gap-2'>
+                    {incomeImages.length > 0 ? (
+                      incomeImages.map((src, index) => (
+                        <PreviewThumb
+                          key={`${src.slice(0, 24)}-${index}`}
+                          src={src}
+                          alt={`تصویر درآمدی ${index + 1}`}
+                          onOpen={openImageModal}
+                        />
+                      ))
+                    ) : (
+                      <span className='text-sm text-muted-foreground'>تصویری وجود ندارد</span>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Plan Details Card */}
           {(requestData?.planName || requestData?.planPeriod || planGuaranteesLabel) && (
             <Card className='hover:scale-[1.02] transition-transform'>
               <CardHeader className='bg-gradient-to-br from-purple-50 to-pink-50'>
@@ -421,7 +382,6 @@ export function AcceptByUser({
             </Card>
           )}
 
-          {/* Invoice / Proforma Card */}
           {requestData?.planIsInvoiceRequired && invoiceImageSrc && (
             <Card className='hover:scale-[1.02] transition-transform'>
               <CardHeader className='bg-gradient-to-br from-amber-50 to-yellow-50'>
@@ -431,25 +391,18 @@ export function AcceptByUser({
                 </CardTitle>
               </CardHeader>
               <CardContent className='space-y-3 pt-6'>
-                <div className='flex justify-between items-center'>
+                <div className='flex items-center justify-between'>
                   <span className='font-medium'>تصویر:</span>
-                  <div
-                    className='relative w-24 h-24 cursor-pointer hover:opacity-80'
-                    onClick={() => openImageModal(invoiceImageSrc)}
-                  >
-                    <Image
-                      src={invoiceImageSrc}
-                      alt='تصویر پیش فاکتور'
-                      fill
-                      className='object-cover rounded-md'
-                    />
-                  </div>
+                  <PreviewThumb
+                    src={invoiceImageSrc}
+                    alt='تصویر پیش فاکتور'
+                    onOpen={openImageModal}
+                  />
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Financial Details Card */}
           <Card className='hover:scale-[1.02] transition-transform'>
             <CardHeader className='bg-gradient-to-br from-red-50 to-orange-50'>
               <CardTitle className='flex items-center text-red-700'>
@@ -486,7 +439,7 @@ export function AcceptByUser({
                 <span className='font-medium'>اعتبار دریافتی:</span>
                 <span className='font-semibold'>{formatAmount(recieveAmount)}</span>
               </div>
-              <div className='flex justify-between pt-2 border-t text-lg font-bold text-green-700'>
+              <div className='flex justify-between border-t pt-2 text-lg font-bold text-green-700'>
                 <span>مبلغ قابل پرداخت:</span>
                 <span>{formatAmount(requestData?.totalRefundAmount)}</span>
               </div>
@@ -494,10 +447,9 @@ export function AcceptByUser({
           </Card>
         </div>
 
-        {/* Checkbox + Rules + Buttons */}
         <Card>
           <CardContent className='pt-6'>
-            <div className='flex items-center justify-center mb-6 flex-wrap gap-2'>
+            <div className='mb-6 flex flex-wrap items-center justify-center gap-2'>
               <div className='flex items-center gap-2'>
                 <Checkbox
                   id='terms-checkbox'
@@ -507,7 +459,7 @@ export function AcceptByUser({
                 />
                 <label
                   htmlFor='terms-checkbox'
-                  className='text-sm md:text-lg font-medium cursor-pointer'
+                  className='cursor-pointer text-sm font-medium md:text-lg'
                 >
                   شرایط را مطالعه کرده‌ام و می‌پذیرم
                 </label>
@@ -516,7 +468,7 @@ export function AcceptByUser({
                 <Button
                   type='button'
                   variant='link'
-                  className='text-blue-600 hover:text-blue-800 underline text-sm font-medium'
+                  className='text-sm font-medium text-blue-600 underline hover:text-blue-800'
                   onClick={() => setIsRulesModalOpen(true)}
                 >
                   مشاهده قوانین و مقررات
@@ -533,7 +485,7 @@ export function AcceptByUser({
                 >
                   {confirmRequestMutation.isPending ? (
                     <>
-                      <Loader2 className='w-4 h-4 ml-2 animate-spin' />
+                      <Loader2 className='ml-2 h-4 w-4 animate-spin' />
                       در حال ثبت...
                     </>
                   ) : (
@@ -556,7 +508,7 @@ export function AcceptByUser({
                 >
                   {isCancelling ? (
                     <>
-                      <Loader2 className='w-4 h-4 ml-2 animate-spin' />
+                      <Loader2 className='ml-2 h-4 w-4 animate-spin' />
                       در حال لغو...
                     </>
                   ) : (
@@ -569,24 +521,27 @@ export function AcceptByUser({
         </Card>
       </div>
 
-      {/* Image Preview Dialog */}
       <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
-        <DialogContent className='max-w-4xl max-h-screen p-2'>
+        <DialogContent className='max-h-screen max-w-4xl p-2'>
           {selectedImage && (
-            <div className='relative w-full h-[80vh]'>
-              <Image src={selectedImage} alt='تصویر بزرگ شده' fill className='object-contain' />
+            <div className='relative h-[80vh] w-full'>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedImage}
+                alt='تصویر بزرگ شده'
+                className='h-full w-full object-contain'
+              />
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Rules Modal */}
       <Dialog open={isRulesModalOpen} onOpenChange={setIsRulesModalOpen}>
-        <DialogContent className='max-w-2xl max-h-[80vh] overflow-y-auto'>
+        <DialogContent className='max-h-[80vh] max-w-2xl overflow-y-auto'>
           <DialogHeader>
             <DialogTitle className='text-base font-bold'>قوانین و مقررات طرح</DialogTitle>
           </DialogHeader>
-          <div className='text-sm whitespace-pre-wrap'>{ruleText}</div>
+          <div className='whitespace-pre-wrap text-sm'>{ruleText}</div>
         </DialogContent>
       </Dialog>
     </>
