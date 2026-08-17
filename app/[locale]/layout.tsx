@@ -61,6 +61,11 @@ export default async function RootLayout({ params, children }: LayoutProps<'/[lo
   return (
     <html lang={locale} dir={dirFor(locale)}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaDeferredPrompt=e;});})();`,
+          }}
+        />
         <Toaster toastOptions={{ className: 'IranYekan !important' }} />
 
         <NextIntlClientProvider>
