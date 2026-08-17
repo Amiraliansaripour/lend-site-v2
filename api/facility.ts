@@ -194,9 +194,11 @@ export async function deleteAttachment(attachmentId: string) {
     },
   });
 
-  if (!response.ok) {
-    throw new Error('Delete failed');
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok || result?.isSuccess === false) {
+    throw new Error(result?.message || 'Delete failed');
   }
 
-  return response.json();
+  return result;
 }

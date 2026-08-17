@@ -56,6 +56,7 @@ export default function RequestCreditPage() {
   const [createdRequestId, setCreatedRequestId] = useState<string | null>(null);
 
   const activeStepRef = useRef<HTMLDivElement>(null);
+  const previousRequestIdRef = useRef<string | null>(null);
 
   const { data: user } = useUserWithStore(userId || '');
 
@@ -98,10 +99,17 @@ export default function RequestCreditPage() {
   ];
 
   useEffect(() => {
-    if (id) {
-      setIsEditMode(editMode);
-      setIsStepsLoaded(false);
+    if (!id) {
+      previousRequestIdRef.current = null;
+      return;
     }
+
+    setIsEditMode(editMode);
+
+    if (previousRequestIdRef.current === id) return;
+
+    previousRequestIdRef.current = id;
+    setIsStepsLoaded(false);
   }, [id, editMode]);
 
   useEffect(() => {
@@ -128,16 +136,16 @@ export default function RequestCreditPage() {
 
       let filteredSteps = [...allSteps];
 
-      if (!planIsInvoiceRequired) {
+      if (planIsInvoiceRequired === false) {
         filteredSteps = filteredSteps.filter(step => step.key !== 6);
       }
-      if (!planIsGuaranteeRequired) {
+      if (planIsGuaranteeRequired === false) {
         filteredSteps = filteredSteps.filter(step => step.key !== 7);
       }
-      if (!planIsIncomeRequired) {
+      if (planIsIncomeRequired === false) {
         filteredSteps = filteredSteps.filter(step => step.key !== 5);
       }
-      if (!planIsValidateRequired) {
+      if (planIsValidateRequired === false) {
         filteredSteps = filteredSteps.filter(step => step.key !== 4);
         filteredSteps = filteredSteps.filter(step => step.key !== 3);
       }
@@ -180,9 +188,7 @@ export default function RequestCreditPage() {
     }
   }, [stepsToShow, currentStep, isStepsLoaded]);
 
-  const handleNext = useCallback(async () => {
-    await refreshPreview();
-
+  const handleNext = useCallback(() => {
     if (isEditMode && forCorrections.length > 0) {
       if (correctionStepIndex < forCorrections.length - 1) {
         setCorrectionStepIndex(prev => prev + 1);
@@ -190,17 +196,26 @@ export default function RequestCreditPage() {
       } else {
         router.push('/requests');
       }
+      void refreshPreview();
       return;
     }
 
+    setCurrentStep(prev => {
+      const currentIndex = stepsToShow.findIndex(step => step.key === prev);
+      if (currentIndex !== -1 && currentIndex < stepsToShow.length - 1) {
+        return stepsToShow[currentIndex + 1].key;
+      }
+      if (prev < 8) return prev + 1;
+      return prev;
+    });
+
     const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
-    if (currentIndex !== -1 && currentIndex < stepsToShow.length - 1) {
-      setCurrentStep(stepsToShow[currentIndex + 1].key);
-    } else if (currentStep < 8) {
-      setCurrentStep(currentStep + 1);
-    } else {
+    if (currentIndex !== -1 && currentIndex >= stepsToShow.length - 1 && currentStep >= 8) {
       router.push('/requests');
+      return;
     }
+
+    void refreshPreview();
   }, [
     refreshPreview,
     isEditMode,
@@ -373,7 +388,9 @@ export default function RequestCreditPage() {
                   onNext={data => {
                     if (data?.requestId) {
                       setCreatedRequestId(data.requestId);
-                      router.replace(`/requests/request-credit?id=${data.requestId}`);
+                      if (searchParams.get('id') !== data.requestId) {
+                        router.replace(`/requests/request-credit?id=${data.requestId}`);
+                      }
                     }
                     handleNext();
                   }}

@@ -109,10 +109,14 @@ interface UploadProgress {
 }
 
 interface ExistingAttachment {
-  id: string;
-  attachmentType: number;
-  filePath: string;
+  id?: string;
+  Id?: string;
+  attachmentId?: string;
+  attachmentType?: number;
+  filePath?: string;
+  file?: string;
   name?: string;
+  [key: string]: unknown;
 }
 
 interface UserWithAttachments {
@@ -127,6 +131,13 @@ const ATTACHMENT_TYPES = {
 } as const;
 
 type FileKey = keyof typeof ATTACHMENT_TYPES;
+
+function getAttachmentId(attachment?: ExistingAttachment | null): string | undefined {
+  if (!attachment) return undefined;
+  const value = attachment.id ?? attachment.Id ?? attachment.attachmentId;
+  if (value == null || value === '') return undefined;
+  return String(value);
+}
 
 export function UserInformation({
   user,
@@ -247,18 +258,35 @@ export function UserInformation({
     }));
   };
 
-  const getExistingPhotoUrl = useCallback(
-    (type: number) => {
-      const attachment = existingAttachments?.find(item => item.attachmentType === type);
-      return getShopImageUrl(attachment?.filePath);
-    },
+  const findAttachmentByType = useCallback(
+    (type: number) => existingAttachments.find(item => Number(item.attachmentType) === type),
     [existingAttachments],
   );
 
-  const removeExistingSinglePhoto = useCallback(async (id: string) => {
+  const getExistingPhotoUrl = useCallback(
+    (type: number) => {
+      const attachment = findAttachmentByType(type);
+      if (
+        attachment?.file &&
+        !attachment.file.startsWith('http') &&
+        !attachment.file.includes('/')
+      ) {
+        return `data:image/jpeg;base64,${attachment.file}`;
+      }
+      return getShopImageUrl(attachment?.filePath) ?? (attachment?.file || null);
+    },
+    [findAttachmentByType],
+  );
+
+  const removeExistingSinglePhoto = useCallback(async (id?: string) => {
+    if (!id) {
+      toast.error('شناسه تصویر یافت نشد');
+      return;
+    }
+
     try {
       await deleteAttachment(id);
-      setExistingAttachments(prev => prev.filter(attachment => attachment.id !== id));
+      setExistingAttachments(prev => prev.filter(attachment => getAttachmentId(attachment) !== id));
       toast.success('تصویر با موفقیت حذف شد');
     } catch {
       toast.error('خطا در حذف تصویر');
@@ -280,10 +308,14 @@ export function UserInformation({
       const ids = new Set<string>();
 
       for (const attachment of existingAttachments) {
-        if (newlyUploadedType !== undefined && attachment.attachmentType === newlyUploadedType) {
+        if (
+          newlyUploadedType !== undefined &&
+          Number(attachment.attachmentType) === newlyUploadedType
+        ) {
           continue;
         }
-        if (attachment.id) ids.add(attachment.id);
+        const attachmentId = getAttachmentId(attachment);
+        if (attachmentId) ids.add(attachmentId);
       }
 
       for (const id of Object.values(uploadedAttachmentIdsRef.current)) {
@@ -425,8 +457,8 @@ export function UserInformation({
     [uploadedFiles],
   );
 
-  const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onFormSubmit = async (e?: FormEvent<HTMLFormElement>) => {
+    e?.preventDefault();
     if (isReadOnly) return;
 
     if (!hasEssentialInfo) {
@@ -651,32 +683,36 @@ export function UserInformation({
                   { type: 101, label: 'پشت کارت ملی', key: 'nationalCardBack' as FileKey },
                 ].map(({ type, label, key }) => {
                   const photoUrl = getExistingPhotoUrl(type);
-                  const attachment = existingAttachments.find(item => item.attachmentType === type);
 
                   return (
                     <div key={type} className='space-y-2'>
                       <Label>{label}</Label>
                       {photoUrl ? (
-                        <div className='relative'>
-                          <div className='relative w-full h-40 border-2 border-green-500 rounded-lg overflow-hidden'>
-                            <Image
-                              src={photoUrl}
-                              alt={label}
-                              fill
-                              unoptimized
-                              className='object-cover cursor-pointer hover:opacity-80 transition-opacity'
-                              onClick={() => openImageModal(photoUrl)}
-                            />
-                          </div>
-                          <Button
+                        <div className='relative w-full'>
+                          <img
+                            src={photoUrl}
+                            alt={label}
+                            className='h-40 w-full cursor-pointer rounded-lg border-2 border-green-500 object-cover hover:opacity-80'
+                            onClick={() => openImageModal(photoUrl)}
+                          />
+                          <button
                             type='button'
-                            variant='destructive'
-                            size='icon'
-                            className='absolute top-2 right-2 h-6 w-6 rounded-full'
-                            onClick={() => attachment && removeExistingSinglePhoto(attachment.id)}
+                            aria-label={`حذف ${label}`}
+                            className='absolute top-2 right-2 z-50 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600'
+                            onMouseDown={event => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            onClick={event => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void removeExistingSinglePhoto(
+                                getAttachmentId(findAttachmentByType(type)),
+                              );
+                            }}
                           >
                             <X className='h-4 w-4' />
-                          </Button>
+                          </button>
                         </div>
                       ) : (
                         <FileUploadArea
@@ -781,7 +817,8 @@ export function UserInformation({
 
       <div className='flex justify-center gap-4'>
         <Button
-          type='submit'
+          type='button'
+          onClick={() => void onFormSubmit()}
           disabled={
             isReadOnly ||
             !hasEssentialInfo ||
