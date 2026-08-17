@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,11 @@ import { toast } from 'sonner';
 import { Upload, X, FileCheck, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCreateIncomeInfo } from '@/mutations/request';
-import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile, previewImageToSrc } from '@/lib/image-file';
+import {
+  ALLOWED_IMAGE_ACCEPT,
+  isAllowedImageFile,
+  resolveAttachmentImageSrc,
+} from '@/lib/image-file';
 import { getShopImageUrl } from '@/lib/shop-utils';
 import type { RequestPreviewData } from '@/api/request';
 
@@ -101,11 +104,11 @@ const FileUploadArea = ({
         {uploadedFile ? (
           <div className='relative z-10 space-y-2'>
             <div className='relative w-full h-32'>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={uploadedFile.preview}
                 alt={FILE_LABELS[fileKey]}
-                fill
-                className='object-contain rounded'
+                className='h-32 w-full rounded object-contain'
               />
             </div>
             <p className='text-xs text-gray-600 truncate'>
@@ -202,24 +205,20 @@ export function IncomeInformation({
 
     const fileKeys: FileKey[] = ['accountTurnover', 'salarySlip'];
     const attachments = previewData.incomeInfoAttachments || [];
+    const fileImages = previewData.incomeInfoFileImage || [];
 
     fileKeys.forEach((key, index) => {
       const attachment = attachments[index];
-      if (!attachment) return;
-
-      const imageSrc =
-        previewImageToSrc(attachment.file) ||
-        previewImageToSrc(attachment.data) ||
-        getShopImageUrl(attachment.filePath);
+      const imageSrc = resolveAttachmentImageSrc(attachment, fileImages[index], getShopImageUrl);
       if (!imageSrc) return;
 
       nextFiles[key] = {
         preview: imageSrc,
-        id: attachment.id,
+        id: attachment?.id,
         isExisting: true,
       };
       nextProgress[key] = { status: 'success', message: 'فایل موجود' };
-      if (attachment.id) nextAttachmentIds.push(attachment.id);
+      if (attachment?.id) nextAttachmentIds.push(attachment.id);
     });
 
     setFormData(nextForm);

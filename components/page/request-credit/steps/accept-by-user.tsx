@@ -13,7 +13,7 @@ import { useUser } from '@/queries/users';
 import { useConfirmRequestByUser, useChangeRequestState } from '@/mutations/request';
 import { REQUEST_STATE_CANCELLED } from '@/utils/request-status';
 import { useRouter } from '@/i18n/navigation';
-import { previewImageToSrc } from '@/lib/image-file';
+import { previewImageToSrc, resolveAttachmentImageSrc } from '@/lib/image-file';
 import { getShopImageUrl } from '@/lib/shop-utils';
 
 interface AcceptByUserProps {
@@ -130,12 +130,10 @@ export function AcceptByUser({
     : 0;
 
   const incomeAttachments = requestData?.incomeInfoAttachments || [];
+  const incomeFileImages = requestData?.incomeInfoFileImage || [];
   const incomeImages = incomeAttachments
-    .map(
-      attachment =>
-        previewImageToSrc(attachment.file) ||
-        previewImageToSrc(attachment.data) ||
-        getShopImageUrl(attachment.filePath),
+    .map((attachment, index) =>
+      resolveAttachmentImageSrc(attachment, incomeFileImages[index], getShopImageUrl),
     )
     .filter((src): src is string => Boolean(src));
 

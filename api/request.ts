@@ -215,6 +215,7 @@ export type RequestPreviewAttachment = {
   name: string;
   file: string;
   filePath: string;
+  fileImage?: string;
   data: string;
   format: string;
   attachmentType: number;
