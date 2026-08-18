@@ -10,6 +10,7 @@ import {
   sendOtpIc,
   icsFullProcess,
   changeRequestState,
+  resolveIcsRequestId,
   type IcsFullProcessData,
 } from '@/api/facility';
 import { toast } from 'sonner';
@@ -43,6 +44,26 @@ function isWaitingStatus(status?: string | null): boolean {
 
 function isUnavailableStatus(status?: string | null): boolean {
   return normalizeStatus(status) === 'unavailable';
+}
+
+const ICS_REQUEST_ID_STORAGE_PREFIX = 'ics-otp-request-id:';
+
+function readStoredIcsRequestId(lendRequestId: string): string | null {
+  if (typeof window === 'undefined' || !lendRequestId) return null;
+  try {
+    return sessionStorage.getItem(`${ICS_REQUEST_ID_STORAGE_PREFIX}${lendRequestId}`);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredIcsRequestId(lendRequestId: string, icsRequestId: string) {
+  if (typeof window === 'undefined' || !lendRequestId || !icsRequestId) return;
+  try {
+    sessionStorage.setItem(`${ICS_REQUEST_ID_STORAGE_PREFIX}${lendRequestId}`, icsRequestId);
+  } catch {
+    // ignore quota / private mode
+  }
 }
 
 function isCompletedStatus(
@@ -213,6 +234,21 @@ export function Validation({
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isRetryingProcess, setIsRetryingProcess] = useState(false);
   const initializedRef = useRef(false);
+  const icsRequestIdRef = useRef<string | null>(null);
+
+  const rememberIcsRequestId = useCallback(
+    (nextId: string | null | undefined) => {
+      if (!nextId) return;
+      icsRequestIdRef.current = nextId;
+      setIcsRequestId(nextId);
+      if (id) writeStoredIcsRequestId(id, nextId);
+    },
+    [id],
+  );
+
+  const getIcsRequestId = useCallback(() => {
+    return icsRequestIdRef.current || icsRequestId || (id ? readStoredIcsRequestId(id) : null);
+  }, [icsRequestId, id]);
 
   const checkValidationScore = useCallback(() => {
     if (creditData?.score == null || creditData.score === '') return false;
@@ -237,9 +273,8 @@ export function Validation({
           mobileNumber: normalizePhoneNo(mobileNumber),
         });
 
-        if (data.requestId) {
-          setIcsRequestId(data.requestId);
-        }
+        const resolvedId = resolveIcsRequestId(data) || (id ? readStoredIcsRequestId(id) : null);
+        rememberIcsRequestId(resolvedId);
 
         if (isUnavailableStatus(data.status)) {
           setPhase('unavailable');
@@ -252,18 +287,14 @@ export function Validation({
 
         const normalized = normalizeStatus(data.status);
         // InQueue / waiting: process not ready for OTP yet — show retry (no re-payment).
-        if (data.isInQueue || normalized === 'inqueue' || normalized === 'waiting') {
+        if (
+          resolvedId &&
+          (data.isInQueue || normalized === 'inqueue' || normalized === 'waiting')
+        ) {
           setPhase('waiting');
           setStatusMessage(
             data.message || 'درخواست شما در صف بررسی است. لطفاً کمی صبر کنید و دوباره تلاش کنید.',
           );
-          return;
-        }
-
-        // Pending (or success) after SendOtpIc typically means the SMS was sent.
-        if (!data.requestId) {
-          setPhase('error');
-          setStatusMessage('شناسه درخواست اعتبارسنجی دریافت نشد. لطفاً دوباره تلاش کنید.');
           return;
         }
 
@@ -281,8 +312,17 @@ export function Validation({
         setIsSendingOtp(false);
       }
     },
-    [nationalCode, mobileNumber],
+    [nationalCode, mobileNumber, id, rememberIcsRequestId],
   );
+
+  useEffect(() => {
+    if (!id) return;
+    const stored = readStoredIcsRequestId(id);
+    if (stored && !icsRequestIdRef.current) {
+      icsRequestIdRef.current = stored;
+      setIcsRequestId(stored);
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!id || !nationalCode || !mobileNumber || initializedRef.current) return;
@@ -324,7 +364,7 @@ export function Validation({
   }, []);
 
   const runIcsFullProcess = useCallback(
-    async (token: string) => {
+    async (token: string, processRequestId?: string | null) => {
       if (!id || !nationalCode || !mobileNumber) {
         toast.error('اطلاعات کد ملی یا شماره موبایل ناقص است.');
         setPhase('error');
@@ -332,23 +372,32 @@ export function Validation({
         return;
       }
 
-      if (!icsRequestId) {
-        toast.error('شناسه درخواست اعتبارسنجی موجود نیست.');
-        setPhase('error');
-        setStatusMessage('شناسه درخواست اعتبارسنجی دریافت نشد. لطفاً دوباره تلاش کنید.');
+      const icsId = processRequestId || getIcsRequestId();
+      if (!icsId) {
+        await handleSendOtp(true);
         return;
       }
+
+      rememberIcsRequestId(icsId);
 
       const data = await icsFullProcess({
         lendRequestId: id,
         nationalCode,
         mobileNumber: normalizePhoneNo(mobileNumber),
-        requestId: icsRequestId,
+        requestId: icsId,
         token,
       });
       handleProcessResult(data);
     },
-    [id, nationalCode, mobileNumber, icsRequestId, handleProcessResult],
+    [
+      id,
+      nationalCode,
+      mobileNumber,
+      getIcsRequestId,
+      rememberIcsRequestId,
+      handleProcessResult,
+      handleSendOtp,
+    ],
   );
 
   const handleVerifyOtp = async () => {
@@ -357,14 +406,25 @@ export function Validation({
       return;
     }
 
-    if (!icsRequestId) {
-      toast.error('شناسه درخواست اعتبارسنجی موجود نیست. لطفاً کد را مجدداً دریافت کنید.');
-      return;
-    }
-
     try {
       setIsVerifying(true);
-      await runIcsFullProcess(otp);
+
+      let processId = getIcsRequestId();
+      if (!processId) {
+        const data = await sendOtpIc({
+          nationalCode,
+          mobileNumber: normalizePhoneNo(mobileNumber),
+        });
+        processId = resolveIcsRequestId(data) || readStoredIcsRequestId(id);
+        rememberIcsRequestId(processId);
+      }
+
+      if (!processId) {
+        toast.error('شناسه درخواست اعتبارسنجی موجود نیست. لطفاً کد را مجدداً دریافت کنید.');
+        return;
+      }
+
+      await runIcsFullProcess(otp, processId);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'کد وارد شده صحیح نیست';
       toast.error(message);
@@ -376,17 +436,26 @@ export function Validation({
   /** Unavailable: restart from SendOtpIc, then OTP + IcsFullProcess */
   const handleRestartFromUnavailable = useCallback(async () => {
     setOtp('');
+    icsRequestIdRef.current = null;
     setIcsRequestId(null);
     setCreditData(null);
     await handleSendOtp(true);
   }, [handleSendOtp]);
 
-  /** Waiting / error / in-queue: poll again via IcsFullProcess (no new SendOtpIc) */
+  /** Waiting / error / in-queue: poll again via IcsFullProcess (no new SendOtpIc).
+   *  If ics requestId was lost (page leave / !data.requestId), restart from SendOtpIc. */
   const handleRetryProcess = useCallback(async () => {
+    const processId = getIcsRequestId();
+    if (!processId) {
+      setCreditData(null);
+      await handleSendOtp(true);
+      return;
+    }
+
     try {
       setIsRetryingProcess(true);
       setPhase('loading');
-      await runIcsFullProcess(otp);
+      await runIcsFullProcess(otp, processId);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'خطا در بررسی وضعیت اعتبارسنجی';
       toast.error(message);
@@ -395,7 +464,7 @@ export function Validation({
     } finally {
       setIsRetryingProcess(false);
     }
-  }, [otp, runIcsFullProcess]);
+  }, [otp, getIcsRequestId, runIcsFullProcess, handleSendOtp]);
 
   const handleResendOtp = useCallback(async () => {
     setOtp('');

@@ -72,6 +72,32 @@ export interface SendOtpIcData {
   isReportGenerated: boolean;
 }
 
+export function resolveIcsRequestId(data: unknown): string | null {
+  if (typeof data === 'string') {
+    const trimmed = data.trim();
+    return trimmed || null;
+  }
+
+  if (!data || typeof data !== 'object') return null;
+
+  const obj = data as Record<string, unknown>;
+  const candidates = [
+    obj.requestId,
+    obj.RequestId,
+    obj.gatewayRequestId,
+    obj.GatewayRequestId,
+    obj.trackId,
+    obj.TrackId,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+  }
+
+  if ('data' in obj) return resolveIcsRequestId(obj.data);
+  return null;
+}
+
 export interface IcsFullProcessPayload {
   lendRequestId: string;
   nationalCode: string;
@@ -100,7 +126,36 @@ export async function sendOtpIc(payload: SendOtpIcPayload) {
     throw new Error(data.message || 'خطا در ارسال کد تایید');
   }
 
-  return data.data;
+  const inner = data.data as SendOtpIcData | string | null | undefined;
+
+  if (typeof inner === 'string') {
+    return {
+      success: true,
+      message: data.message || '',
+      requestId: inner,
+      status: 'Pending',
+      isComplete: false,
+      isInQueue: false,
+      isReportGenerated: false,
+    } satisfies SendOtpIcData;
+  }
+
+  if (inner && typeof inner === 'object') {
+    return {
+      ...inner,
+      requestId: resolveIcsRequestId(inner) ?? resolveIcsRequestId(data) ?? inner.requestId,
+    };
+  }
+
+  return {
+    success: true,
+    message: data.message || '',
+    requestId: resolveIcsRequestId(data) ?? undefined,
+    status: 'Pending',
+    isComplete: false,
+    isInQueue: false,
+    isReportGenerated: false,
+  } satisfies SendOtpIcData;
 }
 
 export async function icsFullProcess(payload: IcsFullProcessPayload) {
