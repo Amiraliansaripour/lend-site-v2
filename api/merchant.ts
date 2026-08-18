@@ -21,9 +21,18 @@ export type MerchantSignupResponse = {
 };
 
 export const createMerchantSignupRequest = async (data: MerchantSignupData) => {
-  const resp = await api.post<MerchantSignupData, APIResult<MerchantSignupResponse>>(
-    '/CooperateRequest/Create',
-    data,
-  );
-  return resp.data;
+  const { data: response, resp } = await api.post<
+    MerchantSignupData,
+    APIResult<MerchantSignupResponse>
+  >('/CooperateRequest/Create', data);
+
+  if (resp.status === 401) {
+    throw new Error('دسترسی برای ثبت درخواست همکاری مجاز نیست.');
+  }
+
+  if (!resp.ok) {
+    throw new Error(response?.message || 'ارسال درخواست با خطا مواجه شد.');
+  }
+
+  return response;
 };

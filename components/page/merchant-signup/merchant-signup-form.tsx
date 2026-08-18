@@ -49,6 +49,11 @@ export function MerchantSignupForm() {
 
     createMerchantSignup.mutate(payload, {
       onSuccess: response => {
+        if (!response) {
+          toast.error('پاسخی از سرور دریافت نشد.');
+          return;
+        }
+
         if (response.isSuccess) {
           toast.success(response.message || 'درخواست شما با موفقیت ثبت شد.');
           setFormData({
@@ -68,13 +73,15 @@ export function MerchantSignupForm() {
       },
       onError: error => {
         console.error(error);
-        toast.error('خطا در ارتباط با سرور');
+        toast.error(error.message || 'ارسال درخواست با خطا مواجه شد.');
       },
     });
   };
 
   const formFields = [
-    { label: 'نام فروشگاه', name: 'firstName', type: 'text', required: true },
+    { label: 'نام فروشگاه', name: 'organName', type: 'text', required: true },
+    { label: 'نام', name: 'firstName', type: 'text', required: true },
+    { label: 'نام خانوادگی', name: 'lastName', type: 'text', required: true },
     { label: 'دسته بندی فروشگاه', name: 'category', type: 'select', required: true },
     { label: 'آدرس اینترنتی', name: 'url', type: 'url', required: false },
     {
@@ -83,8 +90,6 @@ export function MerchantSignupForm() {
       type: 'text',
       required: false,
     },
-    { label: 'نام و نام خانوادگی', name: 'lastName', type: 'text', required: true },
-    { label: 'سمت سازمانی', name: 'organName', type: 'text', required: true },
     { label: 'شماره تماس', name: 'phoneNumber', type: 'tel', required: true },
     { label: 'آدرس ایمیل', name: 'email', type: 'email', required: false },
   ];
@@ -92,11 +97,11 @@ export function MerchantSignupForm() {
   return (
     <div
       id='merchant-signup-form'
-      className='bg-gradient-to-b from-light-blue/20 to-light-blue/10 flex items-center flex-col my-20 pb-32'
+      className='bg-linear-to-b from-light-blue/20 to-light-blue/10 flex items-center flex-col my-20 pb-32'
     >
       <div className='text-2xl font-bold py-14 text-center'>فرم ثبت درخواست همکاری</div>
 
-      <div className='bg-white rounded-2xl w-full sm:w-11/12 md:w-4/5 lg:w-3/4 max-w-screen-lg mx-auto px-4 sm:px-6 md:px-9 py-10 sm:py-16 md:py-28'>
+      <div className='bg-white rounded-2xl w-full sm:w-11/12 md:w-4/5 lg:w-3/4 max-w-5xl mx-auto px-4 sm:px-6 md:px-9 py-10 sm:py-16 md:py-28'>
         <form onSubmit={onFormSubmit} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           {formFields.map(field => (
             <div key={field.name} className='w-full'>

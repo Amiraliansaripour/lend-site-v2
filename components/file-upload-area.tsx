@@ -1,7 +1,6 @@
 'use client';
 
 import { type ChangeEvent } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Upload, X, FileCheck, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -75,11 +74,11 @@ export function FileUploadArea<T extends string>({
         {uploadedFile ? (
           <div className='relative z-10 space-y-2'>
             <div className='relative w-full h-32'>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={uploadedFile.preview}
                 alt={label}
-                fill
-                className='object-contain rounded'
+                className='h-32 w-full rounded object-contain'
               />
             </div>
             <div className='flex items-center justify-center gap-2'>
