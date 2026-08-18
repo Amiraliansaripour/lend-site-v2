@@ -211,6 +211,7 @@ export function Validation({
   const [icsRequestId, setIcsRequestId] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isRetryingProcess, setIsRetryingProcess] = useState(false);
   const initializedRef = useRef(false);
 
   const checkValidationScore = useCallback(() => {
@@ -235,6 +236,10 @@ export function Validation({
           nationalCode,
           mobileNumber: normalizePhoneNo(mobileNumber),
         });
+
+        if (data.requestId) {
+          setIcsRequestId(data.requestId);
+        }
 
         if (isUnavailableStatus(data.status)) {
           setPhase('unavailable');
@@ -262,7 +267,6 @@ export function Validation({
           return;
         }
 
-        setIcsRequestId(data.requestId);
         setOtp('');
         setPhase('otp');
         if (showSuccessToast || data.message) {
@@ -319,6 +323,34 @@ export function Validation({
     setStatusMessage(data.message || 'وضعیت اعتبارسنجی مشخص نیست. لطفاً دوباره تلاش کنید.');
   }, []);
 
+  const runIcsFullProcess = useCallback(
+    async (token: string) => {
+      if (!id || !nationalCode || !mobileNumber) {
+        toast.error('اطلاعات کد ملی یا شماره موبایل ناقص است.');
+        setPhase('error');
+        setStatusMessage('اطلاعات هویتی برای اعتبارسنجی ناقص است.');
+        return;
+      }
+
+      if (!icsRequestId) {
+        toast.error('شناسه درخواست اعتبارسنجی موجود نیست.');
+        setPhase('error');
+        setStatusMessage('شناسه درخواست اعتبارسنجی دریافت نشد. لطفاً دوباره تلاش کنید.');
+        return;
+      }
+
+      const data = await icsFullProcess({
+        lendRequestId: id,
+        nationalCode,
+        mobileNumber: normalizePhoneNo(mobileNumber),
+        requestId: icsRequestId,
+        token,
+      });
+      handleProcessResult(data);
+    },
+    [id, nationalCode, mobileNumber, icsRequestId, handleProcessResult],
+  );
+
   const handleVerifyOtp = async () => {
     if (!id || !nationalCode || !mobileNumber || otp.length !== 5) {
       toast.error('لطفا کد ۵ رقمی را وارد کنید');
@@ -332,14 +364,7 @@ export function Validation({
 
     try {
       setIsVerifying(true);
-      const data = await icsFullProcess({
-        lendRequestId: id,
-        nationalCode,
-        mobileNumber: normalizePhoneNo(mobileNumber),
-        requestId: icsRequestId,
-        token: otp,
-      });
-      handleProcessResult(data);
+      await runIcsFullProcess(otp);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'کد وارد شده صحیح نیست';
       toast.error(message);
@@ -348,10 +373,34 @@ export function Validation({
     }
   };
 
-  const handleRetry = async () => {
+  /** Unavailable: restart from SendOtpIc, then OTP + IcsFullProcess */
+  const handleRestartFromUnavailable = useCallback(async () => {
+    setOtp('');
+    setIcsRequestId(null);
+    setCreditData(null);
+    await handleSendOtp(true);
+  }, [handleSendOtp]);
+
+  /** Waiting / error / in-queue: poll again via IcsFullProcess (no new SendOtpIc) */
+  const handleRetryProcess = useCallback(async () => {
+    try {
+      setIsRetryingProcess(true);
+      setPhase('loading');
+      await runIcsFullProcess(otp);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'خطا در بررسی وضعیت اعتبارسنجی';
+      toast.error(message);
+      setPhase('waiting');
+      setStatusMessage(message);
+    } finally {
+      setIsRetryingProcess(false);
+    }
+  }, [otp, runIcsFullProcess]);
+
+  const handleResendOtp = useCallback(async () => {
     setOtp('');
     await handleSendOtp(true);
-  };
+  }, [handleSendOtp]);
 
   const handleSubmit = async () => {
     if (isReadOnly) return;
@@ -395,7 +444,7 @@ export function Validation({
         isVerifying={isVerifying}
         onOtpChange={setOtp}
         onVerify={handleVerifyOtp}
-        onResend={handleRetry}
+        onResend={handleResendOtp}
         isResending={isSendingOtp}
       />
     );
@@ -411,7 +460,7 @@ export function Validation({
             'سرویس‌دهنده اعتبارسنجی در حال حاضر مشغول است. لطفاً بعداً دوباره تلاش کنید. نیازی به پرداخت مجدد نیست.'
           }
           variant='danger'
-          onRetry={handleRetry}
+          onRetry={handleRestartFromUnavailable}
           isRetrying={isSendingOtp}
         />
         <div className='flex justify-center gap-4'>
@@ -437,8 +486,8 @@ export function Validation({
           title={phase === 'error' ? 'خطا در اعتبارسنجی' : 'در انتظار نتیجه'}
           description={statusMessage}
           variant={phase === 'error' ? 'danger' : 'warning'}
-          onRetry={handleRetry}
-          isRetrying={isSendingOtp}
+          onRetry={handleRetryProcess}
+          isRetrying={isRetryingProcess}
         />
         <div className='flex justify-center gap-4'>
           {onBack && (
