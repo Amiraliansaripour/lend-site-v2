@@ -6,6 +6,7 @@ import {
   User,
   Wallet,
   FileText,
+  MessagesSquare,
   CalendarClock,
   CircleQuestionMark,
   LogOut,
@@ -24,15 +25,17 @@ import {
 import Link from 'next/link';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
 import { useSiteTemplate } from '@/providers/site-template';
+import { TOTAL_UNREAD } from '@/components/page/messages/messages-page-content';
 
 const items = [
-  { title: 'داشبورد', url: '/dashboard', icon: Home },
-  { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet },
-  { title: 'درخواست های من', url: '/requests', icon: FileText },
-  { title: 'اقساط من', url: '/installments', icon: CalendarClock },
-  { title: 'اطلاعات من', url: '/profile', icon: User },
-  { title: 'راهنما و پشتیبانی', url: '/help', icon: CircleQuestionMark },
-  { title: 'فروشگاه‌ها', url: '/shops', icon: Store },
+  { title: 'داشبورد', url: '/dashboard', icon: Home, badge: 0 },
+  { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet, badge: 0 },
+  { title: 'درخواست های من', url: '/requests', icon: FileText, badge: 0 },
+  { title: 'صندوق پیام', url: '/messages', icon: MessagesSquare, badge: TOTAL_UNREAD },
+  { title: 'اقساط من', url: '/installments', icon: CalendarClock, badge: 0 },
+  { title: 'اطلاعات من', url: '/profile', icon: User, badge: 0 },
+  { title: 'راهنما و پشتیبانی', url: '/help', icon: CircleQuestionMark, badge: 0 },
+  { title: 'فروشگاه‌ها', url: '/shops', icon: Store, badge: 0 },
 ];
 
 export function AppSidebar() {
@@ -54,9 +57,16 @@ export function AppSidebar() {
               {items.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+                    <Link href={item.url} className='flex items-center justify-between w-full'>
+                      <span className='flex items-center gap-2'>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </span>
+                      {item.badge > 0 && (
+                        <span className='inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold'>
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
