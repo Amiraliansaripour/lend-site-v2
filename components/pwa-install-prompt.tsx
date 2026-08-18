@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { X, Download } from 'lucide-react';
 
@@ -11,23 +11,60 @@ interface BeforeInstallPromptEvent extends Event {
 
 const STORAGE_KEY = 'pwa-install-dismissed';
 
+declare global {
+  interface Window {
+    __pwaDeferredPrompt?: BeforeInstallPromptEvent;
+  }
+}
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches;
+}
+
+function wasDismissedThisVisit() {
+  try {
+    return Boolean(sessionStorage.getItem(STORAGE_KEY));
+  } catch {
+    return false;
+  }
+}
+
+function markDismissedThisVisit() {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, '1');
+  } catch {
+    // Ignore quota / private-mode failures.
+  }
+}
+
 export function PwaInstallPrompt() {
   const t = useTranslations('PWA');
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+  const fadeTimerRef = useRef<number | null>(null);
+  const hideTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (
-      typeof window === 'undefined' ||
-      window.matchMedia('(display-mode: standalone)').matches ||
-      sessionStorage.getItem(STORAGE_KEY)
-    )
-      return;
+    if (typeof window === 'undefined') return;
+    if (isStandalone() || wasDismissedThisVisit()) return;
+
+    const showPrompt = (event: BeforeInstallPromptEvent) => {
+      setPrompt(event);
+      setVisible(true);
+    };
+
+    const deferred = window.__pwaDeferredPrompt;
+    if (deferred) {
+      showPrompt(deferred);
+    }
 
     const handler = (e: Event) => {
       e.preventDefault();
-      setPrompt(e as BeforeInstallPromptEvent);
-      setVisible(true);
+      const next = e as BeforeInstallPromptEvent;
+      window.__pwaDeferredPrompt = next;
+      if (wasDismissedThisVisit()) return;
+      showPrompt(next);
     };
 
     window.addEventListener('beforeinstallprompt', handler);
@@ -38,19 +75,52 @@ export function PwaInstallPrompt() {
     if (!prompt) return;
     await prompt.prompt();
     const { outcome } = await prompt.userChoice;
-    if (outcome === 'accepted') setVisible(false);
+    if (outcome === 'accepted') {
+      markDismissedThisVisit();
+      setVisible(false);
+    }
     setPrompt(null);
+    window.__pwaDeferredPrompt = undefined;
   };
 
   const handleDismiss = () => {
-    sessionStorage.setItem(STORAGE_KEY, '1');
+    markDismissedThisVisit();
+    if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
+    if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    setIsFadingOut(false);
     setVisible(false);
   };
+
+  useEffect(() => {
+    if (!visible) return;
+
+    setIsFadingOut(false);
+
+    fadeTimerRef.current = window.setTimeout(() => {
+      setIsFadingOut(true);
+    }, 7000);
+
+    hideTimerRef.current = window.setTimeout(() => {
+      setVisible(false);
+      setPrompt(null);
+    }, 7300);
+
+    return () => {
+      if (fadeTimerRef.current) window.clearTimeout(fadeTimerRef.current);
+      if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    };
+  }, [visible]);
 
   if (!visible) return null;
 
   return (
-    <div className='fixed bottom-4 inset-x-4 z-50 mx-auto max-w-sm rounded-2xl border border-border bg-background p-4 shadow-lg'>
+    <div
+      className={[
+        'fixed bottom-4 inset-x-4 z-10000 mx-auto max-w-sm rounded-2xl border border-border bg-background p-4 shadow-lg',
+        'transition-opacity duration-300',
+        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100',
+      ].join(' ')}
+    >
       <div className='flex items-start gap-3'>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -76,7 +146,7 @@ export function PwaInstallPrompt() {
       </div>
       <div className='flex gap-2 mt-3'>
         <button
-          onClick={handleInstall}
+          onClick={() => void handleInstall()}
           className='flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-foreground text-background text-sm font-medium py-2 transition-opacity hover:opacity-80'
         >
           <Download size={14} />

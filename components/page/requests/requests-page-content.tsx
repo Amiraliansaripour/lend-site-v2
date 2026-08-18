@@ -23,7 +23,7 @@ export function RequestsPageContent({
   const isLoading = isLoadingWallet || isLoadingRequests;
 
   return (
-    <div>
+    <div className='w-full min-w-0'>
       {isLoading ? (
         <RequestsCardsSkeleton />
       ) : (
@@ -35,7 +35,7 @@ export function RequestsPageContent({
         />
       )}
 
-      <div className='mt-6 p-6'>
+      <div className='mt-6 min-w-0 overflow-x-auto rounded-xl bg-white p-4 sm:p-6'>
         <RequestsTableComponent requests={requests} />
       </div>
     </div>

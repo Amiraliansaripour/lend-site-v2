@@ -4,12 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { X, Menu, User, LogIn } from 'lucide-react';
 
-import Logo from '@/assets/logo.png';
-import LogoWhite from '@/assets/logo-white.png';
-
 import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
 import { getUserInfo } from '@/lib/auth/client/user-info';
+import { useSiteTemplate } from '@/providers/site-template';
 
 type Href = `/${string}`;
 
@@ -26,12 +24,14 @@ const NAVBAR: NavItem[] = [
   { title: 'ثبت نام فروشگاه‌ها', href: '/merchant-signup' },
 ];
 
-const WITH_INVERTED_HEADERS = new Set<Href>([]);
+const WITH_INVERTED_HEADERS = new Set<Href>(['/login']);
 
 export function Header() {
   const pathname = usePathname() as Href;
   const inverted = WITH_INVERTED_HEADERS.has(pathname);
   const transparent = !inverted;
+  const { brandName, getImageUrl } = useSiteTemplate();
+  const logoUrl = getImageUrl(inverted ? 'darkLogo' : 'lightLogo') || getImageUrl('logo');
 
   const [visible, setVisible] = useState<boolean>(true);
   const [hasScrolled, setHasScrolled] = useState<boolean>(false);
@@ -117,23 +117,17 @@ export function Header() {
 
           {/* Logo */}
           <Link href='/' className='h-6 flex-shrink-0 lg:order-first'>
-            {inverted ? (
+            {logoUrl ? (
               <Image
-                src='/logos/logo-white.png'
-                alt='logo'
+                src={logoUrl}
+                alt={brandName}
                 width={120}
                 height={24}
                 className='h-full w-auto'
+                unoptimized
+                priority
               />
-            ) : (
-              <Image
-                src='/logos/logo-white.png'
-                alt='logo'
-                width={120}
-                height={24}
-                className='h-full w-auto'
-              />
-            )}
+            ) : null}
           </Link>
 
           {/* Desktop Navigation */}
@@ -163,7 +157,9 @@ export function Header() {
                 href='/dashboard'
                 className={cn(
                   'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
-                  'text-white border-white hover:bg-white/10',
+                  inverted
+                    ? 'text-black border-black hover:bg-white/10'
+                    : 'text-white border-white hover:bg-white/10',
                 )}
               >
                 <User size={18} />

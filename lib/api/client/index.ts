@@ -14,11 +14,18 @@ type $FetchOptions<P = never> = OverrideExtend<
     body: P;
     baseURL: BaseURL;
     skipAuth: boolean;
+    suppressErrorToast: boolean;
   }>
 >;
 
 const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
-  let { body = {}, baseURL = 'DEFAULT', skipAuth = false, ...opts } = options ?? {};
+  let {
+    body = {},
+    baseURL = 'DEFAULT',
+    skipAuth = false,
+    suppressErrorToast = false,
+    ...opts
+  } = options ?? {};
   baseURL = isMappedBaseURL(baseURL) ? BASE_URLS[baseURL] : baseURL;
 
   const _url = resolveURL(url, baseURL);
@@ -33,26 +40,57 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     'Content-Type': 'application/json',
   };
 
-  if (!skipAuth) {
-    const token = accessToken.get();
+  const token = accessToken.get();
+  if (!skipAuth && token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   const resp = await fetch(_url, {
     ...opts,
     ...payload,
-    headers: { ...opts.headers, ...headers },
+    // Caller headers win so explicit Authorization (e.g. recipient userToken) is preserved
+    headers: { ...headers, ...opts.headers },
   });
 
   if (resp.status === 401) {
-    clearUserInfo();
-    accessToken.delete();
-    window.location.href = '/';
+    // Public pages (or explicit skipAuth calls) should never force a redirect.
+    if (!skipAuth) {
+      clearUserInfo();
+      accessToken.delete();
+
+      const pathname = window.location.pathname || '';
+      const isDashboardLikeRoute =
+        pathname.includes('/dashboard') ||
+        pathname.includes('/requests') ||
+        pathname.includes('/wallets') ||
+        pathname.includes('/installments') ||
+        pathname.includes('/profile');
+
+      if (isDashboardLikeRoute) {
+        window.location.href = '/';
+      }
+    }
+
     return { data: undefined as unknown as D, resp };
   }
-  const data: D = await resp.json();
 
-  if (!resp.ok) toast.error((data as APIResult<D>).message);
+  const text = await resp.text();
+  let data: D = {} as D;
+
+  if (text) {
+    try {
+      data = JSON.parse(text) as D;
+    } catch {
+      if (!resp.ok) {
+        toast.error(`Request failed with status ${resp.status}`);
+      }
+      return { data, resp };
+    }
+  }
+
+  if (!resp.ok && !suppressErrorToast) {
+    toast.error((data as APIResult<D>)?.message ?? `Request failed with status ${resp.status}`);
+  }
 
   return { data, resp };
 };

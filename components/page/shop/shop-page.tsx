@@ -1,6 +1,7 @@
 import { Calculator } from '@/components/page/landing';
 import { ShopBanner } from './shop-banner';
 import { ShopSteps } from './shop-steps';
+import { ShopCatalog } from './shop-catalog';
 import type { Shop } from './shop-types';
 
 type ShopPageProps = {
@@ -37,7 +38,7 @@ export function ShopPage({ shop }: ShopPageProps) {
               {shop.url && (
                 <div className='flex items-center justify-end gap-2'>
                   <a
-                    href={shop.url}
+                    href={shop.url.startsWith('https://') ? shop.url : `https://${shop.url}`}
                     target='_blank'
                     rel='noopener noreferrer'
                     className='text-blue-600 hover:underline'
@@ -50,6 +51,8 @@ export function ShopPage({ shop }: ShopPageProps) {
             </div>
           </div>
         </div>
+
+        <ShopCatalog merchantId={shop.id} />
 
         <ShopSteps />
         <Calculator />

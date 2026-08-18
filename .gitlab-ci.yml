@@ -1,7 +1,17 @@
 
-
 stages:
   - deploy
+
+variables:
+  IMAGE_NAME: lend-site-v2
+  CONTAINER_NAME: lend-site-v2
+  DEPLOY_HOST_PORT: "3000"
+  CONTAINER_PORT: "3000"
+  NEXT_PUBLIC_API_BASE_URL: "https://lendapitest.persiansys.ir/api/v1"
+  NEXT_PUBLIC_API_REPORT_URL: "https://lendreporttest.persiansys.ir/api/v1"
+  NEXT_PUBLIC_QUERY_GC_TIME: "0"
+  NEXT_PUBLIC_QUERY_STALE_TIME: "0"
+  NEXT_PUBLIC_QUERY_RETRY: "1"
 
 default:
   interruptible: true
@@ -18,6 +28,7 @@ variables:
     - |
       docker build \
         --build-arg NEXT_PUBLIC_API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL" \
+        --build-arg NEXT_PUBLIC_API_REPORT_URL="$NEXT_PUBLIC_API_REPORT_URL" \
         --build-arg NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
         --build-arg NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
         --build-arg NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
@@ -34,6 +45,7 @@ variables:
         -e PORT=3000 \
         -e HOSTNAME=0.0.0.0 \
         -e NEXT_PUBLIC_API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL" \
+        -e NEXT_PUBLIC_API_REPORT_URL="$NEXT_PUBLIC_API_REPORT_URL" \
         -e NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
         -e NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
         -e NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \

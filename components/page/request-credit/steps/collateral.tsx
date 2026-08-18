@@ -5,14 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
 import { ChequeRegistration } from './cheque-registration';
+import type { RequestPreviewData } from '@/api/request';
 
 interface CollateralProps {
   requestId: string;
   guarantees?: string[];
   guaranteedAmount?: number;
   onNext?: () => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
+  previewData?: RequestPreviewData | null;
 }
 
 export function Collateral({
@@ -20,12 +24,23 @@ export function Collateral({
   guarantees = [],
   guaranteedAmount,
   onNext,
+  onBack,
   onCancel,
   isEditMode = false,
+  isReadOnly = false,
+  previewData,
 }: CollateralProps) {
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(
+    previewData?.chequeId ||
+      previewData?.chequeSayadId ||
+      previewData?.chequeAttachmentFilePath ||
+      previewData?.chequeAttachmentBackFilePath
+      ? 'check'
+      : null,
+  );
 
   const handleMethodSelect = (method: string) => {
+    if (isReadOnly) return;
     setSelectedMethod(method);
   };
 
@@ -36,8 +51,11 @@ export function Collateral({
         guarantees={guarantees}
         guaranteedAmount={guaranteedAmount}
         onNext={onNext ? () => onNext() : undefined}
+        onBack={() => setSelectedMethod(null)}
         onCancel={onCancel}
         isEditMode={isEditMode}
+        isReadOnly={isReadOnly}
+        previewData={previewData}
       />
     );
   }
@@ -100,11 +118,18 @@ export function Collateral({
               </button>
             </div>
 
-            {onCancel && (
-              <div className='flex justify-center pt-6'>
-                <Button type='button' variant='outline' size='lg' onClick={onCancel}>
-                  انصراف
-                </Button>
+            {(onBack || onCancel) && (
+              <div className='flex justify-center gap-4 pt-6'>
+                {onBack && (
+                  <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                    بازگشت
+                  </Button>
+                )}
+                {onCancel && (
+                  <Button type='button' variant='outline' size='lg' onClick={onCancel}>
+                    انصراف
+                  </Button>
+                )}
               </div>
             )}
           </div>

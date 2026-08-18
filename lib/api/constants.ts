@@ -17,13 +17,19 @@ const normalizeApiBaseURL = (value: string | undefined) => {
 };
 
 const apiBaseURL = normalizeApiBaseURL(process.env.NEXT_PUBLIC_API_BASE_URL);
+const reportBaseURL = normalizeApiBaseURL(process.env.NEXT_PUBLIC_API_REPORT_URL);
 
 if (!apiBaseURL) {
   throw new Error('NEXT_PUBLIC_API_BASE_URL is not set');
 }
 
+if (!reportBaseURL) {
+  throw new Error('NEXT_PUBLIC_API_REPORT_URL is not set');
+}
+
 export const BASE_URLS = {
   DEFAULT: apiBaseURL,
+  REPORT: reportBaseURL,
 } as const;
 
 export const isMappedBaseURL = (baseURL: BaseURL): baseURL is MappedBaseURL => {

@@ -7,6 +7,7 @@ import { dirFor } from '@/i18n/routing';
 import { NuqsProvider } from '@/providers/nuqs';
 import { AuthListener } from '@/lib/auth/auth-listener';
 import { QueryClientProvider } from '@/lib/query-client/provider';
+import { SiteTemplateProvider } from '@/providers/site-template';
 
 import '@/lib/env';
 import '@/app/globals.css';
@@ -60,13 +61,20 @@ export default async function RootLayout({ params, children }: LayoutProps<'/[lo
   return (
     <html lang={locale} dir={dirFor(locale)}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaDeferredPrompt=e;});})();`,
+          }}
+        />
         <Toaster toastOptions={{ className: 'IranYekan !important' }} />
 
         <NextIntlClientProvider>
           <NuqsProvider>
             <AuthListener />
             <PwaInstallPrompt />
-            <QueryClientProvider>{children}</QueryClientProvider>
+            <QueryClientProvider>
+              <SiteTemplateProvider>{children}</SiteTemplateProvider>
+            </QueryClientProvider>
           </NuqsProvider>
         </NextIntlClientProvider>
       </body>

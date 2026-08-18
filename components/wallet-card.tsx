@@ -36,7 +36,7 @@ const WalletCardRoot = ({
   ...props
 }: WalletCardRootProps) => {
   return (
-    <CreditCard className={cn('w-96 mx-auto relative', className)} {...props}>
+    <CreditCard className={cn('w-full max-w-96 mx-auto relative', className)} {...props}>
       {isFlippable ? <CreditCardFlipper>{children}</CreditCardFlipper> : children}
     </CreditCard>
   );

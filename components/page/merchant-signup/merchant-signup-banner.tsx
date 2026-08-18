@@ -1,9 +1,13 @@
 'use client';
 
 import Image from 'next/image';
-import ShopBanner from '@/assets/images/banners/signupMerchantBanner.png';
-import ShopBannerMobile from '@/assets/images/banners/signupMerchantBanner-res.png';
+
+import { useSiteTemplate } from '@/providers/site-template';
+
 export function MerchantSignupBanner() {
+  const { brandName, getImageUrl, withBrand } = useSiteTemplate();
+  const bannerUrl = getImageUrl('merchantSignupBanner');
+
   const scrollToForm = () => {
     const formSection = document.getElementById('merchant-signup-form');
     if (formSection) {
@@ -16,7 +20,7 @@ export function MerchantSignupBanner() {
       <div className='absolute text-white right-5 lg:right-24 bottom-1/3 z-10'>
         <div className='text-sm lg:text-2xl font-bold pb-3'>به جمع فروشگاه‌های ما بپیوندید.</div>
         <div className='text-xs lg:text-lg'>
-          با ثبت نام در نوالند، فروشگاه خود را به هزاران مشتری معرفی کنید.
+          {withBrand('با ثبت نام در کارالند، فروشگاه خود را به هزاران مشتری معرفی کنید.')}
         </div>
         <button
           onClick={scrollToForm}
@@ -25,20 +29,26 @@ export function MerchantSignupBanner() {
           ثبت درخواست
         </button>
       </div>
-      <Image
-        className='w-full h-full object-cover hidden md:block'
-        src={ShopBannerMobile}
-        alt='Desktop Banner'
-        fill
-        priority
-      />
-      <Image
-        className='w-full h-full block md:hidden object-cover'
-        src={ShopBanner}
-        alt='Mobile Banner'
-        fill
-        priority
-      />
+      {bannerUrl ? (
+        <>
+          <Image
+            className='w-full h-full object-cover hidden md:block'
+            src={bannerUrl}
+            alt={brandName}
+            fill
+            priority
+            unoptimized
+          />
+          <Image
+            className='w-full h-full block md:hidden object-cover'
+            src={bannerUrl}
+            alt={brandName}
+            fill
+            priority
+            unoptimized
+          />
+        </>
+      ) : null}
     </div>
   );
 }

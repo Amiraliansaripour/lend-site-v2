@@ -11,18 +11,24 @@ import { toast } from 'sonner';
 import { ZoomIn } from 'lucide-react';
 import { useCreateInvoice, useChangeRequestState } from '@/mutations/request';
 import { FileUploadArea } from '@/components/file-upload-area';
+import { isAllowedImageFile, previewImageToSrc } from '@/lib/image-file';
+import type { RequestPreviewData } from '@/api/request';
 
 interface ProformaInvoiceProps {
   requestId: string;
   onNext?: () => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
+  previewData?: RequestPreviewData | null;
 }
 
 interface UploadedFile {
-  file: File;
+  file?: File;
   preview: string;
   id?: string;
+  isExisting?: boolean;
 }
 
 interface UploadProgress {
@@ -34,8 +40,11 @@ interface UploadProgress {
 export function ProformaInvoice({
   requestId,
   onNext,
+  onBack,
   onCancel,
   isEditMode = false,
+  isReadOnly = false,
+  previewData,
 }: ProformaInvoiceProps) {
   const createInvoiceMutation = useCreateInvoice();
   const changeRequestStateMutation = useChangeRequestState();
@@ -44,8 +53,24 @@ export function ProformaInvoice({
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [attachmentId, setAttachmentId] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [hasHydratedPreview, setHasHydratedPreview] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!previewData || hasHydratedPreview) return;
+
+    const imageSrc = previewImageToSrc(previewData.invoiceFileImage);
+    if (imageSrc) {
+      setUploadedFile({
+        preview: imageSrc,
+        isExisting: true,
+      });
+      setUploadProgress({ status: 'success', message: 'فایل موجود' });
+      setAttachmentId(null);
+    }
+    setHasHydratedPreview(true);
+  }, [previewData, hasHydratedPreview]);
 
   const uploadToServer = useCallback(async (file: File) => {
     setUploadProgress({ status: 'uploading', message: 'در حال آپلود...', progress: 0 });
@@ -72,8 +97,15 @@ export function ProformaInvoice({
       const file = event.target.files?.[0];
       if (!file) return;
 
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        event.target.value = '';
+        return;
+      }
+
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');
+        event.target.value = '';
         return;
       }
 
@@ -120,8 +152,16 @@ export function ProformaInvoice({
   const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (isReadOnly) return;
+
     if (!uploadedFile || uploadProgress?.status !== 'success') {
       toast.error('لطفا تصویر پیش‌فاکتور را آپلود کنید');
+      return;
+    }
+
+    // Existing invoice from preview — continue without re-creating
+    if (uploadedFile.isExisting && previewData?.invoiceId) {
+      if (onNext) onNext();
       return;
     }
 
@@ -183,7 +223,6 @@ export function ProformaInvoice({
               }}
               onFileSelect={handleFileSelect}
               onRemoveFile={() => void handleRemoveFile()}
-              accept='image/jpeg,image/png'
             />
 
             {uploadedFile && (
@@ -212,6 +251,7 @@ export function ProformaInvoice({
               <Button
                 type='submit'
                 disabled={
+                  isReadOnly ||
                   createInvoiceMutation.isPending ||
                   changeRequestStateMutation.isPending ||
                   !uploadedFile ||
@@ -225,6 +265,11 @@ export function ProformaInvoice({
                     ? 'ویرایش'
                     : 'مرحله بعد'}
               </Button>
+              {onBack && (
+                <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                  بازگشت
+                </Button>
+              )}
               {onCancel && (
                 <Button type='button' variant='outline' size='lg' onClick={onCancel}>
                   انصراف

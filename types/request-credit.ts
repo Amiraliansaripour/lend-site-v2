@@ -161,7 +161,10 @@ export interface CreateRequestPayload {
   planId: string;
   creditAmount: number;
   period: number;
+  force: boolean;
 }
+
+export const REQUEST_CREATE_EXISTING_REQUEST_STATUS = 8;
 
 export interface CreateRequestResponse {
   id: string;

@@ -12,13 +12,22 @@ import type {
   CreateRequestResponse,
   RequestStateChangePayload,
 } from '@/types/request-credit';
+import { REQUEST_CREATE_EXISTING_REQUEST_STATUS } from '@/types/request-credit';
 import { resolveURL } from '@/utils/url';
 
 export async function facilityInquiry(payload: FacilityInquiryPayload) {
-  const { data } = await api.post<FacilityInquiryPayload, FacilityInquiryResponse>(
+  const { data, resp } = await api.post<FacilityInquiryPayload, FacilityInquiryResponse>(
     '/UserFacility/Inquiry',
     payload,
   );
+
+  if (!resp.ok) {
+    throw new Error(
+      (data as FacilityInquiryResponse & { message?: string })?.message ??
+        `Facility inquiry failed with status ${resp.status}`,
+    );
+  }
+
   return data;
 }
 
@@ -38,46 +47,105 @@ export async function verifyValidationOtp(payload: OtpVerifyPayload) {
   return data;
 }
 
-// * Finotech validation flow
-export interface FinotechInquiryResponse {
-  otpStatus?: boolean;
-  token?: string;
-  trackId?: string;
+// * ICS validation flow (SendOtpIc → IcsFullProcess)
+export type IcsValidationStatus =
+  | 'Completed'
+  | 'Pending'
+  | 'ReportGenerated'
+  | 'Unavailable'
+  | 'InQueue'
+  | 'waiting'
+  | string;
+
+export interface SendOtpIcPayload {
+  nationalCode: string;
+  mobileNumber: string;
 }
 
-export interface FinotechCreditData {
-  lifeStatus?: boolean;
-  chequeColorStatus?: number;
-  isBlocked?: boolean;
-  over18?: boolean;
-  facilityDeferred?: boolean;
-  guarantyDeferred?: boolean;
-  score?: number;
+export interface SendOtpIcData {
+  success: boolean;
+  message: string;
+  requestId?: string;
+  status: IcsValidationStatus;
+  isComplete: boolean;
+  isInQueue: boolean;
+  isReportGenerated: boolean;
+}
+
+export interface IcsFullProcessPayload {
+  lendRequestId: string;
+  nationalCode: string;
+  mobileNumber: string;
+  requestId: string;
+  token: string;
+}
+
+export interface IcsFullProcessData {
+  gatewayRequestId?: string;
   risk?: string;
+  score?: string | number;
+  status: IcsValidationStatus;
+  isComplete: boolean;
+  success: boolean;
+  message: string;
 }
 
-export async function sendFinotechInquiry(requestId: string, otp = '') {
-  const { data } = await api.post<{ requestId: string; otp: string }, FinotechInquiryResponse>(
-    '/UserFacility/Inquiry',
-    { requestId, otp },
+export async function sendOtpIc(payload: SendOtpIcPayload) {
+  const { data, resp } = await api.post<SendOtpIcPayload, APIResult<SendOtpIcData>>(
+    '/UserFacility/SendOtpIc',
+    payload,
   );
-  return data;
+
+  if (!resp.ok || !data.isSuccess) {
+    throw new Error(data.message || 'خطا در ارسال کد تایید');
+  }
+
+  return data.data;
 }
 
-export async function getFinotechCreditStatus(userId: string, requestId: string) {
-  const { data } = await api.post<
-    { userId: string; requestId: string },
-    APIResult<FinotechCreditData>
-  >('/UserCreditStatus/CreditStatus', { userId, requestId });
-  return data.data as FinotechCreditData;
+export async function icsFullProcess(payload: IcsFullProcessPayload) {
+  const { data, resp } = await api.post<IcsFullProcessPayload, APIResult<IcsFullProcessData>>(
+    '/UserFacility/IcsFullProcess',
+    payload,
+  );
+
+  if (!resp.ok || !data.isSuccess) {
+    throw new Error(data.message || 'خطا در انجام اعتبارسنجی');
+  }
+
+  return data.data;
+}
+
+export class ExistingRequestError extends Error {
+  readonly statusCode = REQUEST_CREATE_EXISTING_REQUEST_STATUS;
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'ExistingRequestError';
+  }
 }
 
 export async function createRequest(payload: CreateRequestPayload) {
   const { data } = await api.post<CreateRequestPayload, APIResult<CreateRequestResponse>>(
     '/Request/Create',
     payload,
+    { suppressErrorToast: true },
   );
-  return data.data; // Return the unwrapped data from APIResult
+
+  if (data?.statusCode === REQUEST_CREATE_EXISTING_REQUEST_STATUS) {
+    throw new ExistingRequestError(data.message || 'درخواست قبلی شما هنوز تکمیل نشده است');
+  }
+
+  if (!data?.isSuccess) {
+    throw new Error(data?.message || 'خطا در ایجاد درخواست');
+  }
+
+  const created = data.data as CreateRequestResponse | undefined;
+  if (!created?.id) {
+    throw new Error(data?.message || 'درخواست ثبت شد اما شناسه دریافت نشد');
+  }
+
+  return created;
 }
 
 export async function changeRequestState(payload: RequestStateChangePayload) {
@@ -126,9 +194,11 @@ export async function deleteAttachment(attachmentId: string) {
     },
   });
 
-  if (!response.ok) {
-    throw new Error('Delete failed');
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok || result?.isSuccess === false) {
+    throw new Error(result?.message || 'Delete failed');
   }
 
-  return response.json();
+  return result;
 }

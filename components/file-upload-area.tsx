@@ -5,11 +5,14 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Upload, X, FileCheck, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ALLOWED_IMAGE_ACCEPT, isAllowedImageFile } from '@/lib/image-file';
+import { toast } from 'sonner';
 
 interface UploadedFile {
-  file: File;
+  file?: File;
   preview: string;
   id?: string;
+  isExisting?: boolean;
 }
 
 interface UploadProgress {
@@ -38,8 +41,18 @@ export function FileUploadArea<T extends string>({
   onRefChange,
   onFileSelect,
   onRemoveFile,
-  accept = 'image/*',
+  accept = ALLOWED_IMAGE_ACCEPT,
 }: FileUploadAreaProps<T>) {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && !isAllowedImageFile(file)) {
+      toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+      event.target.value = '';
+      return;
+    }
+    onFileSelect(event, fileKey);
+  };
+
   return (
     <div className='space-y-2'>
       <div
@@ -52,12 +65,15 @@ export function FileUploadArea<T extends string>({
           ref={el => onRefChange(fileKey, el)}
           type='file'
           accept={accept}
-          onChange={e => onFileSelect(e, fileKey)}
-          className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
+          onChange={handleChange}
+          className={cn(
+            'absolute inset-0 w-full h-full opacity-0 cursor-pointer',
+            uploadedFile && 'pointer-events-none',
+          )}
         />
 
         {uploadedFile ? (
-          <div className='space-y-2'>
+          <div className='relative z-10 space-y-2'>
             <div className='relative w-full h-32'>
               <Image
                 src={uploadedFile.preview}
@@ -88,6 +104,7 @@ export function FileUploadArea<T extends string>({
               variant='destructive'
               size='sm'
               onClick={e => {
+                e.preventDefault();
                 e.stopPropagation();
                 onRemoveFile(fileKey);
               }}
@@ -101,7 +118,9 @@ export function FileUploadArea<T extends string>({
           <div className='py-4'>
             <Upload className='w-8 h-8 mx-auto mb-2 text-gray-400' />
             <p className='text-sm text-gray-600'>کلیک کنید یا فایل را بکشید</p>
-            <p className='text-xs text-gray-500 mt-1'>حداکثر 3 مگابایت</p>
+            <p className='text-xs text-gray-500 mt-1'>
+              پسوندهای مجاز: jpg, jpeg, png (حداکثر 3 مگابایت)
+            </p>
           </div>
         )}
       </div>

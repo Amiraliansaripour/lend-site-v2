@@ -1,6 +1,14 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, type FormEvent, type ChangeEvent } from 'react';
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+  type FormEvent,
+  type ChangeEvent,
+} from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,23 +16,71 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUploadArea } from '@/components/file-upload-area';
+import { isAllowedImageFile } from '@/lib/image-file';
 import { uploadAttachment, deleteAttachment } from '@/api/facility';
 import { getUser } from '@/api/users';
 import { toast } from 'sonner';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, AlertCircle } from 'lucide-react';
+import { Link, useRouter } from '@/i18n/navigation';
 import type { UserInfo } from '@/types/request-credit';
+import { getShopImageUrl } from '@/lib/shop-utils';
+import { normalizedFormatJalaliDate } from '@/utils/format';
 import {
   useUploadUserAttachments,
   useValidateUserIdentityInfo,
   useChangeRequestState,
 } from '@/mutations/request';
 
+function formatBirthDate(date?: string) {
+  if (!date) return '';
+  const shifted = new Date(date);
+  shifted.setDate(shifted.getDate() + 1);
+  return normalizedFormatJalaliDate(shifted, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}
+
+const ESSENTIAL_FIELD_LABELS = {
+  firstName: 'نام',
+  lastName: 'نام خانوادگی',
+  nationalCode: 'کد ملی',
+  birthDate: 'تاریخ تولد',
+  phoneNumber: 'شماره موبایل',
+  cityProvinceName: 'استان',
+  cityName: 'شهر',
+  address: 'آدرس',
+  postalCode: 'کد پستی',
+} as const;
+
+function getMissingEssentialFields(userData?: UserInfo): string[] {
+  const missingFields: string[] = [];
+
+  if (!userData?.firstName?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.firstName);
+  if (!userData?.lastName?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.lastName);
+  if (!userData?.nationalCode?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.nationalCode);
+  if (!userData?.personInfo?.birthDate) missingFields.push(ESSENTIAL_FIELD_LABELS.birthDate);
+  if (!userData?.personInfo?.phoneNumber?.trim())
+    missingFields.push(ESSENTIAL_FIELD_LABELS.phoneNumber);
+  if (!userData?.personInfo?.cityProvinceName?.trim())
+    missingFields.push(ESSENTIAL_FIELD_LABELS.cityProvinceName);
+  if (!userData?.personInfo?.cityName?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.cityName);
+  if (!userData?.personInfo?.address?.trim()) missingFields.push(ESSENTIAL_FIELD_LABELS.address);
+  if (!userData?.personInfo?.postalCode?.trim())
+    missingFields.push(ESSENTIAL_FIELD_LABELS.postalCode);
+
+  return missingFields;
+}
+
 interface UserInformationProps {
   user?: UserInfo;
   requestId: string;
   onNext?: (data: UserInformationFormData) => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 interface UserInformationFormData {
@@ -53,9 +109,14 @@ interface UploadProgress {
 }
 
 interface ExistingAttachment {
-  id: string;
-  attachmentType: number;
-  file: string; // base64 string
+  id?: string;
+  Id?: string;
+  attachmentId?: string;
+  attachmentType?: number;
+  filePath?: string;
+  file?: string;
+  name?: string;
+  [key: string]: unknown;
 }
 
 interface UserWithAttachments {
@@ -71,13 +132,23 @@ const ATTACHMENT_TYPES = {
 
 type FileKey = keyof typeof ATTACHMENT_TYPES;
 
+function getAttachmentId(attachment?: ExistingAttachment | null): string | undefined {
+  if (!attachment) return undefined;
+  const value = attachment.id ?? attachment.Id ?? attachment.attachmentId;
+  if (value == null || value === '') return undefined;
+  return String(value);
+}
+
 export function UserInformation({
   user,
   requestId,
   onNext,
+  onBack,
   onCancel,
   isEditMode = false,
+  isReadOnly = false,
 }: UserInformationProps) {
+  const router = useRouter();
   const uploadUserAttachmentsMutation = useUploadUserAttachments();
   const validateUserIdentityMutation = useValidateUserIdentityInfo();
   const changeRequestStateMutation = useChangeRequestState();
@@ -85,7 +156,7 @@ export function UserInformation({
   const [formData, setFormData] = useState<UserInformationFormData>({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    birthDate: user?.personInfo?.birthDate || '',
+    birthDate: formatBirthDate(user?.personInfo?.birthDate),
     nationalCode: user?.nationalCode || '',
     phoneNumber: user?.personInfo?.phoneNumber || '',
     branchCityName: user?.personInfo?.cityProvinceName || '',
@@ -106,11 +177,50 @@ export function UserInformation({
   const [showImageModal, setShowImageModal] = useState(false);
 
   const fileInputRefs = useRef<Partial<Record<FileKey, HTMLInputElement | null>>>({});
+  const uploadedAttachmentIdsRef = useRef<Partial<Record<FileKey, string>>>({});
+  const hasRedirectedToProfile = useRef(false);
+
+  const missingEssentialFields = useMemo(() => getMissingEssentialFields(user), [user]);
+  const hasEssentialInfo = missingEssentialFields.length === 0;
+
+  const profileCallbackUrl = requestId
+    ? `/requests/request-credit?id=${requestId}`
+    : '/requests/request-credit';
+  const profileUrl = `/profile?callBackUrl=${encodeURIComponent(profileCallbackUrl)}`;
 
   // Callback to handle ref changes
   const handleRefChange = useCallback((key: FileKey, ref: HTMLInputElement | null) => {
     fileInputRefs.current[key] = ref;
   }, []);
+
+  // Redirect to profile when essential identity fields are missing
+  useEffect(() => {
+    if (hasEssentialInfo) {
+      hasRedirectedToProfile.current = false;
+      return;
+    }
+    if (isReadOnly || hasRedirectedToProfile.current) return;
+
+    hasRedirectedToProfile.current = true;
+    toast.error('لطفا تمام اطلاعات هویتی را در صفحه پروفایل تکمیل کنید');
+    router.push(profileUrl);
+  }, [hasEssentialInfo, isReadOnly, profileUrl, router]);
+
+  // Keep form values in sync when user data is refreshed (e.g. after profile update)
+  useEffect(() => {
+    setFormData({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      birthDate: formatBirthDate(user?.personInfo?.birthDate),
+      nationalCode: user?.nationalCode || '',
+      phoneNumber: user?.personInfo?.phoneNumber || '',
+      branchCityName: user?.personInfo?.cityProvinceName || '',
+      branchName: user?.personInfo?.cityName || '',
+      address: user?.personInfo?.address || '',
+      postalCode: user?.personInfo?.postalCode || '',
+      telephone: user?.personInfo?.telephone || '',
+    });
+  }, [user]);
 
   // Fetch existing attachments
   useEffect(() => {
@@ -148,18 +258,35 @@ export function UserInformation({
     }));
   };
 
-  const getExistingPhotoBase64 = useCallback(
-    (type: number) => {
-      const attachment = existingAttachments?.find(item => item.attachmentType === type);
-      return attachment?.file;
-    },
+  const findAttachmentByType = useCallback(
+    (type: number) => existingAttachments.find(item => Number(item.attachmentType) === type),
     [existingAttachments],
   );
 
-  const removeExistingSinglePhoto = useCallback(async (id: string) => {
+  const getExistingPhotoUrl = useCallback(
+    (type: number) => {
+      const attachment = findAttachmentByType(type);
+      if (
+        attachment?.file &&
+        !attachment.file.startsWith('http') &&
+        !attachment.file.includes('/')
+      ) {
+        return `data:image/jpeg;base64,${attachment.file}`;
+      }
+      return getShopImageUrl(attachment?.filePath) ?? (attachment?.file || null);
+    },
+    [findAttachmentByType],
+  );
+
+  const removeExistingSinglePhoto = useCallback(async (id?: string) => {
+    if (!id) {
+      toast.error('شناسه تصویر یافت نشد');
+      return;
+    }
+
     try {
       await deleteAttachment(id);
-      setExistingAttachments(prev => prev.filter(attachment => attachment.id !== id));
+      setExistingAttachments(prev => prev.filter(attachment => getAttachmentId(attachment) !== id));
       toast.success('تصویر با موفقیت حذف شد');
     } catch {
       toast.error('خطا در حذف تصویر');
@@ -176,47 +303,108 @@ export function UserInformation({
     setSelectedImage(null);
   };
 
-  const uploadToServer = useCallback(async (file: File, key: FileKey) => {
-    setUploadProgress(prev => ({
-      ...prev,
-      [key]: { status: 'uploading', message: 'در حال آپلود...', progress: 0 },
-    }));
+  const collectAttachmentIdsToSend = useCallback(
+    (newlyUploadedType?: number) => {
+      const ids = new Set<string>();
 
-    try {
-      const formDataUpload = new FormData();
-      formDataUpload.append('Name', file.name);
-      formDataUpload.append('attachmentType', String(ATTACHMENT_TYPES[key]));
-      formDataUpload.append('file', file);
+      for (const attachment of existingAttachments) {
+        if (
+          newlyUploadedType !== undefined &&
+          Number(attachment.attachmentType) === newlyUploadedType
+        ) {
+          continue;
+        }
+        const attachmentId = getAttachmentId(attachment);
+        if (attachmentId) ids.add(attachmentId);
+      }
 
-      const result = await uploadAttachment(formDataUpload);
+      for (const id of Object.values(uploadedAttachmentIdsRef.current)) {
+        if (id) ids.add(id);
+      }
+
+      return Array.from(ids);
+    },
+    [existingAttachments],
+  );
+
+  const uploadToServer = useCallback(
+    async (file: File, key: FileKey) => {
+      const userId = user?.id;
+      if (!userId) {
+        toast.error('شناسه کاربری یافت نشد.');
+        return;
+      }
 
       setUploadProgress(prev => ({
         ...prev,
-        [key]: { status: 'success', message: 'آپلود موفق' },
+        [key]: { status: 'uploading', message: 'در حال آپلود...', progress: 0 },
       }));
 
-      setUploadedFiles(prev => ({
-        ...prev,
-        [key]: { ...prev[key]!, id: result.id },
-      }));
+      try {
+        const formDataUpload = new FormData();
+        formDataUpload.append('Name', file.name);
+        formDataUpload.append('attachmentType', String(ATTACHMENT_TYPES[key]));
+        formDataUpload.append('file', file);
 
-      toast.success('فایل با موفقیت آپلود شد');
-    } catch {
-      setUploadProgress(prev => ({
-        ...prev,
-        [key]: { status: 'error', message: 'خطا در آپلود' },
-      }));
-      toast.error('خطا در آپلود فایل');
-    }
-  }, []);
+        const result = await uploadAttachment(formDataUpload);
+
+        uploadedAttachmentIdsRef.current[key] = result.id;
+
+        setUploadedFiles(prev => ({
+          ...prev,
+          [key]: { ...prev[key]!, id: result.id },
+        }));
+
+        const attachmentIdsToSend = collectAttachmentIdsToSend(ATTACHMENT_TYPES[key]);
+
+        const uploadResponse = await uploadUserAttachmentsMutation.mutateAsync({
+          userId,
+          attachmentIdsToSend,
+          isActive: true,
+        });
+
+        if (!uploadResponse?.isSuccess) {
+          delete uploadedAttachmentIdsRef.current[key];
+          setUploadProgress(prev => ({
+            ...prev,
+            [key]: { status: 'error', message: 'خطا در ثبت مدرک' },
+          }));
+          toast.error(uploadResponse?.message || 'خطا در ثبت مدارک');
+          return;
+        }
+
+        setUploadProgress(prev => ({
+          ...prev,
+          [key]: { status: 'success', message: 'آپلود موفق' },
+        }));
+
+        toast.success('فایل با موفقیت آپلود شد');
+      } catch {
+        delete uploadedAttachmentIdsRef.current[key];
+        setUploadProgress(prev => ({
+          ...prev,
+          [key]: { status: 'error', message: 'خطا در آپلود' },
+        }));
+        toast.error('خطا در آپلود فایل');
+      }
+    },
+    [user?.id, collectAttachmentIdsToSend, uploadUserAttachmentsMutation],
+  );
 
   const handleFileSelect = useCallback(
     (event: ChangeEvent<HTMLInputElement>, key: FileKey) => {
       const file = event.target.files?.[0];
       if (!file) return;
 
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        event.target.value = '';
+        return;
+      }
+
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');
+        event.target.value = '';
         return;
       }
 
@@ -248,6 +436,8 @@ export function UserInformation({
         }
       }
 
+      delete uploadedAttachmentIdsRef.current[key];
+
       setUploadedFiles(prev => {
         const newFiles = { ...prev };
         delete newFiles[key];
@@ -267,8 +457,15 @@ export function UserInformation({
     [uploadedFiles],
   );
 
-  const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onFormSubmit = async (e?: FormEvent<HTMLFormElement>) => {
+    e?.preventDefault();
+    if (isReadOnly) return;
+
+    if (!hasEssentialInfo) {
+      toast.error('لطفا تمام اطلاعات هویتی را در صفحه پروفایل تکمیل کنید');
+      router.push(profileUrl);
+      return;
+    }
 
     if (!requestId) {
       toast.error('شناسه درخواست یافت نشد. لطفا ابتدا درخواست را ثبت کنید.');
@@ -286,7 +483,7 @@ export function UserInformation({
     const isUploadingNewFiles = showUploadSection || existingAttachments.length === 0;
 
     if (isUploadingNewFiles) {
-      // Validate new file uploads
+      // Validate new file uploads (IDs are already sent via User/Upload after each photo)
       const requiredFiles: FileKey[] = ['nationalCardFront', 'birthCertificate'];
 
       for (const key of requiredFiles) {
@@ -301,62 +498,35 @@ export function UserInformation({
         }
       }
 
-      const attachmentIdsToSend: string[] = [];
-      for (const key of requiredFiles) {
-        const fileId = uploadedFiles[key]?.id;
-        if (fileId) {
-          attachmentIdsToSend.push(fileId);
-        }
-      }
-      if (uploadedFiles.nationalCardBack?.id) {
-        attachmentIdsToSend.push(uploadedFiles.nationalCardBack.id);
-      }
+      validateUserIdentityMutation.mutate(requestId, {
+        onSuccess: validationResponse => {
+          if (!validationResponse?.isSuccess) {
+            toast.error(validationResponse?.message || 'خطا در تایید اطلاعات هویتی');
+            return;
+          }
 
-      uploadUserAttachmentsMutation.mutate(
-        { userId, attachmentIdsToSend },
-        {
-          onSuccess: uploadResponse => {
-            if (!uploadResponse?.isSuccess) {
-              toast.error(uploadResponse?.message || 'خطا در آپلود مدارک');
-              return;
-            }
-            validateUserIdentityMutation.mutate(requestId, {
-              onSuccess: validationResponse => {
-                if (!validationResponse?.isSuccess) {
-                  toast.error(validationResponse?.message || 'خطا در تایید اطلاعات هویتی');
-                  return;
+          changeRequestStateMutation.mutate(
+            { id: requestId, requestState: 2 },
+            {
+              onSuccess: () => {
+                toast.success('اطلاعات هویتی با موفقیت تایید و مرحله بعد فعال شد');
+                if (onNext) {
+                  onNext(formData);
                 }
-
-                changeRequestStateMutation.mutate(
-                  { id: requestId, requestState: 2 },
-                  {
-                    onSuccess: () => {
-                      toast.success('اطلاعات هویتی با موفقیت تایید و مرحله بعد فعال شد');
-                      if (onNext) {
-                        onNext(formData);
-                      }
-                    },
-                    onError: error => {
-                      const message =
-                        error instanceof Error ? error.message : 'خطا در تغییر وضعیت درخواست';
-                      toast.error(message);
-                    },
-                  },
-                );
               },
               onError: error => {
                 const message =
-                  error instanceof Error ? error.message : 'خطا در تایید اطلاعات هویتی';
+                  error instanceof Error ? error.message : 'خطا در تغییر وضعیت درخواست';
                 toast.error(message);
               },
-            });
-          },
-          onError: error => {
-            const message = error instanceof Error ? error.message : 'خطا در آپلود مدارک';
-            toast.error(message);
-          },
+            },
+          );
         },
-      );
+        onError: error => {
+          const message = error instanceof Error ? error.message : 'خطا در تایید اطلاعات هویتی';
+          toast.error(message);
+        },
+      });
     } else if (hasExistingAttachments) {
       // User has existing attachments, just validate and proceed
       validateUserIdentityMutation.mutate(requestId, {
@@ -409,33 +579,68 @@ export function UserInformation({
     { label: 'کد پستی', name: 'postalCode', type: 'text', required: true, maxLength: 10 },
   ];
 
+  const isFieldEmpty = (name: keyof UserInformationFormData) =>
+    !String(formData[name] || '').trim();
+
   return (
     <form onSubmit={onFormSubmit} className='space-y-6'>
+      {!hasEssentialInfo && !isReadOnly && (
+        <div className='p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
+          <div className='flex items-start gap-2'>
+            <AlertCircle className='w-5 h-5 text-yellow-600 shrink-0 mt-0.5' />
+            <div className='flex-1 space-y-3'>
+              <div>
+                <h3 className='text-sm font-medium text-yellow-800 mb-2'>
+                  برای ادامه، اطلاعات هویتی زیر را در صفحه پروفایل تکمیل کنید:
+                </h3>
+                <ul className='text-sm text-yellow-700 space-y-1'>
+                  {missingEssentialFields.map(field => (
+                    <li key={field} className='flex items-center'>
+                      <span className='w-2 h-2 bg-yellow-400 rounded-full ml-2'></span>
+                      {field}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Button asChild type='button' size='sm'>
+                <Link href={profileUrl}>تکمیل اطلاعات در پروفایل</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>اطلاعات هویتی</CardTitle>
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            {formFields.map(field => (
-              <div key={field.name} className='w-full'>
-                <Label htmlFor={field.name} className='mb-2'>
-                  {field.label} {field.required && <span className='text-red-500'>*</span>}
-                </Label>
-                <Input
-                  type={field.type}
-                  id={field.name}
-                  name={field.name}
-                  value={formData[field.name as keyof UserInformationFormData] || ''}
-                  onChange={handleInputChange}
-                  required={field.required}
-                  maxLength={field.maxLength}
-                  placeholder={field.placeholder}
-                  readOnly
-                  disabled
-                />
-              </div>
-            ))}
+            {formFields.map(field => {
+              const fieldName = field.name as keyof UserInformationFormData;
+              const isEmpty = field.required && isFieldEmpty(fieldName);
+
+              return (
+                <div key={field.name} className='w-full'>
+                  <Label htmlFor={field.name} className='mb-2'>
+                    {field.label} {field.required && <span className='text-red-500'>*</span>}
+                  </Label>
+                  <Input
+                    type={field.type}
+                    id={field.name}
+                    name={field.name}
+                    value={formData[fieldName] || ''}
+                    onChange={handleInputChange}
+                    required={field.required}
+                    maxLength={field.maxLength}
+                    placeholder={field.placeholder}
+                    readOnly
+                    disabled
+                    className={isEmpty && !isReadOnly ? 'border-red-400 bg-red-50' : undefined}
+                  />
+                </div>
+              );
+            })}
 
             <div className='md:col-span-2'>
               <Label htmlFor='address' className='mb-2'>
@@ -450,6 +655,9 @@ export function UserInformation({
                 rows={3}
                 disabled
                 readOnly
+                className={
+                  isFieldEmpty('address') && !isReadOnly ? 'border-red-400 bg-red-50' : undefined
+                }
               />
             </div>
           </div>
@@ -474,34 +682,37 @@ export function UserInformation({
                   { type: 100, label: 'روی کارت ملی', key: 'nationalCardFront' as FileKey },
                   { type: 101, label: 'پشت کارت ملی', key: 'nationalCardBack' as FileKey },
                 ].map(({ type, label, key }) => {
-                  const photoBase64 = getExistingPhotoBase64(type);
-                  const attachment = existingAttachments.find(item => item.attachmentType === type);
+                  const photoUrl = getExistingPhotoUrl(type);
 
                   return (
                     <div key={type} className='space-y-2'>
                       <Label>{label}</Label>
-                      {photoBase64 ? (
-                        <div className='relative'>
-                          <div className='relative w-full h-40 border-2 border-green-500 rounded-lg overflow-hidden'>
-                            <Image
-                              src={`data:image/jpeg;base64,${photoBase64}`}
-                              alt={label}
-                              fill
-                              className='object-cover cursor-pointer hover:opacity-80 transition-opacity'
-                              onClick={() =>
-                                openImageModal(`data:image/jpeg;base64,${photoBase64}`)
-                              }
-                            />
-                          </div>
-                          <Button
+                      {photoUrl ? (
+                        <div className='relative w-full'>
+                          <img
+                            src={photoUrl}
+                            alt={label}
+                            className='h-40 w-full cursor-pointer rounded-lg border-2 border-green-500 object-cover hover:opacity-80'
+                            onClick={() => openImageModal(photoUrl)}
+                          />
+                          <button
                             type='button'
-                            variant='destructive'
-                            size='icon'
-                            className='absolute top-2 right-2 h-6 w-6 rounded-full'
-                            onClick={() => attachment && removeExistingSinglePhoto(attachment.id)}
+                            aria-label={`حذف ${label}`}
+                            className='absolute top-2 right-2 z-50 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600'
+                            onMouseDown={event => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            onClick={event => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void removeExistingSinglePhoto(
+                                getAttachmentId(findAttachmentByType(type)),
+                              );
+                            }}
                           >
                             <X className='h-4 w-4' />
-                          </Button>
+                          </button>
                         </div>
                       ) : (
                         <FileUploadArea
@@ -519,7 +730,16 @@ export function UserInformation({
                 })}
               </div>
               <div className='flex justify-center'>
-                <Button type='button' variant='outline' onClick={() => setShowUploadSection(true)}>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => {
+                    uploadedAttachmentIdsRef.current = {};
+                    setUploadedFiles({});
+                    setUploadProgress({});
+                    setShowUploadSection(true);
+                  }}
+                >
                   بارگذاری مدارک جدید
                 </Button>
               </div>
@@ -597,8 +817,11 @@ export function UserInformation({
 
       <div className='flex justify-center gap-4'>
         <Button
-          type='submit'
+          type='button'
+          onClick={() => void onFormSubmit()}
           disabled={
+            isReadOnly ||
+            !hasEssentialInfo ||
             uploadUserAttachmentsMutation.isPending ||
             validateUserIdentityMutation.isPending ||
             changeRequestStateMutation.isPending
@@ -613,9 +836,14 @@ export function UserInformation({
               ? 'ویرایش'
               : 'مرحله بعد'}
         </Button>
+        {onBack && (
+          <Button type='button' variant='outline' size='lg' onClick={onBack}>
+            بازگشت
+          </Button>
+        )}
         {onCancel && (
           <Button type='button' variant='outline' size='lg' onClick={onCancel}>
-            بازگشت
+            انصراف
           </Button>
         )}
       </div>

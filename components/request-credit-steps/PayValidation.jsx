@@ -29,8 +29,8 @@ const PayValidation = ({ user, requestId, validationPrice }) => {
 
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = `https://panel.aqayepardakht.ir/startpay/${token}`;
-    // form.action = "https://rt.sizpay.ir/Route/Payment";
+    // form.action = `https://panel.aqayepardakht.ir/startpay/${token}`;
+    form.action = 'https://rt.sizpay.ir/Route/Payment';
     form.target = '_self';
 
     const fields = [

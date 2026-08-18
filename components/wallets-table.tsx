@@ -49,7 +49,7 @@ const data = [
     period: 12,
     contractFilePath: null,
     requestNumber: 10054,
-    planFinancierName: 'نیکاپیی',
+    planFinancierName: 'لندپی',
     planName: '12 ماهه',
     planGuarantees: ['کسر از حقوق'],
     requestState: 28,

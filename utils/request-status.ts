@@ -1,4 +1,4 @@
-export type RequestStatusType = 'pending' | 'approved' | 'rejected' | 'unknown';
+export type RequestStatusType = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'unknown';
 
 export type RequestStatusInfo = {
   text: string;
@@ -6,7 +6,42 @@ export type RequestStatusInfo = {
   variant: 'default' | 'secondary' | 'destructive' | 'outline';
 };
 
+export const REQUEST_STATE_CANCELLED = 29;
+
+/** Cancel is allowed while status has not progressed beyond 18. */
+export const canCancelRequest = (requestState: number): boolean => {
+  return requestState > 0 && requestState <= 18;
+};
+
+/** Statuses 10–17 are locked — user cannot modify submitted data. */
+export const canModifyRequestData = (requestState: number): boolean => {
+  return !(requestState >= 10 && requestState <= 17);
+};
+
+/**
+ * New request is blocked while any request sits in statuses 10–17.
+ * Status 29 (cancelled) and incomplete (< 8) do not block (incomplete ones are cancelled on create).
+ */
+export const canSubmitNewRequest = (requests: Array<{ requestState: number }>): boolean => {
+  return !requests.some(r => r.requestState >= 10 && r.requestState <= 17);
+};
+
+/** Requests with status < 8 must be cancelled (→ 29) before / when submitting a new one. */
+export const getIncompleteRequestsToCancel = <T extends { requestState: number }>(
+  requests: T[],
+): T[] => {
+  return requests.filter(r => r.requestState > 0 && r.requestState < 8);
+};
+
 export const getRequestStatusInfo = (requestState: number): RequestStatusInfo => {
+  if (requestState === REQUEST_STATE_CANCELLED) {
+    return {
+      text: 'لغو شده توسط کاربر',
+      type: 'cancelled',
+      variant: 'outline',
+    };
+  }
+
   // User steps (1-8)
   if (requestState >= 1 && requestState <= 8) {
     const states: Record<number, string> = {
@@ -73,4 +108,16 @@ export const getRequestStatusInfo = (requestState: number): RequestStatusInfo =>
 
 export const canContinueRequest = (requestState: number): boolean => {
   return requestState >= 1 && requestState < 8;
+};
+
+/**
+ * Admin rejections 22–28 can be resumed by the user.
+ * Resume stage = requestState - 20 (e.g. 25 → stage 5).
+ */
+export const canResumeRequest = (requestState: number): boolean => {
+  return requestState >= 22 && requestState <= 28;
+};
+
+export const getResumeStep = (requestState: number): number => {
+  return requestState - 20;
 };

@@ -14,11 +14,12 @@ import {
 import { formatNumber } from '@/utils/format';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import { WalletCard } from '@/components/wallet-card';
-import { getRequestStatusInfo, canContinueRequest } from '@/utils/request-status';
+import { canSubmitNewRequest } from '@/utils/request-status';
 import { getWalletUser, createCashWallet, getPaymentToken } from '@/api/wallet';
 import { toast } from 'sonner';
 import type { Request } from './request-types';
 import type { WalletInfo } from '@/api/wallet';
+import { useSiteTemplate } from '@/providers/site-template';
 
 type RequestsCardsProps = {
   walletInfo: WalletInfo | null;
@@ -33,12 +34,14 @@ export function RequestsCards({
   isLoading,
   onWalletUpdate,
 }: RequestsCardsProps) {
+  const { brandName, getImageUrl } = useSiteTemplate();
+  const lightLogoUrl = getImageUrl('lightLogo') || getImageUrl('logo');
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [chargeAmount, setChargeAmount] = useState('');
   const [rawAmount, setRawAmount] = useState('');
 
-  const continueRequests = requests.filter(request => canContinueRequest(request.requestState));
+  const allowNewRequest = canSubmitNewRequest(requests);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -55,7 +58,8 @@ export function RequestsCards({
   const navigateUserToPayment = (token: string, terminalID: string, merchantId: string) => {
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = `https://panel.aqayepardakht.ir/startpay/${token}`;
+    form.action = 'https://rt.sizpay.ir/Route/Payment';
+    // form.action = `https://panel.aqayepardakht.ir/startpay/${token}`;
     form.target = '_self';
 
     const fields = [
@@ -140,18 +144,21 @@ export function RequestsCards({
 
   return (
     <>
-      <div className='flex items-center gap-10 justify-center max-lg:flex-col'>
+      <div className='grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3'>
         {/* Credit Wallet Card */}
         <WalletCard>
           <WalletCard.Front>
             <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-              <Image
-                src='/logos/wallet-logo.png'
-                alt='wallet'
-                width={56}
-                height={56}
-                className='w-14'
-              />
+              {lightLogoUrl ? (
+                <Image
+                  src={lightLogoUrl}
+                  alt={brandName}
+                  width={86}
+                  height={86}
+                  className='w-28'
+                  unoptimized
+                />
+              ) : null}
             </div>
 
             <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
@@ -165,9 +172,8 @@ export function RequestsCards({
                   ریال
                 </span>
               </div>
-
               <Link href='/requests/request-credit'>
-                <Button variant='outline' className='w-fit mr-auto cursor-pointer text-primary!'>
+                <Button variant='outline' className='w-fit mr-auto text-primary!'>
                   درخواست اعتبار
                 </Button>
               </Link>
@@ -179,13 +185,16 @@ export function RequestsCards({
         <WalletCard>
           <WalletCard.Front>
             <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-              <Image
-                src='/logos/wallet-logo.png'
-                alt='wallet'
-                width={56}
-                height={56}
-                className='w-14'
-              />
+              {lightLogoUrl ? (
+                <Image
+                  src={lightLogoUrl}
+                  alt={brandName}
+                  width={86}
+                  height={86}
+                  className='w-28'
+                  unoptimized
+                />
+              ) : null}
             </div>
 
             <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
@@ -210,83 +219,16 @@ export function RequestsCards({
             </div>
           </WalletCard.Front>
         </WalletCard>
-
-        {/* Continue Request Cards */}
-        {isLoading ? (
-          <WalletCard>
-            <WalletCard.Front>
-              <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                <Image
-                  src='/logos/wallet-logo.png'
-                  alt='wallet'
-                  width={56}
-                  height={56}
-                  className='w-14'
-                />
-              </div>
-
-              <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
-                <div className='flex flex-col gap-y-1'>
-                  <span className='font-bold'>درخواست در حال بارگذاری</span>
-                  <div className='flex items-center gap-2'>
-                    <div className='h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent' />
-                  </div>
-                </div>
-              </div>
-            </WalletCard.Front>
-          </WalletCard>
-        ) : (
-          continueRequests.map(request => {
-            const statusInfo = getRequestStatusInfo(request.requestState);
-
-            return (
-              <WalletCard key={request.id}>
-                <WalletCard.Front>
-                  <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-                    <Image
-                      src='/logos/wallet-logo.png'
-                      alt='wallet'
-                      width={56}
-                      height={56}
-                      className='w-14'
-                    />
-                  </div>
-
-                  <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
-                    <div className='flex flex-col gap-y-1'>
-                      <span className='font-bold'>درخواست اعتبار</span>
-                      <span className='text-sm text-secondary'>
-                        موجودی{' '}
-                        {normalizeToPersianDigits(
-                          formatNumber(request.creditAmount, { int: true }),
-                        )}{' '}
-                        ریال
-                      </span>
-                      <span className='text-sm text-secondary'>وضعیت: {statusInfo.text}</span>
-                    </div>
-
-                    <Link href={`/requests/request-credit?id=${request.id}`}>
-                      <Button
-                        variant='outline'
-                        className='w-fit mr-auto cursor-pointer text-primary!'
-                      >
-                        ادامه درخواست
-                      </Button>
-                    </Link>
-                  </div>
-                </WalletCard.Front>
-              </WalletCard>
-            );
-          })
-        )}
       </div>
 
       {/* Charge Wallet Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className='sm:max-w-md'>
           <DialogHeader>
-            <DialogTitle>شارژ کیف پول نقدی</DialogTitle>
-            <DialogDescription>مبلغ مدنظر خود برای شارژ کیف پول را وارد کنید.</DialogDescription>
+            <DialogTitle className='text-right'>شارژ کیف پول نقدی</DialogTitle>
+            <DialogDescription className='text-right'>
+              مبلغ مدنظر خود برای شارژ کیف پول را وارد کنید.
+            </DialogDescription>
           </DialogHeader>
           <div className='flex gap-2 mt-4'>
             <Input
@@ -312,11 +254,11 @@ export function RequestsCards({
 
 export function RequestsCardsSkeleton() {
   return (
-    <div className='flex items-center gap-10 justify-center max-lg:flex-col'>
-      {[1, 2, 3].map(i => (
+    <div className='grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3'>
+      {[1, 2].map(i => (
         <div
           key={i}
-          className='w-full max-w-sm h-64 rounded-xl bg-gray-100 animate-pulse shadow-lg'
+          className='w-full max-w-96 h-64 rounded-xl bg-gray-100 animate-pulse shadow-lg'
         />
       ))}
     </div>

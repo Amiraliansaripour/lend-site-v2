@@ -39,10 +39,19 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
   const resp = await fetch(_url, {
     ...opts,
     ...payload,
-    headers: { ...opts.headers, ...headers },
+    headers: { ...headers, ...opts.headers },
   });
 
-  const data: D = await resp.json();
+  const text = await resp.text();
+  let data: D = {} as D;
+
+  if (text) {
+    try {
+      data = JSON.parse(text) as D;
+    } catch {
+      return { data, resp };
+    }
+  }
 
   if (resp.status === 401) {
     clearUserInfo();

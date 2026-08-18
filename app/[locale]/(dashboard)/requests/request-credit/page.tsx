@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { PageContent } from '@/components/page-content';
@@ -15,12 +15,21 @@ import {
   Collateral,
   AcceptByUser,
 } from '@/components/page/request-credit';
+import { RequestSummaryBar } from '@/components/page/request-credit/request-summary-bar';
 import { getUserId } from '@/lib/auth/client/user-info';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 
-import { useRequestWithPlanData } from '@/queries/request';
+import { useRequestWithPlanData, useRequestPreview, useUserRequests } from '@/queries/request';
 import { usePlan } from '@/queries/plan';
 import type { PlanDetail } from '@/api/plan';
 import { useUserWithStore } from '@/queries/users';
+import { useChangeRequestState } from '@/mutations/request';
+import {
+  canCancelRequest,
+  canModifyRequestData,
+  REQUEST_STATE_CANCELLED,
+} from '@/utils/request-status';
+import { toast } from 'sonner';
 
 const breadcrumbs: Breadcrumbs = [{ label: 'درخواست اعتبار', href: '/requests/request-credit' }];
 
@@ -42,16 +51,41 @@ export default function RequestCreditPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [forCorrections] = useState<number[]>([]);
   const [correctionStepIndex, setCorrectionStepIndex] = useState(0);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isBackToPaymentDialogOpen, setIsBackToPaymentDialogOpen] = useState(false);
+  const [createdRequestId, setCreatedRequestId] = useState<string | null>(null);
 
   const activeStepRef = useRef<HTMLDivElement>(null);
+  const previousRequestIdRef = useRef<string | null>(null);
 
   const { data: user } = useUserWithStore(userId || '');
 
-  const id = searchParams.get('id');
+  const id = searchParams.get('id') || createdRequestId;
   const editMode = searchParams.get('editMode') === 'true';
 
   const { data: requestData } = useRequestWithPlanData(id || '');
-  const { data: plan } = usePlan(requestData?.planId || '');
+  const { data: previewData, refetch: refetchPreview } = useRequestPreview(id || '');
+  const { data: plan } = usePlan(requestData?.planId || previewData?.planId || '');
+  const { data: userRequests = [] } = useUserRequests(userId || '');
+  const changeRequestStateMutation = useChangeRequestState();
+
+  const requestState = requestData?.requestState ?? previewData?.requestState ?? 0;
+  const isReadOnly = requestState > 0 && !canModifyRequestData(requestState);
+  const showCancel = !!id && canCancelRequest(requestState);
+
+  const planIsInvoiceRequired =
+    requestData?.planIsInvoiceRequired ?? previewData?.planIsInvoiceRequired;
+  const planIsGuaranteeRequired =
+    requestData?.planIsGuaranteeRequired ?? previewData?.planIsGuaranteeRequired;
+  const planIsIncomeRequired =
+    requestData?.planIsIncomeRequired ?? previewData?.planIsIncomeRequired;
+  const planIsValidateRequired =
+    requestData?.planIsValidateRequired ?? previewData?.planIsValidateRequired;
+
+  const refreshPreview = useCallback(async () => {
+    if (!id) return;
+    await refetchPreview();
+  }, [id, refetchPreview]);
 
   const allSteps: StepConfig[] = [
     { label: 'انتخاب طرح', key: 1 },
@@ -65,12 +99,17 @@ export default function RequestCreditPage() {
   ];
 
   useEffect(() => {
-    console.log('🎯 ID changed:', id, 'editMode:', editMode);
-    if (id) {
-      setIsEditMode(editMode);
-
-      setIsStepsLoaded(false);
+    if (!id) {
+      previousRequestIdRef.current = null;
+      return;
     }
+
+    setIsEditMode(editMode);
+
+    if (previousRequestIdRef.current === id) return;
+
+    previousRequestIdRef.current = id;
+    setIsStepsLoaded(false);
   }, [id, editMode]);
 
   useEffect(() => {
@@ -80,44 +119,50 @@ export default function RequestCreditPage() {
   }, [plan]);
 
   useEffect(() => {
-    if (requestData && !isStepsLoaded) {
+    const stepSource = requestData ?? previewData;
+    if (stepSource && !isStepsLoaded) {
       let normalizedStep: number;
-      const requestState = requestData.requestState;
+      const state = stepSource.requestState;
 
-      if (requestState >= 11 && requestState <= 18) {
-        normalizedStep = requestState - 10 + (editMode ? 0 : 1);
-      } else if (requestState >= 1 && requestState <= 8) {
-        normalizedStep = requestState + (editMode ? 0 : 1);
-      } else if (requestState >= 21 && requestState <= 28) {
-        normalizedStep = requestState - 20 + (editMode ? 0 : 1);
+      if (state >= 11 && state <= 18) {
+        normalizedStep = state - 10 + (editMode ? 0 : 1);
+      } else if (state >= 1 && state <= 8) {
+        normalizedStep = state + (editMode ? 0 : 1);
+      } else if (state >= 21 && state <= 28) {
+        normalizedStep = state - 20 + (editMode ? 0 : 1);
       } else {
         normalizedStep = 1;
       }
 
-      console.log('📍 Normalized step:', normalizedStep);
-
       let filteredSteps = [...allSteps];
 
-      if (!requestData.planIsInvoiceRequired) {
+      if (planIsInvoiceRequired === false) {
         filteredSteps = filteredSteps.filter(step => step.key !== 6);
       }
-      if (!requestData.planIsGuaranteeRequired) {
+      if (planIsGuaranteeRequired === false) {
         filteredSteps = filteredSteps.filter(step => step.key !== 7);
       }
-      if (!requestData.planIsIncomeRequired) {
+      if (planIsIncomeRequired === false) {
         filteredSteps = filteredSteps.filter(step => step.key !== 5);
       }
-      if (!requestData.planIsValidateRequired) {
+      if (planIsValidateRequired === false) {
         filteredSteps = filteredSteps.filter(step => step.key !== 4);
         filteredSteps = filteredSteps.filter(step => step.key !== 3);
       }
-      console.log(filteredSteps);
       setStepsToShow(filteredSteps);
-      setCurrentStep(normalizedStep);
+      setCurrentStep(prev => (prev > 1 ? Math.max(prev, normalizedStep) : normalizedStep));
       setIsStepsLoaded(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestData, editMode]);
+  }, [
+    requestData,
+    previewData,
+    editMode,
+    planIsInvoiceRequired,
+    planIsGuaranteeRequired,
+    planIsIncomeRequired,
+    planIsValidateRequired,
+  ]);
 
   useEffect(() => {
     if (activeStepRef.current) {
@@ -143,7 +188,7 @@ export default function RequestCreditPage() {
     }
   }, [stepsToShow, currentStep, isStepsLoaded]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (isEditMode && forCorrections.length > 0) {
       if (correctionStepIndex < forCorrections.length - 1) {
         setCorrectionStepIndex(prev => prev + 1);
@@ -151,29 +196,111 @@ export default function RequestCreditPage() {
       } else {
         router.push('/requests');
       }
-    } else {
-      const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
-      if (currentIndex !== -1 && currentIndex < stepsToShow.length - 1) {
-        setCurrentStep(stepsToShow[currentIndex + 1].key);
-      } else {
-        router.push('/requests');
-      }
+      void refreshPreview();
+      return;
     }
-  };
 
-  const handleCancel = () => {
+    setCurrentStep(prev => {
+      const currentIndex = stepsToShow.findIndex(step => step.key === prev);
+      if (currentIndex !== -1 && currentIndex < stepsToShow.length - 1) {
+        return stepsToShow[currentIndex + 1].key;
+      }
+      if (prev < 8) return prev + 1;
+      return prev;
+    });
+
+    const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
+    if (currentIndex !== -1 && currentIndex >= stepsToShow.length - 1 && currentStep >= 8) {
+      router.push('/requests');
+      return;
+    }
+
+    void refreshPreview();
+  }, [
+    refreshPreview,
+    isEditMode,
+    forCorrections,
+    correctionStepIndex,
+    stepsToShow,
+    currentStep,
+    router,
+  ]);
+
+  const hasValidationStep = Boolean(planIsValidateRequired);
+
+  const handleBack = useCallback(async () => {
     if (isEditMode && forCorrections.length > 0) {
       if (correctionStepIndex > 0) {
+        await refreshPreview();
         setCorrectionStepIndex(prev => prev - 1);
         setCurrentStep(forCorrections[correctionStepIndex - 1]);
       }
-    } else {
-      const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
-      if (currentIndex > 0) {
-        setCurrentStep(stepsToShow[currentIndex - 1].key);
-      }
+      return;
     }
-  };
+
+    // From income (step 5), going back with validation required jumps to payment (step 3).
+    if (currentStep === 5 && hasValidationStep) {
+      setIsBackToPaymentDialogOpen(true);
+      return;
+    }
+
+    const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
+    if (currentIndex > 0) {
+      await refreshPreview();
+      setCurrentStep(stepsToShow[currentIndex - 1].key);
+    }
+  }, [
+    isEditMode,
+    forCorrections,
+    correctionStepIndex,
+    stepsToShow,
+    currentStep,
+    hasValidationStep,
+    refreshPreview,
+  ]);
+
+  const handleConfirmBackToPayment = useCallback(async () => {
+    await refreshPreview();
+    setCurrentStep(3);
+  }, [refreshPreview]);
+
+  const canGoBack =
+    isEditMode && forCorrections.length > 0
+      ? correctionStepIndex > 0
+      : stepsToShow.findIndex(step => step.key === currentStep) > 0;
+
+  const backHandler = canGoBack ? handleBack : undefined;
+
+  const handleCancelRequest = useCallback(async () => {
+    if (!id || !canCancelRequest(requestState)) {
+      toast.error('امکان لغو این درخواست وجود ندارد');
+      return;
+    }
+
+    try {
+      await changeRequestStateMutation.mutateAsync({
+        id,
+        requestState: REQUEST_STATE_CANCELLED,
+      });
+      toast.success('درخواست شما با موفقیت لغو شد');
+      setIsCancelDialogOpen(false);
+      router.push('/requests');
+    } catch (error: unknown) {
+      const msg =
+        error && typeof error === 'object' && 'response' in error
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (error as any).response?.data?.message
+          : undefined;
+      toast.error(msg || 'خطا در لغو درخواست');
+    }
+  }, [id, requestState, changeRequestStateMutation, router]);
+
+  const openCancelDialog = useCallback(() => {
+    if (!showCancel) return;
+    setIsCancelDialogOpen(true);
+  }, [showCancel]);
+
+  const cancelHandler = showCancel ? openCancelDialog : undefined;
 
   const renderProgressBar = () => (
     <div className='mb-8 overflow-x-auto'>
@@ -220,6 +347,7 @@ export default function RequestCreditPage() {
       </div>
     </div>
   );
+
   if (!user || !userId) {
     return (
       <PageContainer breadcrumbs={breadcrumbs}>
@@ -231,16 +359,49 @@ export default function RequestCreditPage() {
       </PageContainer>
     );
   }
+
   return (
     <PageContainer breadcrumbs={breadcrumbs}>
       <PageContent title='مراحل ثبت درخواست'>
         <div className='rounded-2xl bg-card p-6 shadow-lg'>
           {renderProgressBar()}
 
+          {currentStep > 1 && (
+            <RequestSummaryBar
+              previewData={previewData}
+              requestData={requestData}
+              planData={planData}
+            />
+          )}
+
+          {isReadOnly && (
+            <div className='mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+              درخواست شما در حال بررسی است و امکان ویرایش اطلاعات وجود ندارد. در صورت نیاز می‌توانید
+              درخواست را لغو کرده و درخواست جدیدی ثبت کنید.
+            </div>
+          )}
+
           <div className='transition-opacity duration-300'>
             {(!isStepsLoaded || stepsToShow.find(step => step.key === 1)) && currentStep === 1 && (
               <div key='step1'>
-                <LoanCalc onNext={() => handleNext()} isEditMode={isEditMode} />
+                <LoanCalc
+                  onNext={data => {
+                    if (data?.requestId) {
+                      setCreatedRequestId(data.requestId);
+                      if (searchParams.get('id') !== data.requestId) {
+                        router.replace(`/requests/request-credit?id=${data.requestId}`);
+                      }
+                    }
+                    handleNext();
+                  }}
+                  isEditMode={isEditMode}
+                  existingRequests={userRequests}
+                  existingRequestId={id || undefined}
+                  initialPlanId={previewData?.planId || requestData?.planId || undefined}
+                  initialCreditAmount={
+                    previewData?.creditAmount ?? requestData?.creditAmount ?? undefined
+                  }
+                />
               </div>
             )}
 
@@ -250,11 +411,15 @@ export default function RequestCreditPage() {
                   requestId={id || ''}
                   user={{
                     id: userId || '',
-                    firstName: user?.firstName || '',
-                    lastName: user?.lastName || '',
-                    nationalCode: user?.nationalCode || '',
+                    firstName: user?.firstName || previewData?.userFirstName || '',
+                    lastName: user?.lastName || previewData?.userLastName || '',
+                    nationalCode: user?.nationalCode || previewData?.userNationalCode || '',
                     personInfo: {
-                      phoneNumber: user?.phoneNumber || '',
+                      phoneNumber:
+                        user?.phoneNumber ||
+                        user?.personInfo?.phoneNumber ||
+                        previewData?.userPhoneNumber ||
+                        '',
                       birthDate: user?.personInfo?.birthDate || '',
                       cityProvinceName: user?.personInfo?.cityProvinceName || '',
                       cityName: user?.personInfo?.cityName || '',
@@ -264,8 +429,10 @@ export default function RequestCreditPage() {
                     },
                   }}
                   onNext={() => handleNext()}
-                  onCancel={handleCancel}
+                  onBack={backHandler}
+                  onCancel={cancelHandler}
                   isEditMode={isEditMode}
+                  isReadOnly={isReadOnly}
                 />
               </div>
             )}
@@ -277,8 +444,10 @@ export default function RequestCreditPage() {
                   user={user}
                   validationPrice={planData?.documentAmount || 0}
                   onNext={() => handleNext()}
-                  onCancel={handleCancel}
+                  onBack={backHandler}
+                  onCancel={cancelHandler}
                   isEditMode={isEditMode}
+                  isReadOnly={isReadOnly}
                 />
               </div>
             )}
@@ -287,12 +456,19 @@ export default function RequestCreditPage() {
               <div key='step4'>
                 <Validation
                   requestId={id || ''}
-                  userId={userId || ''}
+                  nationalCode={user?.nationalCode || previewData?.userNationalCode || ''}
+                  mobileNumber={
+                    user?.personInfo?.phoneNumber ||
+                    user?.phoneNumber ||
+                    previewData?.userPhoneNumber ||
+                    ''
+                  }
                   neededScore={planData?.score}
-                  validateType={planData?.validateType ?? requestData?.validateType ?? null}
                   onNext={() => handleNext()}
-                  onCancel={handleCancel}
+                  onBack={backHandler}
+                  onCancel={cancelHandler}
                   isEditMode={isEditMode}
+                  isReadOnly={isReadOnly}
                 />
               </div>
             )}
@@ -302,8 +478,11 @@ export default function RequestCreditPage() {
                 <IncomeInformation
                   requestId={id || ''}
                   onNext={() => handleNext()}
-                  onCancel={handleCancel}
+                  onBack={backHandler}
+                  onCancel={cancelHandler}
                   isEditMode={isEditMode}
+                  isReadOnly={isReadOnly}
+                  previewData={previewData}
                 />
               </div>
             )}
@@ -313,8 +492,11 @@ export default function RequestCreditPage() {
                 <ProformaInvoice
                   requestId={id || ''}
                   onNext={() => handleNext()}
-                  onCancel={handleCancel}
+                  onBack={backHandler}
+                  onCancel={cancelHandler}
                   isEditMode={isEditMode}
+                  isReadOnly={isReadOnly}
+                  previewData={previewData}
                 />
               </div>
             )}
@@ -323,11 +505,24 @@ export default function RequestCreditPage() {
               <div key='step7'>
                 <Collateral
                   requestId={id || ''}
-                  guarantees={planData?.guarantees || []}
-                  guaranteedAmount={requestData?.guaranteedAmount ?? planData?.documentAmount ?? 0}
+                  guarantees={
+                    planData?.guarantees ||
+                    previewData?.planGuarantees ||
+                    requestData?.planGuarantees ||
+                    []
+                  }
+                  guaranteedAmount={
+                    previewData?.guaranteedAmount ??
+                    requestData?.guaranteedAmount ??
+                    planData?.documentAmount ??
+                    0
+                  }
                   onNext={() => handleNext()}
-                  onCancel={handleCancel}
+                  onBack={backHandler}
+                  onCancel={cancelHandler}
                   isEditMode={isEditMode}
+                  isReadOnly={isReadOnly}
+                  previewData={previewData}
                 />
               </div>
             )}
@@ -339,12 +534,35 @@ export default function RequestCreditPage() {
                   userId={userId || ''}
                   ruleText={planData?.ruleText}
                   onConfirm={() => handleNext()}
-                  onCancel={handleCancel}
+                  onBack={backHandler}
+                  onCancel={cancelHandler}
+                  isReadOnly={isReadOnly}
                 />
               </div>
             )}
           </div>
         </div>
+
+        <ConfirmDialog
+          open={isCancelDialogOpen}
+          setOpen={setIsCancelDialogOpen}
+          title='لغو درخواست'
+          description='آیا از لغو این درخواست اطمینان دارید؟ پس از لغو می‌توانید درخواست جدیدی ثبت کنید.'
+          confirmText='بله، لغو شود'
+          cancelText='خیر'
+          isPending={changeRequestStateMutation.isPending}
+          onConfirm={handleCancelRequest}
+        />
+
+        <ConfirmDialog
+          open={isBackToPaymentDialogOpen}
+          setOpen={setIsBackToPaymentDialogOpen}
+          title='بازگشت به مرحله پرداخت'
+          description='در صورت بازگشت، به مرحله پرداخت (مرحله ۳) منتقل می‌شوید و باید دوباره از آن مرحله ادامه دهید. آیا مطمئن هستید؟'
+          confirmText='بله، بازگشت'
+          cancelText='انصراف'
+          onConfirm={handleConfirmBackToPayment}
+        />
       </PageContent>
     </PageContainer>
   );

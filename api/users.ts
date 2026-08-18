@@ -34,6 +34,7 @@ export const loginByUsername = async (credentials: LoginByUsernameCredentials) =
     '/Register/UserRegister',
     { ...credentials, phoneNumber: formatPhoneNumber(credentials.phoneNumber || '') },
     {
+      skipAuth: true,
       headers: {
         'X-CaptchaCode': credentials.X_CaptchaCode,
         'X-CaptchaId': credentials.X_CaptchaId,

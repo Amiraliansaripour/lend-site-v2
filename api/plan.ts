@@ -16,6 +16,7 @@ export type PlanDetail = {
   period: number;
   minAmount: number;
   maxAmount: number;
+  percentage: number;
   firstSystemFee: number;
   firstBankFee: number;
   duringSystemFee: number;
@@ -26,6 +27,8 @@ export type PlanDetail = {
   validateType?: number;
   ruleText?: string;
   score?: number;
+  hasLink?: boolean;
+  link?: string;
 };
 
 export type FinancierPlansResponse = {
@@ -43,7 +46,7 @@ export const getPlan = async (id: string, params: Params = {}) => {
 };
 
 export const getPlanWithoutAuth = async (id: string, params: Params = {}) => {
-  const resp = await api.get<APIResult<Plan>>(`/Plan/GetAll/${id}`, params);
+  const resp = await api.get<APIResult<Plan>>(`/Plan/Get/${id}`, params);
   return resp.data.data as Plan;
 };
 

@@ -1,36 +1,3 @@
-export const SHOP_CATEGORIES = [
-  {
-    name: 'مد و پوشاک',
-    id: '34f0ba6a-6b2c-45c8-b0fa-202183aa1160',
-  },
-  {
-    name: 'زیبایی وسلامت',
-    id: 'd348fb09-e8db-475e-b2d3-6200ab309a19',
-  },
-  {
-    name: 'کالای دیجیتال',
-    id: '4f90d831-eae1-4f82-9f16-68c4e3994049',
-  },
-  {
-    name: 'طلا',
-    id: '9f9901a9-c137-4e30-ab79-84768df6ba81',
-  },
-  {
-    name: 'خانه و آشپزخانه',
-    id: '071c42f6-ada4-4840-8f41-b0b47ca18c85',
-  },
-  {
-    name: 'وسایل نقلیه',
-    id: '6dadd428-8e72-4dc6-9ab7-e375f0c49f74',
-  },
-  {
-    name: 'گردشگری و سفر',
-    id: '246d8fb1-fe6c-45af-be89-e9e5464d9030',
-  },
-] as const;
-
-export type ShopCategory = (typeof SHOP_CATEGORIES)[number];
-
 export type ShopType = '0' | '1' | '2' | '3';
 
 export type ShopStatus = 0 | 1 | 2;
@@ -61,4 +28,78 @@ export type Shop = {
   address?: string;
   type?: ShopType;
   url?: string;
+};
+
+export type HomeCategory = {
+  id: string;
+  name: string;
+  merchantId?: string;
+  isActive?: boolean;
+};
+
+export type MerchantPaginationResult = {
+  items: Shop[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+};
+
+export type MerchantPaginationParams = {
+  pageNumber?: number;
+  pageSize?: number;
+  status?: ShopType;
+  filter?: string[];
+};
+
+export type ProductCategoryField = {
+  id: string;
+  categoryId: string;
+  fieldName: string;
+  dataType: number;
+  isRequired: boolean;
+  displayOrder: number;
+  description?: string | null;
+  defaultValues?: string | null;
+  isActive?: boolean;
+};
+
+export type ProductCategory = {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  children?: ProductCategory[] | null;
+  level?: number;
+  path?: string;
+  displayOrder?: number;
+  merchantId?: string;
+  childrenCount?: number;
+  totalChildrenCount?: number;
+  categoryFields?: ProductCategoryField[] | null;
+  isActive?: boolean;
+};
+
+export type ProductImage = {
+  attachmentId?: string;
+  displayOrder?: number;
+  isMain?: boolean;
+  title?: string | null;
+  alt?: string | null;
+  filePath?: string | null;
+};
+
+export type CategoryProduct = {
+  id: string;
+  name: string;
+  code?: number;
+  serial?: string | null;
+  categoryId?: string;
+  categoryName?: string | null;
+  merchantId?: string;
+  merchantName?: string | null;
+  basePrice?: number | null;
+  description?: string | null;
+  isAvailable?: boolean;
+  path?: string | null;
+  fieldValues?: Record<string, string> | null;
+  productImages?: ProductImage[] | null;
 };

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,13 +10,23 @@ import { toast } from 'sonner';
 import { Upload, X, FileCheck, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCreateIncomeInfo } from '@/mutations/request';
+import {
+  ALLOWED_IMAGE_ACCEPT,
+  isAllowedImageFile,
+  resolveAttachmentImageSrc,
+} from '@/lib/image-file';
+import { getShopImageUrl } from '@/lib/shop-utils';
+import type { RequestPreviewData } from '@/api/request';
 
 interface IncomeInformationProps {
   requestId: string;
   onNext?: (data: IncomeFormData) => void;
+  onBack?: () => void;
   onCancel?: () => void;
   initialData?: IncomeFormData;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
+  previewData?: RequestPreviewData | null;
 }
 
 interface IncomeFormData {
@@ -26,9 +35,10 @@ interface IncomeFormData {
 }
 
 interface UploadedFile {
-  file: File;
+  file?: File;
   preview: string;
   id?: string;
+  isExisting?: boolean;
 }
 
 interface UploadProgress {
@@ -71,9 +81,7 @@ const FileUploadArea = ({
   return (
     <div className='space-y-2'>
       <Label className='block'>{FILE_LABELS[fileKey]}</Label>
-      <p className='text-xs text-blue-600 mb-2'>
-        پسوندهای مجاز: excel, txt, jpg, jpeg, png (حداکثر 3 مگابایت)
-      </p>
+      <p className='text-xs text-blue-600 mb-2'>پسوندهای مجاز: jpg, jpeg, png (حداکثر 3 مگابایت)</p>
       <div
         className={cn(
           'relative border-2 border-dashed rounded-lg p-4 text-center transition-colors',
@@ -85,22 +93,27 @@ const FileUploadArea = ({
         <input
           ref={el => onRefChange(fileKey, el)}
           type='file'
-          accept='application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xls,.xlsx,text/plain,.txt,image/jpeg,.jpg,.jpeg,image/png,.png'
+          accept={ALLOWED_IMAGE_ACCEPT}
           onChange={e => onFileSelect(e, fileKey)}
-          className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
+          className={cn(
+            'absolute inset-0 w-full h-full opacity-0 cursor-pointer',
+            uploadedFile && 'pointer-events-none',
+          )}
         />
 
         {uploadedFile ? (
-          <div className='space-y-2'>
+          <div className='relative z-10 space-y-2'>
             <div className='relative w-full h-32'>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={uploadedFile.preview}
                 alt={FILE_LABELS[fileKey]}
-                fill
-                className='object-contain rounded'
+                className='h-32 w-full rounded object-contain'
               />
             </div>
-            <p className='text-xs text-gray-600 truncate'>{uploadedFile.file.name}</p>
+            <p className='text-xs text-gray-600 truncate'>
+              {uploadedFile.file?.name || (uploadedFile.isExisting ? 'فایل موجود' : '')}
+            </p>
             <div className='flex items-center justify-center gap-2'>
               {uploadProgress?.status === 'uploading' && (
                 <>
@@ -123,6 +136,7 @@ const FileUploadArea = ({
               variant='destructive'
               size='sm'
               onClick={e => {
+                e.preventDefault();
                 e.stopPropagation();
                 onRemoveFile(fileKey);
               }}
@@ -146,15 +160,25 @@ const FileUploadArea = ({
 export function IncomeInformation({
   requestId,
   onNext,
+  onBack,
   onCancel,
   initialData,
   isEditMode = false,
+  isReadOnly = false,
+  previewData,
 }: IncomeInformationProps) {
   const createIncomeInfoMutation = useCreateIncomeInfo();
 
+  const previewIncomeToman = previewData?.incomeInfoIncome
+    ? String(Math.round(Number(previewData.incomeInfoIncome) / 10) || '')
+    : '';
+  const previewPayAbilityToman = previewData?.incomeInfoPayAbility
+    ? String(Math.round(Number(previewData.incomeInfoPayAbility) / 10) || '')
+    : '';
+
   const [formData, setFormData] = useState<IncomeFormData>({
-    income: initialData?.income || '',
-    payAbility: initialData?.payAbility || '',
+    income: initialData?.income || previewIncomeToman,
+    payAbility: initialData?.payAbility || previewPayAbilityToman,
   });
 
   const [uploadedFiles, setUploadedFiles] = useState<Partial<Record<FileKey, UploadedFile>>>({});
@@ -162,8 +186,50 @@ export function IncomeInformation({
     {},
   );
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
+  const [hasExistingPreviewData, setHasExistingPreviewData] = useState(false);
+  const [hasHydratedPreview, setHasHydratedPreview] = useState(false);
 
   const fileInputRefs = useRef<Partial<Record<FileKey, HTMLInputElement | null>>>({});
+
+  useEffect(() => {
+    if (!previewData || hasHydratedPreview) return;
+
+    const nextForm: IncomeFormData = {
+      income: initialData?.income || previewIncomeToman,
+      payAbility: initialData?.payAbility || previewPayAbilityToman,
+    };
+
+    const nextFiles: Partial<Record<FileKey, UploadedFile>> = {};
+    const nextProgress: Partial<Record<FileKey, UploadProgress>> = {};
+    const nextAttachmentIds: string[] = [];
+
+    const fileKeys: FileKey[] = ['accountTurnover', 'salarySlip'];
+    const attachments = previewData.incomeInfoAttachments || [];
+    const fileImages = previewData.incomeInfoFileImage || [];
+
+    fileKeys.forEach((key, index) => {
+      const attachment = attachments[index];
+      const imageSrc = resolveAttachmentImageSrc(attachment, fileImages[index], getShopImageUrl);
+      if (!imageSrc) return;
+
+      nextFiles[key] = {
+        preview: imageSrc,
+        id: attachment?.id,
+        isExisting: true,
+      };
+      nextProgress[key] = { status: 'success', message: 'فایل موجود' };
+      if (attachment?.id) nextAttachmentIds.push(attachment.id);
+    });
+
+    setFormData(nextForm);
+    setUploadedFiles(nextFiles);
+    setUploadProgress(nextProgress);
+    setAttachmentIds(nextAttachmentIds);
+    setHasExistingPreviewData(
+      Boolean(nextForm.income && nextForm.payAbility && Object.keys(nextFiles).length > 0),
+    );
+    setHasHydratedPreview(true);
+  }, [previewData, hasHydratedPreview, initialData, previewIncomeToman, previewPayAbilityToman]);
 
   const formatNumber = (value: string): string => {
     if (!value) return '';
@@ -224,8 +290,15 @@ export function IncomeInformation({
       const file = event.target.files?.[0];
       if (!file) return;
 
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        event.target.value = '';
+        return;
+      }
+
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');
+        event.target.value = '';
         return;
       }
 
@@ -250,6 +323,11 @@ export function IncomeInformation({
       event.preventDefault();
       const file = event.dataTransfer.files[0];
       if (!file) return;
+
+      if (!isAllowedImageFile(file)) {
+        toast.error('فقط فایل‌های با پسوند jpg، jpeg و png مجاز هستند');
+        return;
+      }
 
       if (file.size > 3 * 1024 * 1024) {
         toast.error('حجم فایل باید کمتر از 3 مگابایت باشد');
@@ -325,6 +403,8 @@ export function IncomeInformation({
   const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (isReadOnly) return;
+
     const numericIncome = Number(formData.income);
     const numericInstallment = Number(formData.payAbility);
 
@@ -349,6 +429,20 @@ export function IncomeInformation({
         toast.error(`لطفا ${FILE_LABELS[key]} را آپلود کنید`);
         return;
       }
+    }
+
+    // Existing data from preview and no new uploads — continue without re-creating
+    const onlyExistingFiles = requiredFiles.every(key => uploadedFiles[key]?.isExisting);
+    const amountsUnchanged =
+      formData.income === previewIncomeToman && formData.payAbility === previewPayAbilityToman;
+    if (
+      hasExistingPreviewData &&
+      onlyExistingFiles &&
+      amountsUnchanged &&
+      previewData?.incomeInfoId
+    ) {
+      if (onNext) onNext(formData);
+      return;
     }
 
     createIncomeInfoMutation.mutate(
@@ -484,7 +578,7 @@ export function IncomeInformation({
           <div className='flex justify-center gap-4'>
             <Button
               type='submit'
-              disabled={createIncomeInfoMutation.isPending || !isFormValid}
+              disabled={isReadOnly || createIncomeInfoMutation.isPending || !isFormValid}
               size='lg'
             >
               {createIncomeInfoMutation.isPending
@@ -493,6 +587,11 @@ export function IncomeInformation({
                   ? 'ویرایش'
                   : 'مرحله بعد'}
             </Button>
+            {onBack && (
+              <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                بازگشت
+              </Button>
+            )}
             {onCancel && (
               <Button type='button' variant='outline' size='lg' onClick={onCancel}>
                 انصراف

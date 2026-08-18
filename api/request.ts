@@ -51,7 +51,7 @@ export const createRequest = async (data: Request) => {
 
 export const getUserRequests = async (userId: string): Promise<Request[]> => {
   const { data } = await api.get<{ isSuccess: boolean; data: Request[] }>(
-    `/Request/GetUserRequest/${userId}`,
+    `/Request/GetUserRequest/`,
   );
 
   if (data.isSuccess && data.data && Array.isArray(data.data)) {
@@ -103,12 +103,24 @@ export const changeRequestState = async (data: ChangeRequestStateData) => {
 export type UploadUserAttachmentsData = {
   userId: string;
   attachmentIdsToSend: string[];
+  isActive?: boolean;
+};
+
+export type UploadUserAttachmentsPayload = {
+  id: string;
+  isActive: boolean;
+  attachmentIdsToSend: string[];
 };
 
 export const uploadUserAttachments = async (data: UploadUserAttachmentsData) => {
-  const resp = await api.put<{ attachmentIdsToSend: string[] }, APIResult<unknown>>(
+  const payload: UploadUserAttachmentsPayload = {
+    id: data.userId,
+    isActive: data.isActive ?? true,
+    attachmentIdsToSend: data.attachmentIdsToSend,
+  };
+  const resp = await api.put<UploadUserAttachmentsPayload, APIResult<unknown>>(
     `/User/Upload/${data.userId}`,
-    { attachmentIdsToSend: data.attachmentIdsToSend },
+    payload,
   );
   return resp.data;
 };
@@ -197,37 +209,97 @@ export const registerCheque = async (data: RegisterChequeData) => {
 };
 
 // * Get request preview
+export type RequestPreviewAttachment = {
+  id: string;
+  isActive: boolean;
+  name: string;
+  file: string;
+  filePath: string;
+  fileImage?: string;
+  data: string;
+  format: string;
+  attachmentType: number;
+  requestId: string;
+};
+
 export type RequestPreviewData = {
-  userFirstName?: string;
-  userLastName?: string;
-  userNationalCode?: string;
-  chequeSayadId?: string;
-  chequeFileImage?: string;
-  chequeFileImageBack?: string;
-  chequeFileImagePromissory?: string;
-  chequeFileImageDeductionSalary?: string;
-  invoiceFileImage?: string;
-  incomeInfo?: {
-    income: number;
-    payAbility: number;
-    incomeInfoFileImage?: string[];
-  };
-  plan?: {
-    planName?: string;
-    planPercentage?: number;
-    planPeriod?: number;
-    planGuarantees?: string;
-  };
-  planName?: string;
-  period?: number;
-  loanDetailAmount?: number;
-  creditAmount?: number;
-  feeAmount?: number;
-  totalRefundAmount?: number;
-  guaranteedAmount?: number;
-  planIsInvoiceRequired?: boolean;
-  planFirstSystemFee?: number;
-  planFirstBankFee?: number;
+  id: string;
+  isActive: boolean;
+  loanDetailAmount: number;
+  requestDate: string;
+  creditAmount: number;
+  feeAmount: number;
+  guaranteedAmount: number;
+  totalRefundAmount: number;
+  remainCreditAmount: number;
+  creditValidityDate: string | null;
+  period: number;
+  settledInstallmentAmount: number;
+  remainInstallmentAmount: number;
+  contractFilePath: string | null;
+  requestNumber: number;
+  userId: string;
+  userFirstName: string | null;
+  userLastName: string | null;
+  userNationalCode: string | null;
+  userPhoneNumber: string | null;
+  userAttachments: RequestPreviewAttachment[];
+  userFileImage: string[];
+  financierId: string | null;
+  financierName: string | null;
+  requestState: number;
+  lastSuccessState: number | null;
+  mode: number;
+  forCorrections: string | null;
+  validateType: number | null;
+  chequeId: string | null;
+  chequeSayadId: string | null;
+  chequeFileImage: string | null;
+  chequeFileImageBack: string | null;
+  chequeAttachmentFilePath: string | null;
+  chequeAttachmentBackFilePath: string | null;
+  chequeFileImagePromissory: string | null;
+  chequeAttachmentPromissoryFilePath: string | null;
+  chequeFileImageDeductionSalary: string | null;
+  chequeAttachmentDeductionSalaryFilePath: string | null;
+  incomeInfoId: string | null;
+  incomeInfoIncome: string | null;
+  incomeInfoPayAbility: string | null;
+  incomeInfoAttachments: RequestPreviewAttachment[];
+  incomeInfoFileImage: string[];
+  rejectDescription: string | null;
+  loanHeaderId: string | null;
+  planId: string | null;
+  planGuarantees: string[];
+  planName: string | null;
+  planPercentage: string | null;
+  planFee: string | null;
+  planFinancierName: string | null;
+  planDuringBankFee: number;
+  planDuringSystemFee: number;
+  planFirstBankFee: number;
+  planFirstSystemFee: number;
+  planPeriod: string | null;
+  planIsDoubleControl: boolean;
+  planIsGuaranteeRequired: boolean;
+  planIsIncomeRequired: boolean;
+  planIsValidateRequired: boolean;
+  planIsInvoiceRequired: boolean;
+  planScore: string | null;
+  invoiceId: string | null;
+  invoiceAttachmentFilePath: string | null;
+  invoiceFileImage: string | null;
+  userCreditStatusId: string | null;
+  userCreditStatusChequeColorStatus: string | null;
+  userCreditStatusIsBlocked: string | null;
+  userCreditStatusOver18: string | null;
+  userCreditStatusLifeStatus: string | null;
+  userCreditStatusFacilityDeferred: string | null;
+  userCreditStatusGuarantyDeferred: string | null;
+  userCreditStatusScore: string | null;
+  userCreditStatusRisk: string | null;
+  userFacilityId: string | null;
+  userGuarantyId: string | null;
 };
 
 export const getRequestPreview = async (requestId: string) => {
@@ -236,7 +308,14 @@ export const getRequestPreview = async (requestId: string) => {
 };
 
 // * Confirm request by user
-export const confirmRequestByUser = async (requestId: string) => {
+export const confirmRequestByUser = async (requestId: string): Promise<APIResult<unknown>> => {
   const resp = await api.get<APIResult<unknown>>(`/Request/UserConfirm/${requestId}`);
+
+  // The UserConfirm endpoint returns HTTP 200 with an empty body on success.
+  // If the response is ok and data is empty/incomplete, treat it as success.
+  if (resp.resp.ok && (!resp.data || Object.keys(resp.data as object).length === 0)) {
+    return { isSuccess: true, data: null, message: '', statusCode: 0 } as APIResult<unknown>;
+  }
+
   return resp.data;
 };

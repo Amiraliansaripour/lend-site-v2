@@ -13,8 +13,10 @@ interface PayValidationProps {
   user?: User | null;
   validationPrice?: number;
   onNext?: () => void;
+  onBack?: () => void;
   onCancel?: () => void;
   isEditMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 const explanations = [
@@ -29,8 +31,10 @@ export function PayValidation({
   user,
   validationPrice = 0,
   onNext,
+  onBack,
   onCancel,
   isEditMode,
+  isReadOnly = false,
 }: PayValidationProps) {
   const getPaymentTokenMutation = useGetPaymentToken();
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
@@ -40,9 +44,16 @@ export function PayValidation({
   };
 
   const navigateUserToPayment = (token: string, terminalID: string, merchantId: string) => {
+    // Persist so /CallBack can return the user to this request after gateway redirect.
+    if (requestId) {
+      localStorage.setItem('requestId', requestId);
+      localStorage.setItem('pendingPayType', '2');
+    }
+
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = `https://panel.aqayepardakht.ir/startpay/${token}`;
+    form.action = 'https://rt.sizpay.ir/Route/Payment';
+    // form.action = `https://panel.aqayepardakht.ir/startpay/${token}`;
     form.target = '_self';
 
     const fields = [
@@ -97,7 +108,7 @@ export function PayValidation({
     );
   };
 
-  const isPaymentButtonDisabled = isPaymentLoading || !user?.id;
+  const isPaymentButtonDisabled = isPaymentLoading || !user?.id || isReadOnly;
 
   return (
     <div className='w-full space-y-0'>
@@ -184,6 +195,11 @@ export function PayValidation({
               )}
             </Button>
 
+            {onBack && (
+              <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                بازگشت
+              </Button>
+            )}
             {onCancel && (
               <Button type='button' variant='outline' size='lg' onClick={onCancel}>
                 انصراف

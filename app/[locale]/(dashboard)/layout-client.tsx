@@ -10,8 +10,8 @@ export function DashboardLayoutClient({ children }: { children: React.ReactNode 
       <SidebarProvider>
         <AppSidebar />
 
-        <SidebarInset>
-          <main>{children}</main>
+        <SidebarInset className='min-w-0'>
+          <main className='min-w-0 overflow-x-hidden'>{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </DirectionProvider>

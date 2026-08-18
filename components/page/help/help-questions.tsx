@@ -10,6 +10,7 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion';
 import { ReactNode } from 'react';
+import { useSiteTemplate } from '@/providers/site-template';
 
 type QuestionItem = {
   category: string;
@@ -41,8 +42,8 @@ const CATEGORY: CategoryItem[] = [
 const QUESTIONS: QuestionItem[] = [
   {
     category: 'loan-info',
-    title: 'سقف مبلغ وام در نوالند چقدر است؟',
-    desc: 'سقف مبلغ وامی که می‌توانید از طریق نوالند دریافت کنید براساس رتبه‌ی اعتباری شما متفاوت خواهد بود اما در حال حاضر بالاترین سقف 100 میلیون تومان است.',
+    title: 'سقف مبلغ وام در کارالند چقدر است؟',
+    desc: 'سقف مبلغ وامی که می‌توانید از طریق کارالند دریافت کنید براساس رتبه‌ی اعتباری شما متفاوت خواهد بود اما در حال حاضر بالاترین سقف 100 میلیون تومان است.',
   },
   {
     category: 'loan-info',
@@ -57,7 +58,7 @@ const QUESTIONS: QuestionItem[] = [
   {
     category: 'loan-info',
     title: 'چه کالاهایی را می توانید با تسهیلات خریداری کرد؟',
-    desc: 'شما می توانید با مراجعه به سایت هر یک از فروشگاه‌های آنلاین طرف قرارداد با نوالند، هر کالایی را خریداری کنید و در هنگام پرداخت، گزینه پرداخت با نوالند را انتخاب کنید.',
+    desc: 'شما می توانید با مراجعه به سایت هر یک از فروشگاه‌های آنلاین طرف قرارداد با کارالند، هر کالایی را خریداری کنید و در هنگام پرداخت، گزینه پرداخت با کارالند را انتخاب کنید.',
   },
   {
     category: 'loan-info',
@@ -77,7 +78,7 @@ const QUESTIONS: QuestionItem[] = [
   {
     category: 'loan-process',
     title: 'آیا برای دریافت وام نیاز به دسته چک دارم؟',
-    desc: 'بله. برای دریافت وام در نوالند حتما به دسته چک صیادی بنفش به نام خودتان نیاز دارید.',
+    desc: 'بله. برای دریافت وام در کارالند حتما به دسته چک صیادی بنفش به نام خودتان نیاز دارید.',
   },
   {
     category: 'loan-process',
@@ -112,9 +113,13 @@ const QUESTIONS: QuestionItem[] = [
 ];
 
 export function HelpQuestions() {
+  const { withBrand } = useSiteTemplate();
   const loanInfoQuestions = QUESTIONS.filter(q => q.category === 'loan-info');
   const loanProcessQuestions = QUESTIONS.filter(q => q.category === 'loan-process');
   const repaymentQuestions = QUESTIONS.filter(q => q.category === 'repayment');
+
+  const renderTitle = (title: string) => withBrand(title);
+  const renderDesc = (desc: string) => withBrand(desc);
 
   return (
     <div className='mb-10 pb-2 md:mb-36 mt-28 md:mt-28'>
@@ -150,10 +155,10 @@ export function HelpQuestions() {
                 className='border border-[#a9a9a9] rounded'
               >
                 <AccordionTrigger className='px-3 py-4 hover:no-underline text-right'>
-                  <span className='text-sm md:text-base flex-1'>{item.title}</span>
+                  <span className='text-sm md:text-base flex-1'>{renderTitle(item.title)}</span>
                 </AccordionTrigger>
                 <AccordionContent className='px-3 pb-4'>
-                  <p className='text-xs md:text-base text-darker-text'>{item.desc}</p>
+                  <p className='text-xs md:text-base text-darker-text'>{renderDesc(item.desc)}</p>
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -169,10 +174,10 @@ export function HelpQuestions() {
                 className='border border-[#a9a9a9] rounded'
               >
                 <AccordionTrigger className='px-3 py-4 hover:no-underline text-right'>
-                  <span className='text-sm md:text-base flex-1'>{item.title}</span>
+                  <span className='text-sm md:text-base flex-1'>{renderTitle(item.title)}</span>
                 </AccordionTrigger>
                 <AccordionContent className='px-3 pb-4'>
-                  <p className='text-xs md:text-base text-darker-text'>{item.desc}</p>
+                  <p className='text-xs md:text-base text-darker-text'>{renderDesc(item.desc)}</p>
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -188,10 +193,10 @@ export function HelpQuestions() {
                 className='border border-[#a9a9a9] rounded'
               >
                 <AccordionTrigger className='px-3 py-4 hover:no-underline text-right'>
-                  <span className='text-sm md:text-base flex-1'>{item.title}</span>
+                  <span className='text-sm md:text-base flex-1'>{renderTitle(item.title)}</span>
                 </AccordionTrigger>
                 <AccordionContent className='px-3 pb-4'>
-                  <p className='text-xs md:text-base text-darker-text'>{item.desc}</p>
+                  <p className='text-xs md:text-base text-darker-text'>{renderDesc(item.desc)}</p>
                 </AccordionContent>
               </AccordionItem>
             ))}
