@@ -9,7 +9,6 @@ import {
   type FormEvent,
   type ChangeEvent,
 } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -795,11 +794,11 @@ export function UserInformation({
         >
           <div className='relative max-w-4xl max-h-full p-4'>
             <div className='relative w-full h-[80vh]'>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={selectedImage}
                 alt='تصویر بزرگ شده'
-                fill
-                className='object-contain'
+                className='h-full w-full object-contain'
                 onClick={e => e.stopPropagation()}
               />
             </div>
