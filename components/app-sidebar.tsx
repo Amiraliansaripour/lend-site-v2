@@ -31,11 +31,11 @@ const items = [
   { title: 'داشبورد', url: '/dashboard', icon: Home, badge: 0 },
   { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet, badge: 0 },
   { title: 'درخواست های من', url: '/requests', icon: FileText, badge: 0 },
-  { title: 'صندوق پیام', url: '/messages', icon: MessagesSquare, badge: TOTAL_UNREAD },
   { title: 'اقساط من', url: '/installments', icon: CalendarClock, badge: 0 },
   { title: 'اطلاعات من', url: '/profile', icon: User, badge: 0 },
   { title: 'راهنما و پشتیبانی', url: '/help', icon: CircleQuestionMark, badge: 0 },
   { title: 'فروشگاه‌ها', url: '/shops', icon: Store, badge: 0 },
+  { title: 'صندوق پیام', url: '/messages', icon: MessagesSquare, badge: TOTAL_UNREAD },
 ];
 
 export function AppSidebar() {

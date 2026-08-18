@@ -40,8 +40,8 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     'Content-Type': 'application/json',
   };
 
-  if (!skipAuth) {
-    const token = accessToken.get();
+  const token = accessToken.get();
+  if (!skipAuth && token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
@@ -53,9 +53,24 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
   });
 
   if (resp.status === 401) {
-    clearUserInfo();
-    accessToken.delete();
-    window.location.href = '/';
+    // Public pages (or explicit skipAuth calls) should never force a redirect.
+    if (!skipAuth) {
+      clearUserInfo();
+      accessToken.delete();
+
+      const pathname = window.location.pathname || '';
+      const isDashboardLikeRoute =
+        pathname.includes('/dashboard') ||
+        pathname.includes('/requests') ||
+        pathname.includes('/wallets') ||
+        pathname.includes('/installments') ||
+        pathname.includes('/profile');
+
+      if (isDashboardLikeRoute) {
+        window.location.href = '/';
+      }
+    }
+
     return { data: undefined as unknown as D, resp };
   }
 
