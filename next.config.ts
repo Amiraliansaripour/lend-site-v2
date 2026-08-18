@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'lendapi.persiansys.ir',
+        hostname: 'lendapitest.persiansys.ir',
         pathname: '/uploads/**',
       },
     ],
