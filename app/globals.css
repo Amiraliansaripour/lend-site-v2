@@ -247,6 +247,36 @@ html body {
   }
 }
 
+@keyframes faq-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes faq-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes faq-orb {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -12px, 0) scale(1.08);
+  }
+}
+
 .site-template-loader-enter {
   animation: site-template-loader-enter 0.45s ease-out both;
 }
@@ -294,7 +324,11 @@ html body {
   .site-template-ring,
   .site-template-progress,
   .site-template-dot,
-  .site-template-shimmer {
+  .site-template-shimmer,
+  .faq-item,
+  .faq-shimmer,
+  .faq-orb,
+  .faq-orb-delayed {
     animation: none !important;
   }
 
@@ -305,37 +339,26 @@ html body {
 }
 
 @layer components {
-  .faq [data-slot='accordion-item'] {
-    @apply ring-1 ring-brand;
+  .faq-item {
+    animation: faq-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 
-    [data-slot='icon'] {
-      @apply bg-transparent shrink-0 rounded-sm;
+  .faq-item[data-state='open'] {
+    background: transparent;
+  }
 
-      svg {
-        @apply size-4 shrink-0;
-      }
-    }
+  .faq-shimmer {
+    background-size: 200% 100%;
+    animation: faq-shimmer 1.4s ease-in-out infinite;
+  }
 
-    [data-slot='accordion-trigger'] svg {
-      @apply size-8! p-2 rounded-sm;
-    }
+  .faq-orb {
+    animation: faq-orb 8s ease-in-out infinite;
+  }
 
-    &[data-state='open'] {
-      background: linear-gradient(243.48deg, #f1f0fb 33.93%, #eae8ff 85.45%);
-
-      [data-slot='accordion-trigger'] {
-        @apply text-brand;
-
-        & svg:is(:nth-child(2), :nth-child(3)) {
-          @apply stroke-white;
-          background: linear-gradient(193.06deg, #6a5dff 5.92%, #a33aff 89.21%);
-        }
-      }
-
-      [data-slot='icon'] {
-        @apply bg-white;
-      }
-    }
+  .faq-orb-delayed {
+    animation: faq-orb 10s ease-in-out infinite reverse;
+    animation-delay: -2.4s;
   }
 
   .marquee > * {
