@@ -186,33 +186,6 @@ export function SiteTemplateProvider({ children }: SiteTemplateProviderProps) {
     };
   }, []);
 
-  useEffect(() => {
-    if (template) return;
-
-    const blockNavigation = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-
-      const anchor = target.closest('a');
-      if (anchor) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    };
-
-    const blockPopState = () => {
-      window.history.pushState(null, '', window.location.href);
-    };
-
-    document.addEventListener('click', blockNavigation, true);
-    window.addEventListener('popstate', blockPopState);
-
-    return () => {
-      document.removeEventListener('click', blockNavigation, true);
-      window.removeEventListener('popstate', blockPopState);
-    };
-  }, [template]);
-
   const getImageUrl = useCallback(
     (key: SiteTemplateImageKey) => {
       if (!template) return '';

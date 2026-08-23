@@ -149,7 +149,7 @@ function FaqQuestionItem({ item, index, title }: { item: FaqItem; index: number;
   return (
     <AccordionItem
       value={item.id}
-      className='faq-item group overflow-hidden rounded-2xl border border-border/80 bg-background transition-all duration-300 hover:border-primary/25 hover:shadow-[0_8px_24px_-18px_rgba(15,23,42,0.35)] data-[state=open]:border-primary/35 data-[state=open]:bg-primary/3'
+      className='faq-item group overflow-hidden rounded-2xl border border-border/80 bg-background transition-all duration-300 hover:border-primary/25 hover:shadow-[0_8px_24px_-18px_rgba(15,23,42,0.35)] data-[state=open]:border-primary/40 data-[state=open]:bg-muted/50 data-[state=open]:shadow-[0_6px_20px_-14px_rgba(15,23,42,0.18)]'
       style={{ animationDelay: `${index * 45}ms` }}
     >
       <AccordionTrigger className='items-center gap-3 px-3.5 py-2.5 hover:no-underline cursor-pointer md:px-4 [&>svg:last-child]:hidden'>
@@ -168,7 +168,7 @@ function FaqQuestionItem({ item, index, title }: { item: FaqItem; index: number;
         </span>
       </AccordionTrigger>
       <AccordionContent className='px-3.5 pb-3.5 md:px-4'>
-        <div className='mr-11 space-y-3 rounded-xl bg-muted/40 px-4 py-3'>
+        <div className='mr-11 space-y-3 border-t border-border/30 pt-3'>
           {answers.length === 0 ? (
             <p className='text-sm text-muted-foreground'>پاسخی برای این سوال ثبت نشده است.</p>
           ) : (

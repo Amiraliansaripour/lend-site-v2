@@ -170,16 +170,20 @@ export function Header() {
 
           {/* Mobile Auth Button */}
           {!isAuthenticated ? (
-            <Link className='lg:hidden' href='/login'>
-              <button className='p-2'>
-                <LogIn className={cn('text-black', transparent && 'text-white')} size={20} />
-              </button>
+            <Link
+              className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
+              href='/login'
+              aria-label='ورود / ثبت نام'
+            >
+              <LogIn size={20} />
             </Link>
           ) : (
-            <Link className='lg:hidden' href='/dashboard'>
-              <button className='p-2'>
-                <User className={cn('text-black', transparent && 'text-white')} size={23} />
-              </button>
+            <Link
+              className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
+              href='/dashboard'
+              aria-label='پروفایل'
+            >
+              <User size={23} />
             </Link>
           )}
         </div>
