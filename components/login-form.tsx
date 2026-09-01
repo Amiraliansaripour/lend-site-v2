@@ -295,7 +295,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                     children={(field: any) => (
                       <field.TextField
                         placeholder='کد کپچا'
-                        inputMode='tel'
+                        inputMode='text'
                         autoComplete='one-time-code'
                       />
                     )}
