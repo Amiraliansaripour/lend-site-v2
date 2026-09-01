@@ -4,7 +4,7 @@ export function HelpBanner() {
   return (
     <div className=''>
       <div className='w-full relative flex items-center flex-col md:flex-row justify-between h-[400px] md:h-[530px]'>
-        <div className='flex flex-col gap-3 md:gap-4 px-4 md:pr-28 h-full justify-center z-10 text-right'>
+        <div className='flex flex-col gap-3 md:gap-4 px-4 md:pr-28 h-full justify-center text-right'>
           <span className='text-xs md:text-sm text-[#282828] border-b-2 border-[#70FFB5] pb-1 inline-block w-fit text-right mx-0'>
             با ما همراه باشید.
           </span>

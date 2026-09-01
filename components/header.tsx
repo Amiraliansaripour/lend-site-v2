@@ -92,7 +92,7 @@ export function Header() {
         <div className='w-full h-full flex justify-between items-center relative'>
           {/* Mobile Menu Button */}
           <button
-            className='lg:hidden p-2 text-gray-600 hover:text-black transition-all duration-200'
+            className='lg:hidden p-2 text-gray-600 hover:text-black transition-all duration-200 !z-50'
             onClick={toggleMenu}
           >
             <div className='relative w-6 h-6 flex items-center justify-center'>
