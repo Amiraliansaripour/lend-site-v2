@@ -49,7 +49,7 @@ const PayValidation = ({ user, requestId, validationPrice }) => {
 
     document.body.appendChild(form);
     form.submit();
-    document.body.removeChild(form);
+    form.remove();
   }, []);
 
   const handleGeneralPayment = async () => {

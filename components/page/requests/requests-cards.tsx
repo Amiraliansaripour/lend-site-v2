@@ -78,7 +78,7 @@ export function RequestsCards({
 
     document.body.appendChild(form);
     form.submit();
-    document.body.removeChild(form);
+    form.remove();
   };
 
   const handleGeneralPayment = async (creditCachAccountId: string) => {

@@ -108,23 +108,35 @@ type SiteTemplateContextValue = {
 
 const SiteTemplateContext = createContext<SiteTemplateContextValue | null>(null);
 
+function upsertHeadLink(selector: string, attrs: Record<string, string>) {
+  let link = document.querySelector<HTMLLinkElement>(selector);
+
+  if (!link) {
+    link = document.createElement('link');
+    document.head.appendChild(link);
+  }
+
+  for (const [key, value] of Object.entries(attrs)) {
+    link.setAttribute(key, value);
+  }
+}
+
 function updateDocumentBranding(template: SiteTemplateImages) {
   if (typeof document === 'undefined') return;
 
   const faviconUrl = getUploadUrl(template.favicon);
   if (faviconUrl) {
-    const existing = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
-    existing.forEach(link => link.remove());
-
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.href = faviconUrl;
-    document.head.appendChild(link);
-
-    const apple = document.createElement('link');
-    apple.rel = 'apple-touch-icon';
-    apple.href = faviconUrl;
-    document.head.appendChild(apple);
+    // Update dedicated links instead of removing Next.js-managed icon nodes.
+    upsertHeadLink('link[data-site-template-favicon]', {
+      rel: 'icon',
+      href: faviconUrl,
+      'data-site-template-favicon': 'true',
+    });
+    upsertHeadLink('link[data-site-template-apple-icon]', {
+      rel: 'apple-touch-icon',
+      href: faviconUrl,
+      'data-site-template-apple-icon': 'true',
+    });
   }
 
   if (template.name) {

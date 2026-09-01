@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Minus, Plus } from 'lucide-react';
 
 import {
@@ -38,6 +38,11 @@ export function Faq({ className }: FaqProps) {
   const { withBrand } = useSiteTemplate();
   const { data, isLoading, isError } = useFaqs();
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
+  const [openItem, setOpenItem] = useState('');
+
+  useEffect(() => {
+    setOpenItem('');
+  }, [activeCategory]);
 
   const items = useMemo(
     () =>
@@ -101,7 +106,13 @@ export function Faq({ className }: FaqProps) {
           سوالی برای نمایش پیدا نشد.
         </div>
       ) : (
-        <Accordion key={activeCategory} type='single' collapsible className='space-y-2.5'>
+        <Accordion
+          type='single'
+          collapsible
+          value={openItem}
+          onValueChange={setOpenItem}
+          className='space-y-2.5'
+        >
           {filteredItems.map((item, index) => (
             <FaqQuestionItem
               key={item.id}
