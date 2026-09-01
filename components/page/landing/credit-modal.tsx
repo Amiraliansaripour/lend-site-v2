@@ -58,7 +58,7 @@ export function CreditModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className='min-w-2xl'>
+        <DialogContent className=''>
           <DialogHeader className='text-center sm:text-center'>
             <DialogTitle className='text-base lg:text-xl font-semibold text-center'>
               نکات قابل توجه جهت درخواست اعتبار (کیف پول اعتباری)
