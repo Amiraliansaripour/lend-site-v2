@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { WalletCard } from '@/components/wallet-card';
 import Link from 'next/link';
 import { getUserId } from '@/lib/auth/client/user-info';
-import { useUserWithStore } from '@/queries/users';
+import { useUser, useUserClub, useUserWithStore } from '@/queries/users';
 import { useWalletInfo } from '@/queries/wallet';
 import { formatNumber } from '@/utils/format';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import Image from 'next/image';
 import { useSiteTemplate } from '@/providers/site-template';
+import { LoyaltyPointsCard } from '@/components/loyalty-points-card';
 
 export default function DashboardPage() {
   const breadcrumbs: Breadcrumbs = [{ label: 'داشبورد', href: '/dashboard' }];
@@ -22,6 +23,10 @@ export default function DashboardPage() {
   // Fetch and update user info on dashboard load
   useUserWithStore(userId || '');
   const { data: walletInfo } = useWalletInfo();
+
+  const { data: user } = useUser(userId || '');
+
+  const { data: userClub } = useUserClub(user?.personInfo?.nationalCode || '');
 
   return (
     <PageContainer breadcrumbs={breadcrumbs}>
@@ -95,6 +100,17 @@ export default function DashboardPage() {
           </WalletCard>
         </div>
       </PageContent>
+
+      {userClub && userClub.available_points != null && (
+        <PageContent title='باشگاه مشتریان'>
+          <div className='flex w-full justify-center'>
+            <LoyaltyPointsCard
+              points={Number(userClub.available_points)}
+              className='w-full max-w-md'
+            />
+          </div>
+        </PageContent>
+      )}
 
       <PageContent title='خلاصه فعالیت'>
         <div className='flex flex-col items-center justify-center gap-y-5'>

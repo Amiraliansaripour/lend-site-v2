@@ -3,6 +3,7 @@ import { queryOptions, useQuery } from '@tanstack/react-query';
 
 // * api
 import { getUser, getUserAndUpdateStore } from '@/api/users';
+import { getPlatformClubCustomer } from '@/api/users-club';
 import { appStore } from '@/stores';
 
 export const queryKeys = { users: ['users'] } as const;
@@ -36,6 +37,15 @@ export const useUserWithStore = (id: string) => {
       return userData;
     },
     enabled: !!id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useUserClub = (nationalCode: string) => {
+  return useQuery({
+    queryKey: [...queryKeys.users, nationalCode, 'club'],
+    queryFn: () => getPlatformClubCustomer(nationalCode),
+    enabled: !!nationalCode,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

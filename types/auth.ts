@@ -17,6 +17,7 @@ export type User = {
     birthCertificateNumber?: string;
     email?: string;
     cityProvinceId?: string;
+    nationalCode?: string;
     cityId?: string;
     jobTitle?: string;
   };
