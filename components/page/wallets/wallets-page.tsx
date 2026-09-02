@@ -27,7 +27,7 @@ export function WalletsPage({ walletInfo, transactions, isLoading }: WalletsPage
 
   const cashStats: WalletStats = useMemo(
     () => ({
-      initial: walletInfo?.cash ?? 0,
+      initial: walletInfo?.sumCachCharg ?? 0,
       spent: walletInfo?.sumCachBuy ?? 0,
       remaining: walletInfo?.cachRemain ?? 0,
     }),

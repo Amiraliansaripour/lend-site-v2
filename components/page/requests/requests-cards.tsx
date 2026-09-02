@@ -201,7 +201,7 @@ export function RequestsCards({
                 <span className='text-sm text-secondary'>
                   موجودی{' '}
                   {normalizeToPersianDigits(
-                    formatNumber(walletInfo?.sumCachCharg ?? 0, { int: true }),
+                    formatNumber(walletInfo?.cachRemain ?? 0, { int: true }),
                   )}{' '}
                   ریال
                 </span>
