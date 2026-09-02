@@ -166,9 +166,7 @@ export function RequestsCards({
                 <span className='font-bold'>کیف پول اعتباری</span>
                 <span className='text-sm text-secondary'>
                   موجودی{' '}
-                  {normalizeToPersianDigits(
-                    formatNumber(walletInfo?.sumCreditCharg ?? 0, { int: true }),
-                  )}{' '}
+                  {normalizeToPersianDigits(formatNumber(walletInfo?.credit ?? 0, { int: true }))}{' '}
                   ریال
                 </span>
               </div>
@@ -203,7 +201,7 @@ export function RequestsCards({
                 <span className='text-sm text-secondary'>
                   موجودی{' '}
                   {normalizeToPersianDigits(
-                    formatNumber(walletInfo?.sumCachCharg ?? 0, { int: true }),
+                    formatNumber(walletInfo?.cachRemain ?? 0, { int: true }),
                   )}{' '}
                   ریال
                 </span>

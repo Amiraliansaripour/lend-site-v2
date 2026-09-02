@@ -45,9 +45,7 @@ export default function DashboardPage() {
                   <span>کیف پول اعتباری</span>
                   <div className='text-sm'>
                     موجودی{' '}
-                    {normalizeToPersianDigits(
-                      formatNumber(walletInfo?.sumCreditCharg ?? 0, { int: true }),
-                    )}{' '}
+                    {normalizeToPersianDigits(formatNumber(walletInfo?.credit ?? 0, { int: true }))}{' '}
                     ریال
                   </div>
                 </div>
@@ -80,7 +78,7 @@ export default function DashboardPage() {
                   <div className='text-sm'>
                     موجودی{' '}
                     {normalizeToPersianDigits(
-                      formatNumber(walletInfo?.sumCachCharg ?? 0, { int: true }),
+                      formatNumber(walletInfo?.cachRemain ?? 0, { int: true }),
                     )}{' '}
                     ریال
                   </div>

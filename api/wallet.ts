@@ -46,13 +46,30 @@ export type WalletTransaction = {
   dateTimeClear: string | null;
 };
 
+const sumNullable = (values: (number | null | undefined)[]): number =>
+  values.reduce<number>((total, value) => total + (value ?? 0), 0);
+
+export const aggregateWalletInfo = (wallets: WalletInfo[]): WalletInfo | null => {
+  if (wallets.length === 0) return null;
+
+  const [first] = wallets;
+
+  return {
+    ...first,
+    credit: sumNullable(wallets.map(wallet => wallet.credit)),
+    cash: sumNullable(wallets.map(wallet => wallet.cash)),
+    sumCreditCharg: sumNullable(wallets.map(wallet => wallet.sumCreditCharg)),
+    sumCreditBuy: sumNullable(wallets.map(wallet => wallet.sumCreditBuy)),
+  };
+};
+
 export const getWalletInfo = async (): Promise<WalletInfo | null> => {
   const { data } = await api.get<APIResult<WalletInfo[]>>('/WalletReport/GetWallets', {
     baseURL: 'REPORT',
   });
 
   if (data?.isSuccess && Array.isArray(data.data)) {
-    return data.data[0] ?? null;
+    return aggregateWalletInfo(data.data);
   }
 
   return null;
