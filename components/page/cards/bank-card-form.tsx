@@ -236,7 +236,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
           </form.AppField>
         </div>
 
-        <form.AppField name='bankName'>
+        {/* <form.AppField name='bankName'>
           {field => (
             <FormFieldWrapper>
               <Label htmlFor={field.name} className='mb-2 block'>
@@ -253,7 +253,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
               />
             </FormFieldWrapper>
           )}
-        </form.AppField>
+        </form.AppField> */}
       </div>
 
       <div className='flex flex-col-reverse gap-3 sm:flex-row sm:justify-end'>

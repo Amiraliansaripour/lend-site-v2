@@ -171,7 +171,7 @@ export function BankCardsPage() {
         }}
       >
         <AlertDialogContent dir='rtl'>
-          <AlertDialogHeader className='items-end text-right sm:text-right'>
+          <AlertDialogHeader className='items-start text-right sm:text-right'>
             <AlertDialogTitle className='flex items-center gap-2'>
               <Trash2 className='size-5 text-destructive' />
               حذف کارت بانکی
@@ -191,7 +191,7 @@ export function BankCardsPage() {
                 void handleDelete();
               }}
               disabled={deleteMutation.isPending}
-              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              className='bg-destructive text-white hover:bg-destructive/90'
             >
               {deleteMutation.isPending && <Loader2 className='ml-2 size-4 animate-spin' />}
               حذف کارت

@@ -1,6 +1,6 @@
 'use client';
 
-import { CreditCard, ShieldCheck } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -37,42 +37,63 @@ export function BankCardPreview({
     <div
       dir='ltr'
       className={cn(
-        'relative min-h-[220px] w-full overflow-hidden rounded-[24px] bg-gradient-to-br from-slate-950 via-slate-800 to-slate-700 p-6 text-white shadow-2xl',
+        'relative min-h-[220px] w-full overflow-hidden rounded-[22px] p-6 text-white shadow-2xl',
         className,
       )}
+      style={{
+        background: 'linear-gradient(150deg, #10131b 0%, #171c28 45%, #232a3a 100%)',
+      }}
     >
-      <div className='absolute -right-16 -top-20 h-48 w-48 rounded-full bg-white/10' />
-      <div className='absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-white/5' />
-      <div className='absolute right-20 bottom-10 h-24 w-24 rounded-full bg-white/[0.03]' />
+      {/* fine brushed-metal grain */}
+      <div
+        className='pointer-events-none absolute inset-0 opacity-[0.06] mix-blend-overlay'
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(115deg, #fff 0px, #fff 1px, transparent 1px, transparent 3px)',
+        }}
+      />
+
+      {/* single diagonal light sheen, the one intentional highlight */}
+      <div
+        className='pointer-events-none absolute -inset-x-10 -top-16 h-40 rotate-[-8deg] opacity-[0.08]'
+        style={{ background: 'linear-gradient(90deg, transparent, #fff, transparent)' }}
+      />
 
       <div className='relative z-10 flex h-full min-h-[168px] flex-col justify-between'>
         <div className='flex items-start justify-between gap-4'>
-          <div className='flex items-center gap-3'>
-            <div className='flex size-12 items-center justify-center overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm'>
-              {bankInfo?.logo ? (
-                <img src={bankInfo.logo} alt={displayBankName} className='size-9 object-contain' />
-              ) : (
-                <CreditCard className='size-6 text-white/80' />
-              )}
-            </div>
-
-            <div>
-              <p className='text-[11px] text-white/50'>BANK CARD</p>
-
-              <p className='mt-0.5 text-sm font-bold'>{displayBankName}</p>
-            </div>
+          {/* embossed chip */}
+          <div
+            className='flex h-8 w-11 items-center justify-center rounded-[6px] shadow-inner'
+            style={{
+              background: 'linear-gradient(155deg, #f4dfa3 0%, #d3a94f 45%, #9c7527 100%)',
+            }}
+          >
+            <div className='h-4 w-7 rounded-[2px] border border-black/20' />
           </div>
 
-          <div className='flex items-center gap-1.5 text-white/50'>
-            <ShieldCheck className='size-4' />
-            <span className='text-[10px]'>SECURE</span>
+          <div className='flex items-center gap-2 text-right'>
+            <div>
+              <p className='text-sm font-semibold leading-tight'>{displayBankName}</p>
+              <p className='text-[10px] text-white/40'>کارت بانکی</p>
+            </div>
+
+            {bankInfo?.logo ? (
+              <img
+                src={bankInfo.logo}
+                alt={displayBankName}
+                className='size-7 rounded-md object-contain'
+              />
+            ) : (
+              <CreditCard className='size-5 text-white/50' />
+            )}
           </div>
         </div>
 
-        <div className='mt-7'>
+        <div className='mt-6'>
           <p
             dir='ltr'
-            className='[unicode-bidi:isolate] text-left font-mono text-[19px] tracking-[2px] text-white sm:text-[21px]'
+            className='[unicode-bidi:isolate] text-left font-mono text-[20px] tracking-[3px] text-white/95 sm:text-[22px]'
+            style={{ textShadow: '0 1px 0 rgba(255,255,255,0.12), 0 -1px 0 rgba(0,0,0,0.5)' }}
           >
             {displayCardNumber}
           </p>
@@ -80,17 +101,20 @@ export function BankCardPreview({
 
         <div className='mt-6 flex items-end justify-between'>
           <div>
-            <p className='text-[9px] uppercase tracking-wider text-white/40'>Expiry</p>
+            <p className='text-[9px] tracking-wider text-white/35'>VALID THRU</p>
 
-            <p dir='ltr' className='mt-1 [unicode-bidi:isolate] text-left font-mono text-sm'>
+            <p
+              dir='ltr'
+              className='mt-1 [unicode-bidi:isolate] text-left font-mono text-sm text-white/90'
+            >
               {expiryDate || '••/••••'}
             </p>
           </div>
 
           <div className='text-left'>
-            <p className='text-[9px] uppercase tracking-wider text-white/40'>CVV2</p>
+            <p className='text-[9px] tracking-wider text-white/35'>CVV2</p>
 
-            <p className='mt-1 font-mono text-sm tracking-widest'>
+            <p className='mt-1 font-mono text-sm tracking-widest text-white/90'>
               {masked ? '••••' : maskCvv2(cvv2)}
             </p>
           </div>
