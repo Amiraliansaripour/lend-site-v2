@@ -33,7 +33,6 @@ import {
 function formatBirthDate(date?: string) {
   if (!date) return '';
   const shifted = new Date(date);
-  shifted.setDate(shifted.getDate() + 1);
   return normalizedFormatJalaliDate(shifted, {
     year: 'numeric',
     month: '2-digit',
