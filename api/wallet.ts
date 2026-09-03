@@ -166,12 +166,18 @@ export const getMerchantToken = async (
 export type GetOrderIdPayload = {
   nationalcode: string;
   amount: number;
-  IsOnline: true;
+  isOnline: true;
+  mobile?: string;
+  InstallMentNumber?: number;
+  rateValue?: number;
 };
 
 export type GetOrderIdResult = {
-  merchantId: string;
   orderId: number;
+  id: string;
+  isOnline?: boolean;
+  /** @deprecated Prefer `id` from newer API responses */
+  merchantId?: string;
 };
 
 export const getOrderId = async (
