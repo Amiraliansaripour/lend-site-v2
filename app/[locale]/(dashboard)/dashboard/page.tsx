@@ -12,7 +12,6 @@ import { formatNumber } from '@/utils/format';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import { LoyaltyPointsCard } from '@/components/loyalty-points-card';
 
-// وکتور درصد سفید
 const PercentVector = () => (
   <svg width='32' height='32' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
     <path
@@ -44,10 +43,8 @@ export default function DashboardPage() {
     <PageContainer breadcrumbs={breadcrumbs}>
       <PageContent title='کیف پول های من'>
         <div className='grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2 sm:gap-6'>
-          {/* کیف پول اعتباری */}
           <WalletCard isFlippable>
             <WalletCard.Front style={cardGradientStyle} className='p-5 text-white border-0'>
-              {/* بخش بالا چپ برای لوگو با خنثی‌سازی RTL */}
               <div className='w-full flex justify-start items-start z-10' dir='ltr'>
                 <PercentVector />
               </div>
@@ -74,10 +71,8 @@ export default function DashboardPage() {
             </WalletCard.Back>
           </WalletCard>
 
-          {/* کیف پول نقدی */}
           <WalletCard isFlippable>
             <WalletCard.Front style={cardGradientStyle} className='p-5 text-white border-0'>
-              {/* بخش بالا چپ برای لوگو با خنثی‌سازی RTL */}
               <div className='w-full flex justify-start items-start z-10' dir='ltr'>
                 <PercentVector />
               </div>
