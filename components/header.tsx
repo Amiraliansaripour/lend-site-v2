@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { X, Menu, User, LogIn } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
 import { getUserInfo } from '@/lib/auth/client/user-info';
-import { useSiteTemplate } from '@/providers/site-template';
+import { BoomLogo } from '@/components/brand/boom-logo';
 
 type Href = `/${string}`;
 
@@ -26,10 +25,7 @@ const NAVBAR: NavItem[] = [
 
 export function Header() {
   const pathname = usePathname() as Href;
-  const inverted = true;
   const transparent = false;
-  const { brandName, getImageUrl } = useSiteTemplate();
-  const logoUrl = getImageUrl(inverted ? 'darkLogo' : 'lightLogo') || getImageUrl('logo');
 
   const [visible, setVisible] = useState<boolean>(true);
   const [hasScrolled, setHasScrolled] = useState<boolean>(false);
@@ -112,19 +108,9 @@ export function Header() {
             </div>
           </button>
 
-          {/* Logo */}
-          <Link href='/' className='h-6 flex-shrink-0 lg:order-first'>
-            {logoUrl ? (
-              <Image
-                src={logoUrl}
-                alt={brandName}
-                width={120}
-                height={24}
-                className='h-full w-auto'
-                unoptimized
-                priority
-              />
-            ) : null}
+          {/* Logo — static Figma brand mark */}
+          <Link href='/' className='flex-shrink-0 lg:order-first' aria-label='BOOM UP'>
+            <BoomLogo markClassName='size-7' wordmarkClassName='text-base md:text-lg' />
           </Link>
 
           {/* Desktop Navigation */}

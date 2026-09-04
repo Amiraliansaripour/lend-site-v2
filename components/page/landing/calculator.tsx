@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo, useRef, startTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { calculateLoanSummary } from '@/utils/loan-calculator';
@@ -15,7 +14,7 @@ import { ExternalLinkPlanPanel } from '@/components/external-link-plan-panel';
 import { toast } from 'sonner';
 
 import { useRouter } from '@/i18n/navigation';
-import { useSiteTemplate } from '@/providers/site-template';
+import { BoomLogo } from '@/components/brand/boom-logo';
 
 interface CalculatorProps {
   onRequestCredit?: (plan: PlanDetail | null, amount: number) => void;
@@ -28,8 +27,6 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
   const isInitializedRef = useRef(false);
   const { data: financierPlansData } = useQuery(getFinancierPlansQueryOptions());
   const router = useRouter();
-  const { brandName, getImageUrl } = useSiteTemplate();
-  const logoUrl = getImageUrl('logo');
   const financiers = useMemo(() => {
     return financierPlansData?.plans || [];
   }, [financierPlansData?.plans]);
@@ -201,16 +198,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
         ) : (
           <div className='p-4 sm:p-5 lg:p-[17px] px-4 sm:px-5 calculator-shadow rounded-2xl h-full bg-white border border-brand/10'>
             <div className='mb-8 sm:mb-12 lg:mb-[74px]'>
-              {logoUrl ? (
-                <Image
-                  className='w-28 sm:w-36 lg:w-44'
-                  src={logoUrl}
-                  alt={brandName}
-                  width={144}
-                  height={48}
-                  unoptimized
-                />
-              ) : null}
+              <BoomLogo markClassName='size-8' wordmarkClassName='text-xl sm:text-2xl' />
             </div>
 
             <div className='space-y-3 sm:space-y-4'>

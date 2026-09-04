@@ -28,12 +28,12 @@ import { base64ToDataUrl } from '@/utils/convert';
 
 // * cookies
 import { accessToken } from '@/lib/auth/client/cookies';
-import { BrandName } from '@/components/brand-text';
 
 // * components
 import { useAppForm } from './form';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from './ui/skeleton';
+import { BoomLogo } from '@/components/brand/boom-logo';
 
 const OTP_RESEND_SECONDS = 120;
 
@@ -193,9 +193,7 @@ export function LoginForm() {
   return (
     <div className='w-full max-w-md rounded-2xl border border-brand/10 bg-white p-6 shadow-[0_24px_60px_-24px_rgba(0,85,255,0.2)] md:p-8'>
       <div className='mb-8 text-center lg:hidden'>
-        <span className='text-3xl font-black text-brand'>
-          <BrandName />
-        </span>
+        <BoomLogo className='justify-center' markClassName='size-8' wordmarkClassName='text-2xl' />
       </div>
 
       <div className='mb-8 text-right'>

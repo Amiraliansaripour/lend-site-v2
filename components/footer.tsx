@@ -1,14 +1,12 @@
 'use client';
 
-import Image from 'next/image';
-
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent } from '@/components/ui/card';
+import { BoomLogo } from '@/components/brand/boom-logo';
 import { useSiteTemplate } from '@/providers/site-template';
 
 export function Footer() {
-  const { brandName, email, phone, address, getImageUrl, withBrand } = useSiteTemplate();
-  const logoUrl = getImageUrl('logo');
+  const { brandName, email, phone, address, withBrand } = useSiteTemplate();
   const mailto = email ? `mailto:${email}` : undefined;
   const tel = phone ? `tel:${phone}` : undefined;
 
@@ -17,17 +15,8 @@ export function Footer() {
       <section className='bg-boom-blue-light pb-12 pt-6'>
         <div className='container flex flex-col md:flex-row justify-between gap-x-6 gap-y-10'>
           <section className='basis-1/3 min-w-67.5 grid gap-4'>
-            <Link href='/'>
-              {logoUrl ? (
-                <Image
-                  src={logoUrl}
-                  alt={brandName}
-                  width={200}
-                  height={100}
-                  className='w-52'
-                  unoptimized
-                />
-              ) : null}
+            <Link href='/' aria-label='BOOM UP'>
+              <BoomLogo markClassName='size-9' wordmarkClassName='text-xl' />
             </Link>
 
             <p className='leading-7 text-balance'>
