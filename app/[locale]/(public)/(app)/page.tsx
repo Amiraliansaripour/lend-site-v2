@@ -16,9 +16,7 @@ export default function IndexPage() {
         <WhyUs />
 
         <section className='container mx-auto'>
-          <div className='overflow-hidden rounded-3xl border border-brand/10 bg-white boom-card-shadow'>
-            <Calculator />
-          </div>
+          <Calculator />
         </section>
 
         <WalletsDescription />

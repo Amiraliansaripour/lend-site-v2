@@ -1,4 +1,7 @@
+import Image from 'next/image';
+
 import { cn } from '@/lib/utils';
+import boomLogoMark from '@/assets/images/boomlogo.svg';
 
 type BoomLogoProps = {
   className?: string;
@@ -8,7 +11,7 @@ type BoomLogoProps = {
   variant?: 'color' | 'white';
 };
 
-/** Static Boom brand mark (Figma) — never loaded via GetImage / site-template. */
+/** Static Boom brand mark — never loaded via GetImage / site-template. */
 export function BoomLogo({
   className,
   markClassName,
@@ -16,22 +19,21 @@ export function BoomLogo({
   showWordmark = true,
   variant = 'color',
 }: BoomLogoProps) {
-  const fill = variant === 'white' ? '#FFFFFF' : '#0055FF';
-
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
-      <svg
-        viewBox='0 0 64 64'
-        fill='none'
-        xmlns='http://www.w3.org/2000/svg'
+      <Image
+        src={boomLogoMark}
+        alt=''
+        width={64}
+        height={64}
+        unoptimized
         aria-hidden
-        className={cn('size-8 shrink-0', markClassName)}
-      >
-        {/* Percent mark matching Boom Figma logo */}
-        <circle cx='18' cy='16' r='9' fill={fill} />
-        <circle cx='46' cy='48' r='9' fill={fill} />
-        <path d='M44 8L20 56' stroke={fill} strokeWidth='10' strokeLinecap='round' />
-      </svg>
+        className={cn(
+          'size-8 shrink-0 object-contain',
+          variant === 'white' && 'brightness-0 invert',
+          markClassName,
+        )}
+      />
       {showWordmark ? (
         <span
           className={cn(

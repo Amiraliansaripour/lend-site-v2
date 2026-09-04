@@ -6,6 +6,7 @@ import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { calculateLoanSummary } from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
+import { normalizeToPersianDigits } from '@/utils/normalize';
 import { type PlanDetail } from '@/api/plan';
 import { getFinancierPlansQueryOptions } from '@/queries/plan';
 import { Slider } from '@/components/ui/slider';
@@ -14,10 +15,13 @@ import { ExternalLinkPlanPanel } from '@/components/external-link-plan-panel';
 import { toast } from 'sonner';
 
 import { useRouter } from '@/i18n/navigation';
-import { BoomLogo } from '@/components/brand/boom-logo';
 
 interface CalculatorProps {
   onRequestCredit?: (plan: PlanDetail | null, amount: number) => void;
+}
+
+function formatRial(amount: number) {
+  return `${normalizeToPersianDigits(formatNumber(amount, { int: true }))} ریال`;
 }
 
 export function Calculator({ onRequestCredit }: CalculatorProps) {
@@ -31,7 +35,6 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
     return financierPlansData?.plans || [];
   }, [financierPlansData?.plans]);
 
-  // Initialize with first plan when data loads
   useEffect(() => {
     if (financiers.length > 0 && !isInitializedRef.current) {
       const firstPlan = financiers[financiers.length - 1];
@@ -88,146 +91,138 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
   };
 
   const installmentAmount = loanCalculation?.monthlyInstallment ?? 0;
-  const totalPayable = loanCalculation?.totalRepayment ?? 0;
   const totalInterest = loanCalculation?.totalInterest ?? 0;
-  const totalRecived = loanCalculation?.netReceived ?? 0;
 
   const minAmount = selectedPlan ? selectedPlan.minAmount : 0;
   const maxAmount = selectedPlan ? selectedPlan.maxAmount : 0;
 
-  const sliderPercentage =
-    maxAmount > minAmount ? ((value - minAmount) / (maxAmount - minAmount)) * 100 : 0;
+  const summaryRows = [
+    { label: 'اعتبار درخواستی', value: formatRial(value) },
+    { label: 'طرح بازپرداخت', value: selectedPlan?.name ?? '—' },
+    { label: 'سود پرداختی', value: formatRial(totalInterest) },
+    {
+      label: 'مبلغ قسط ماهانه',
+      value: formatRial(installmentAmount),
+      emphasize: true,
+    },
+  ];
 
   return (
-    <div className='flex flex-col lg:flex-row gap-6 lg:gap-10 px-4 sm:px-6 md:px-8 lg:px-10 xl:pl-20 xl:pr-10 py-8 lg:py-12 justify-center'>
-      {/* Controls: plans (+ amount slider for normal plans) */}
-      <div className='w-full lg:w-3/5 pt-4 lg:pt-6'>
-        <div className='font-bold text-xl sm:text-2xl mb-3 sm:mb-5 text-[#0f172a]'>
-          نمایشگر اقساط
-        </div>
-        <div className='text-base sm:text-lg text-light-text mb-8 sm:mb-12 lg:mb-[75px]'>
+    <section className='px-4 py-10 sm:py-12 lg:py-16'>
+      <header className='mx-auto mb-8 max-w-2xl text-center sm:mb-10'>
+        <h2 className='mb-3 text-2xl font-bold text-[#0f172a] sm:text-3xl'>نمایشگر اقساط</h2>
+        <p className='text-sm leading-7 text-[#64748b] sm:text-base'>
           {hasExternalLink
             ? 'این طرح از طریق لینک اختصاصی ادامه پیدا می‌کند؛ مبلغ و اقساط در این صفحه نمایش داده نمی‌شود.'
-            : 'لطفا مبلغ درخواستی و مدت بازپرداخت را انتخاب کنید.'}
-        </div>
+            : 'مبلغ اعتبار درخواستی و طرح بازپرداخت را انتخاب کنید تا اقساط ماهانه محاسبه شود.'}
+        </p>
+      </header>
 
-        {/* Amount Selector — hidden for linked plans */}
-        {selectedPlan && !hasExternalLink && (
-          <div
-            key={selectedPlan.id}
-            className='pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-boom-blue-light p-3 sm:p-4 rounded-xl border border-brand/10'
-          >
-            <div className='mb-8 sm:mb-10 lg:mb-12 text-light-text text-sm sm:text-base'>
-              مبلغ مورد نظر
-            </div>
-            <div className='flex flex-col'>
-              <div className='relative mb-8'>
-                <div
-                  className='absolute transform -translate-x-1/2 -translate-y-full'
-                  style={{
-                    left: `calc(${sliderPercentage}%)`,
-                    top: '-32px',
-                  }}
-                >
-                  <div
-                    className={cn(
-                      'text-[#3F455D] bg-white px-3 py-1 rounded-lg text-xs sm:text-sm font-bold relative shadow-sm border border-gray-200',
-                    )}
-                  >
-                    {formatNumber(value.toString())}
-                  </div>
-                </div>
+      <div dir='ltr' className='mx-auto grid max-w-5xl gap-5 lg:grid-cols-2 lg:gap-6'>
+        {/* Input card */}
+        <div
+          dir='rtl'
+          className='rounded-3xl border border-[#e8eef7] bg-white p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] sm:p-7'
+        >
+          {selectedPlan && !hasExternalLink && (
+            <div className='mb-8'>
+              <div className='mb-4 text-sm font-medium text-[#64748b]'>مبلغ اعتبار مورد نظر</div>
+              <div className='mb-6 text-center text-2xl font-bold text-brand sm:text-3xl'>
+                {formatRial(value)}
               </div>
+
               <Slider
                 dir='ltr'
-                min={selectedPlan.minAmount}
-                max={selectedPlan.maxAmount}
+                min={minAmount}
+                max={maxAmount}
                 step={10000000}
                 value={[value]}
                 onValueChange={handleSliderChange}
-                className='w-full'
+                className={cn(
+                  'w-full',
+                  '**:data-[slot=slider-track]:h-1.5 **:data-[slot=slider-track]:rounded-full **:data-[slot=slider-track]:bg-[#e8eef7] **:data-[slot=slider-track]:shadow-none',
+                  '**:data-[slot=slider-range]:bg-brand **:data-[slot=slider-range]:shadow-none',
+                  '**:data-[slot=slider-thumb]:size-5 **:data-[slot=slider-thumb]:border-[3px] **:data-[slot=slider-thumb]:border-white **:data-[slot=slider-thumb]:bg-brand **:data-[slot=slider-thumb]:shadow-[0_2px_8px_rgba(0,85,255,0.35)] **:data-[slot=slider-thumb]:ring-0 **:data-[slot=slider-thumb]:hover:ring-0 **:data-[slot=slider-thumb]:focus-visible:ring-0',
+                )}
               />
-              <div className='text-sm sm:text-base lg:text-lg text-purple-darker flex justify-between w-full pt-2'>
-                <div>{formatNumber(selectedPlan.maxAmount.toString())}</div>
-                <div>{formatNumber(selectedPlan.minAmount.toString())}</div>
+
+              <div className='mt-3 flex justify-between text-xs text-[#94a3b8] sm:text-sm'>
+                <span>{formatRial(maxAmount)}</span>
+                <span>{formatRial(minAmount)}</span>
               </div>
             </div>
-          </div>
-        )}
-
-        <div
-          className={cn(
-            'pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-boom-blue-light p-3 sm:p-4 rounded-xl border border-brand/10',
-            !hasExternalLink && 'mt-4 sm:mt-6 lg:mt-9',
           )}
-        >
-          <div className='text-light-text text-xs sm:text-sm mb-3'>طرح ها</div>
-          <div className='flex flex-wrap gap-2'>
-            {financiers.map(item => {
-              const isLinked = Boolean(item.hasLink && item.link);
-              return (
-                item.isActive && (
+
+          <div>
+            <div className='mb-3 text-sm font-medium text-[#64748b]'>طرح‌های اعتباری</div>
+            <div className='flex flex-wrap gap-2'>
+              {financiers.map(item => {
+                if (!item.isActive) return null;
+                const isLinked = Boolean(item.hasLink && item.link);
+                const isSelected = item.id === selectedPlan?.id;
+                return (
                   <button
                     key={item.id}
+                    type='button'
                     className={cn(
-                      'text-xs px-2 py-2 flex-shrink-0 rounded transition-colors inline-flex items-center gap-1.5',
-                      item?.id === selectedPlan?.id
-                        ? 'bg-brand text-white'
-                        : 'bg-boom-blue-light text-[#334155] hover:bg-brand/10',
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors sm:text-sm',
+                      isSelected
+                        ? 'border-brand/20 bg-brand/10 text-brand'
+                        : 'border-[#e2e8f0] bg-white text-[#475569] hover:border-brand/30 hover:bg-brand/5',
                     )}
                     onClick={() => handlePlanClick(item)}
                   >
-                    {item?.name}
+                    {item.name}
                     {isLinked && <ExternalLink className='size-3 opacity-70' aria-hidden />}
                   </button>
-                )
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Results / external redirect panel */}
-      <div className='w-full lg:w-2/3 max-w-[545px] mx-auto lg:mx-0 mt-8 lg:mt-[87px]'>
+        {/* Summary / external panel */}
         {hasExternalLink ? (
           <ExternalLinkPlanPanel
             planName={selectedPlan?.name}
             onContinue={handleExternalLinkRedirect}
             variant='landing'
+            className='rounded-3xl border border-[#e8eef7] bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)]'
           />
         ) : (
-          <div className='p-4 sm:p-5 lg:p-[17px] px-4 sm:px-5 calculator-shadow rounded-2xl h-full bg-white border border-brand/10'>
-            <div className='mb-8 sm:mb-12 lg:mb-[74px]'>
-              <BoomLogo markClassName='size-8' wordmarkClassName='text-xl sm:text-2xl' />
+          <div
+            dir='rtl'
+            className='flex flex-col rounded-3xl border border-[#e8eef7] bg-white p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] sm:p-7'
+          >
+            <div className='flex-1'>
+              {summaryRows.map((row, index) => (
+                <div
+                  key={row.label}
+                  className={cn(
+                    'flex items-center justify-between gap-4 py-4',
+                    index < summaryRows.length - 1 && 'border-b border-[#eef2f7]',
+                  )}
+                >
+                  <span className='text-sm text-[#64748b] sm:text-base'>{row.label}</span>
+                  <span
+                    className={cn(
+                      'text-left text-sm font-semibold text-[#0f172a] sm:text-base',
+                      row.emphasize && 'text-base font-bold text-brand sm:text-lg',
+                    )}
+                  >
+                    {row.value}
+                  </span>
+                </div>
+              ))}
             </div>
 
-            <div className='space-y-3 sm:space-y-4'>
-              <div className='flex justify-between text-sm sm:text-base lg:text-lg mb-3'>
-                <div>مبلغ قسط ماهانه</div>
-                <div>{formatNumber(installmentAmount.toString())} ریال</div>
-              </div>
-              <div className='flex justify-between text-sm sm:text-base lg:text-lg mb-3 text-darker-text font-light'>
-                <div>اعتبار دریافتی شما</div>
-                <div>{formatNumber(totalRecived.toString())} ریال</div>
-              </div>
-              <div className='flex justify-between text-sm sm:text-base lg:text-lg pb-4 border-b border-brand/10 text-darker-text font-light'>
-                <div>سود پرداختی</div>
-                <div>{formatNumber(totalInterest.toString())} ریال</div>
-              </div>
-              <div className='flex justify-between text-sm sm:text-base lg:text-lg pt-4'>
-                <div className=''>جمع کل اقساط</div>
-                <div className=''>{formatNumber(totalPayable.toString())} ریال</div>
-              </div>
-            </div>
-
-            <div className='w-full mt-8 sm:mt-12 lg:mt-16 flex items-end'>
-              <button
-                className='w-full bg-brand text-white h-12 sm:h-14 rounded-xl text-sm sm:text-base font-medium transition-colors hover:bg-brand/90'
-                onClick={handleRequestCredit}
-              >
-                درخواست اعتبار
-              </button>
-            </div>
+            <button
+              type='button'
+              className='mt-8 w-full rounded-full bg-brand py-3.5 text-sm font-semibold text-white transition-colors hover:bg-brand/90 sm:mt-10 sm:py-4 sm:text-base'
+              onClick={handleRequestCredit}
+            >
+              درخواست اعتبار
+            </button>
           </div>
         )}
       </div>
@@ -239,6 +234,6 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
         onConfirm={handleModalConfirm}
         isCheckRequired={selectedPlan?.guarantees?.includes('چک')}
       />
-    </div>
+    </section>
   );
 }

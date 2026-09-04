@@ -11,20 +11,7 @@ import { useWalletInfo } from '@/queries/wallet';
 import { formatNumber } from '@/utils/format';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import { LoyaltyPointsCard } from '@/components/loyalty-points-card';
-
-const PercentVector = () => (
-  <svg width='32' height='32' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-    <path
-      d='M19 5L5 19'
-      stroke='white'
-      strokeWidth='2'
-      strokeLinecap='round'
-      strokeLinejoin='round'
-    />
-    <circle cx='7.5' cy='7.5' r='2.5' stroke='white' strokeWidth='2' />
-    <circle cx='16.5' cy='16.5' r='2.5' stroke='white' strokeWidth='2' />
-  </svg>
-);
+import { BoomLogo } from '@/components/brand/boom-logo';
 
 export default function DashboardPage() {
   const breadcrumbs: Breadcrumbs = [{ label: 'داشبورد', href: '/dashboard' }];
@@ -46,7 +33,7 @@ export default function DashboardPage() {
           <WalletCard isFlippable>
             <WalletCard.Front style={cardGradientStyle} className='p-5 text-white border-0'>
               <div className='w-full flex justify-start items-start z-10' dir='ltr'>
-                <PercentVector />
+                <BoomLogo showWordmark={false} markClassName='size-8' />
               </div>
 
               <div className='flex flex-col gap-1 z-10 text-right w-full mt-auto'>
@@ -74,7 +61,7 @@ export default function DashboardPage() {
           <WalletCard isFlippable>
             <WalletCard.Front style={cardGradientStyle} className='p-5 text-white border-0'>
               <div className='w-full flex justify-start items-start z-10' dir='ltr'>
-                <PercentVector />
+                <BoomLogo showWordmark={false} markClassName='size-8' />
               </div>
 
               <div className='flex flex-col gap-1 z-10 text-right w-full mt-auto'>
