@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
 import { useSiteTemplate } from '@/providers/site-template';
 import { TOTAL_UNREAD } from '@/components/page/messages/messages-page-content';
+import { BoomLogo } from './brand/boom-logo';
 
 const items = [
   { title: 'داشبورد', url: '/dashboard', icon: Home, badge: 0 },
@@ -54,7 +55,7 @@ export function AppSidebar() {
             href='/'
             className='flex justify-center items-center mb-3 border-b border-gray-200 w-full py-4'
           >
-            {logoUrl ? <img src={logoUrl} alt={brandName} className='w-44 mx-auto' /> : null}
+            <BoomLogo markClassName='size-9' wordmarkClassName='text-xl' />
           </Link>
           <SidebarGroupContent>
             <SidebarMenu>

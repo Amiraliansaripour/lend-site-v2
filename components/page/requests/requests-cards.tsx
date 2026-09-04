@@ -45,8 +45,19 @@ export function RequestsCards({
   const allowNewRequest = canSubmitNewRequest(requests);
 
   const cardGradientStyle = {
-    background: 'linear-gradient(135deg, #4c3ba8 0%, #292267 100%)',
+    background: 'linear-gradient(125deg, #0a2d86 0%, #1649b5 48%, #2b6de0 100%)',
   };
+  function CardCircles() {
+    return (
+      <div aria-hidden className='pointer-events-none absolute inset-0 overflow-hidden'>
+        <div className='absolute -left-10 -top-12 size-44 rounded-full border border-white/20' />
+        <div className='absolute left-4 top-6 size-28 rounded-full border border-white/15' />
+        <div className='absolute -right-14 -bottom-20 size-56 rounded-full border border-white/15' />
+        <div className='absolute right-10 -bottom-4 size-36 rounded-full border border-white/20' />
+        <div className='absolute left-[38%] top-[28%] size-24 rounded-full border border-white/10' />
+      </div>
+    );
+  }
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -153,6 +164,8 @@ export function RequestsCards({
         {/* Credit Wallet Card */}
         <WalletCard>
           <WalletCard.Front style={cardGradientStyle} className='p-5 text-white border-0'>
+            <CardCircles />
+
             <div className='w-full flex justify-start items-start z-10' dir='ltr'>
               <BoomLogo showWordmark={false} markClassName='size-8' />
             </div>
@@ -167,10 +180,7 @@ export function RequestsCards({
                 </span>
               </div>
               <Link href='/requests/request-credit'>
-                <Button
-                  variant='outline'
-                  className='w-fit mr-auto  bg-boom-surface/20  text-white!'
-                >
+                <Button variant='outline' className='w-fit mr-auto  bg-white  text-primary!'>
                   درخواست اعتبار
                 </Button>
               </Link>
@@ -181,6 +191,8 @@ export function RequestsCards({
         {/* Cash Wallet Card */}
         <WalletCard>
           <WalletCard.Front style={cardGradientStyle} className='p-5 text-white border-0'>
+            <CardCircles />
+
             <div className='w-full flex justify-start items-start z-10' dir='ltr'>
               <BoomLogo showWordmark={false} markClassName='size-8' />
             </div>
@@ -199,7 +211,7 @@ export function RequestsCards({
 
               <Button
                 variant='outline'
-                className='w-fit mr-auto bg-boom-surface/20 cursor-pointer text-white!'
+                className='w-fit mr-auto bg-white cursor-pointer text-primary!'
                 onClick={() => setModalOpen(true)}
               >
                 شارژ کیف پول
