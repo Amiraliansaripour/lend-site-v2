@@ -12,7 +12,7 @@ export function HelpContactUs() {
 
   return (
     <div className='w-full flex items-center justify-center px-4 md:px-6'>
-      <div className='relative bg-brand px-6 md:px-8 lg:px-32 mb-16 md:mb-24 w-full md:w-10/12 lg:w-9/12 min-h-[230px] md:h-52 rounded-2xl flex flex-col md:flex-row items-center justify-end md:justify-between gap-6 md:gap-4 py-6 pt-10 md:py-0'>
+      <div className='relative bg-boom-blue-light px-6 md:px-8 lg:px-32 mb-16 md:mb-24 w-full md:w-10/12 lg:w-9/12 min-h-[230px] md:h-52 rounded-2xl flex flex-col md:flex-row items-center justify-end md:justify-between gap-6 md:gap-4 py-6 pt-10 md:py-0'>
         <Image
           src={LandingBanner}
           className='absolute bottom-0 right-0 w-16 md:w-auto opacity-50 md:opacity-100'

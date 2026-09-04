@@ -48,13 +48,13 @@ export function LoanRequestSteps() {
         </p>
       </div>
 
-      <section className='grid gap-4 sm:grid-cols-2 lg:gap-6'>
+      <section className='grid gap-4 sm:grid-cols-4 lg:gap-6'>
         {STEPS.map(({ title, image, description }, index) => (
           <Card
             key={index}
             className='overflow-hidden border-brand/10 bg-white boom-card-shadow gap-y-0 py-0 transition-shadow hover:shadow-[0_16px_48px_-16px_rgba(0,85,255,0.18)]'
           >
-            <div className='aspect-[16/10] w-full bg-[#eef2f7]'>
+            <div className='aspect-[10/2] w-full bg-[#eef2f7]'>
               <Image
                 src={image}
                 alt={title}

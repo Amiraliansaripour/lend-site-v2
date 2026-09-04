@@ -28,8 +28,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
         {
           fontFamily: 'IranYekan !important',
           '--normal-bg': 'var(--popover)',
-          '--normal-text': 'var(--popover-foreground)',
-          '--normal-border': 'var(--border)',
+          '--normal-text': 'oklch(0.577 0.245 27.325)',
+          '--normal-border': 'oklch(0.577 0.245 27.325)',
           '--border-radius': 'var(--radius)',
         } as React.CSSProperties
       }

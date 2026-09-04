@@ -135,6 +135,8 @@ export type LoanSummaryInput = {
   percentage?: number | null;
   firstBankFee?: number | null;
   firstSystemFee?: number | null;
+  duringBankFee?: number | null;
+  duringSystemFee?: number | null;
   period?: number | null;
 };
 
@@ -154,7 +156,7 @@ export function calculateLoanSummary(
     return null;
   }
 
-  const interestRate = plan.percentage ?? 0;
+  const interestRate = (plan.duringBankFee ?? 0) + (plan.duringSystemFee ?? 0);
   const firstFeeRate = (plan.firstBankFee ?? 0) + (plan.firstSystemFee ?? 0);
   const period = plan.period ?? 0;
 
