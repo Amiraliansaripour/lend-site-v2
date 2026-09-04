@@ -75,98 +75,100 @@ export function Header() {
 
   return (
     <>
-      <header
-        className={cn(
-          'h-[58px] md:h-[78px] w-full flex justify-between items-center px-4 md:px-6 lg:px-10 sticky top-0 inset-x-0 z-10 transition-[color,background-color,translate] bg-white/90 text-[#0f172a] font-medium backdrop-blur-md border-b border-brand/10',
-          hasScrolled && 'shadow-[0_8px_24px_-16px_rgba(15,23,42,0.25)]',
-          !visible && '-translate-y-full',
-        )}
-      >
-        <div className='w-full h-full flex justify-between items-center relative'>
-          {/* Mobile Menu Button */}
-          <button
-            className='lg:hidden p-2 text-gray-600 hover:text-black transition-all duration-200 !z-50'
-            onClick={toggleMenu}
-          >
-            <div className='relative w-6 h-6 flex items-center justify-center'>
-              <Menu
-                size={20}
-                className={cn(
-                  'absolute transition-all duration-300',
-                  isMenuOpen ? 'opacity-0 rotate-180 scale-75' : 'opacity-100 rotate-0 scale-100',
-                  transparent && 'text-white',
-                  !transparent && 'text-black',
-                )}
-              />
-              <X
-                size={20}
-                className={cn(
-                  'absolute transition-all duration-300 text-black',
-                  isMenuOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-75',
-                )}
-              />
+      <div className='sticky top-0 lg:top-3 inset-x-0 z-40 w-full flex justify-center px-0 lg:px-6 transition-transform duration-300'>
+        <header
+          className={cn(
+            'w-full h-[52px] flex justify-between items-center px-4 transition-all duration-300',
+            'lg:max-w-5xl lg:rounded-full lg:bg-white/95 lg:backdrop-blur-md lg:shadow-[0_8px_20px_rgba(0,0,0,0.05)] lg:border lg:border-gray-100',
+            'max-lg:bg-white/90 max-lg:backdrop-blur-md max-lg:border-b max-lg:border-brand/10',
+            hasScrolled && 'max-lg:shadow-md',
+            !visible && '-translate-y-full lg:-translate-y-[calc(100%+2rem)]',
+          )}
+        >
+          <div className='w-full h-full flex justify-between items-center relative'>
+            {/* Mobile Menu Button */}
+            <button
+              className='lg:hidden p-2 text-gray-600 hover:text-black transition-all duration-200 !z-50'
+              onClick={toggleMenu}
+            >
+              <div className='relative w-6 h-6 flex items-center justify-center'>
+                <Menu
+                  size={18}
+                  className={cn(
+                    'absolute transition-all duration-300',
+                    isMenuOpen ? 'opacity-0 rotate-180 scale-75' : 'opacity-100 rotate-0 scale-100',
+                    transparent ? 'text-white' : 'text-black',
+                  )}
+                />
+                <X
+                  size={18}
+                  className={cn(
+                    'absolute transition-all duration-300 text-black',
+                    isMenuOpen
+                      ? 'opacity-100 rotate-0 scale-100'
+                      : 'opacity-0 -rotate-180 scale-75',
+                  )}
+                />
+              </div>
+            </button>
+
+            <Link href='/' className='flex-shrink-0 pr-1' aria-label='BOOM UP'>
+              <BoomLogo markClassName='size-6' wordmarkClassName='text-sm md:text-base' />
+            </Link>
+
+            <nav className='hidden lg:flex items-center gap-5 h-full'>
+              {NAVBAR.map(item => (
+                <NavLink key={item.href} {...item} transparent={transparent} />
+              ))}
+            </nav>
+
+            <div className='hidden lg:flex items-center'>
+              {!isAuthenticated ? (
+                <Link
+                  href='/login'
+                  className='inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-white text-xs font-semibold transition-all hover:bg-brand/90 hover:shadow-md hover:shadow-brand/20'
+                >
+                  <User size={15} />
+                  <span>ورود / ثبت نام</span>
+                </Link>
+              ) : (
+                <Link
+                  href='/dashboard'
+                  className='inline-flex items-center gap-1.5 rounded-full border border-brand px-4 py-1.5 text-brand text-xs font-semibold transition-colors hover:bg-brand/5'
+                >
+                  <User size={15} />
+                  <span>پروفایل</span>
+                </Link>
+              )}
             </div>
-          </button>
 
-          {/* Logo — static Figma brand mark */}
-          <Link href='/' className='flex-shrink-0 lg:order-first' aria-label='BOOM UP'>
-            <BoomLogo markClassName='size-7' wordmarkClassName='text-base md:text-lg' />
-          </Link>
-
-          {/* Desktop Navigation */}
-          <nav className='hidden lg:flex gap-5'>
-            {NAVBAR.map(item => (
-              <NavLink key={item.href} {...item} transparent={transparent} />
-            ))}
-          </nav>
-
-          {/* Desktop Auth Buttons */}
-          <div className='hidden lg:block'>
+            {/* Mobile Auth Button */}
             {!isAuthenticated ? (
               <Link
+                className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
                 href='/login'
-                className='inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-white transition-colors hover:bg-brand/90'
+                aria-label='ورود / ثبت نام'
               >
-                <User size={18} />
-                <span>ورود / ثبت نام</span>
+                <LogIn size={18} />
               </Link>
             ) : (
               <Link
+                className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
                 href='/dashboard'
-                className='inline-flex items-center gap-2 rounded-xl border-2 border-brand px-5 py-2.5 text-brand transition-colors hover:bg-brand/5'
+                aria-label='پروفایل'
               >
-                <User size={18} />
-                <span>پروفایل</span>
+                <User size={20} />
               </Link>
             )}
           </div>
-
-          {/* Mobile Auth Button */}
-          {!isAuthenticated ? (
-            <Link
-              className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
-              href='/login'
-              aria-label='ورود / ثبت نام'
-            >
-              <LogIn size={20} />
-            </Link>
-          ) : (
-            <Link
-              className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
-              href='/dashboard'
-              aria-label='پروفایل'
-            >
-              <User size={23} />
-            </Link>
-          )}
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className='fixed inset-0 bg-black/50 z-40 lg:hidden' onClick={closeMenu}>
           <div
-            className='fixed top-[58px] md:top-[78px] left-0 right-0 bg-white shadow-lg z-50'
+            className='fixed top-[52px] left-0 right-0 bg-white shadow-lg z-50'
             onClick={e => e.stopPropagation()}
           >
             <nav className='flex flex-col'>
@@ -176,9 +178,9 @@ export function Header() {
                   href={item.href}
                   onClick={closeMenu}
                   className={cn(
-                    'px-6 py-4 border-b border-gray-200 transition-all',
+                    'px-6 py-3.5 border-b border-gray-200 transition-all text-sm',
                     pathname === item.href
-                      ? 'text-brand font-medium bg-gray-50'
+                      ? 'text-brand font-bold bg-gray-50'
                       : 'text-gray-700 hover:bg-gray-50',
                   )}
                 >
@@ -195,7 +197,7 @@ export function Header() {
 
 type NavLinkProps = NavItem & { transparent: boolean };
 
-function NavLink({ title, href, transparent }: NavLinkProps) {
+function NavLink({ title, href }: NavLinkProps) {
   const pathname = usePathname();
   const isActive = href === pathname;
 
@@ -203,18 +205,12 @@ function NavLink({ title, href, transparent }: NavLinkProps) {
     <Link
       href={href}
       className={cn(
-        'border-b-2 transition-all hover:font-medium',
-        isActive ? 'font-medium border-current' : 'border-transparent hover:border-current',
-        transparent
-          ? isActive
-            ? 'text-white'
-            : 'text-gray-300 hover:text-white'
-          : isActive
-            ? 'text-brand'
-            : 'text-gray-600 hover:text-brand',
+        'relative h-full flex items-center text-xs md:text-[13px] transition-colors px-1',
+        isActive ? 'font-bold text-gray-900' : 'text-gray-600 hover:text-gray-900 font-medium',
       )}
     >
-      {title}
+      <span>{title}</span>
+      {isActive && <span className='absolute bottom-0 inset-x-0 h-[3px] bg-brand rounded-t-full' />}
     </Link>
   );
 }

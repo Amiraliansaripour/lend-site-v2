@@ -45,7 +45,7 @@ const WalletCardRoot = ({
 const WalletCardFrontComponent = ({ className, children, ...props }: WalletCardFrontProps) => {
   return (
     <CreditCardFront
-      className={cn('bg-linear-to-br from-[#3bb9cf] to-[#133c7a]', className)}
+      className={cn('bg-transparent p-0 overflow-hidden border-0', className)}
       {...props}
     >
       {children}
@@ -56,7 +56,7 @@ const WalletCardFrontComponent = ({ className, children, ...props }: WalletCardF
 const WalletCardBackComponent = ({ className, children, ...props }: WalletCardBackProps) => {
   return (
     <CreditCardBack
-      className={cn('bg-linear-to-br from-[#3bb9cf] to-[#133c7a]', className)}
+      className={cn('bg-transparent p-0 overflow-hidden border-0', className)}
       {...props}
     >
       {children}
