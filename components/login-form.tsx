@@ -32,13 +32,12 @@ import { BrandName } from '@/components/brand-text';
 
 // * components
 import { useAppForm } from './form';
-import { Skeleton } from './ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from './ui/skeleton';
 
 const OTP_RESEND_SECONDS = 120;
 
-export function LoginForm({ className, ...props }: React.ComponentProps<'form'>) {
+export function LoginForm() {
   const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [captchaCredentials, setCaptchaCredentials] = useState<{
@@ -192,22 +191,23 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
   };
 
   return (
-    <Card className='lg:w-100'>
-      <CardHeader>
-        <div className='text-center mb-4'>
-          <span className='text-2xl font-bold text-brand'>
-            <BrandName />
-          </span>
-        </div>
-        <CardTitle>ورود به حساب کاربری</CardTitle>
-        <CardDescription className='mt-2'>
+    <div className='w-full max-w-md rounded-2xl border border-brand/10 bg-white p-6 shadow-[0_24px_60px_-24px_rgba(0,85,255,0.2)] md:p-8'>
+      <div className='mb-8 text-center lg:hidden'>
+        <span className='text-3xl font-black text-brand'>
+          <BrandName />
+        </span>
+      </div>
+
+      <div className='mb-8 text-right'>
+        <h1 className='text-2xl font-bold text-[#0f172a]'>ورود / ثبت نام</h1>
+        <p className='mt-2 text-sm leading-7 text-[#64748b]'>
           {isOtpStep
             ? 'برای ورود به حساب کاربری خود کد اعتبار سنجی را وارد نمایید.'
             : 'برای ورود به حساب کاربری خود شماره همراه را وارد نمایید.'}
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </div>
 
-      <CardContent>
+      <div>
         <form onSubmit={handleSubmit} noValidate>
           {isOtpStep ? (
             <>
@@ -227,7 +227,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
 
               <div className='flex flex-col gap-3'>
                 <form.AppForm>
-                  <form.SubmitButton className='w-full' disabled={isOtpPending}>
+                  <form.SubmitButton
+                    className='w-full h-12 rounded-xl bg-brand text-white hover:bg-brand/90'
+                    disabled={isOtpPending}
+                  >
                     {isOtpPending ? 'در حال ارسال...' : 'تایید'}
                   </form.SubmitButton>
                 </form.AppForm>
@@ -320,7 +323,10 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
 
               <div className='flex flex-col gap-3'>
                 <form.AppForm>
-                  <form.SubmitButton className='w-full' disabled={isPending}>
+                  <form.SubmitButton
+                    className='w-full h-12 rounded-xl bg-brand text-white hover:bg-brand/90'
+                    disabled={isPending}
+                  >
                     {isPending ? 'در حال ارسال...' : 'تایید'}
                   </form.SubmitButton>
                 </form.AppForm>
@@ -328,7 +334,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
             </div>
           )}
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

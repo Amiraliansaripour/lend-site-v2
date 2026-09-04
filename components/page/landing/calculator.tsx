@@ -102,11 +102,13 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
     maxAmount > minAmount ? ((value - minAmount) / (maxAmount - minAmount)) * 100 : 0;
 
   return (
-    <div className='flex flex-col lg:flex-row gap-6 lg:gap-10 px-4 sm:px-6 md:px-8 lg:px-10 xl:pl-20 xl:pr-10 mb-10 border-t border-gray-100 justify-center'>
+    <div className='flex flex-col lg:flex-row gap-6 lg:gap-10 px-4 sm:px-6 md:px-8 lg:px-10 xl:pl-20 xl:pr-10 py-8 lg:py-12 justify-center'>
       {/* Controls: plans (+ amount slider for normal plans) */}
-      <div className='w-full lg:w-3/5 pt-8 lg:pt-12'>
-        <div className='font-bold text-lg sm:text-xl mb-3 sm:mb-5'>نمایشگر اقساط</div>
-        <div className='text-base sm:text-lg text-[#454545] mb-8 sm:mb-12 lg:mb-[75px]'>
+      <div className='w-full lg:w-3/5 pt-4 lg:pt-6'>
+        <div className='font-bold text-xl sm:text-2xl mb-3 sm:mb-5 text-[#0f172a]'>
+          نمایشگر اقساط
+        </div>
+        <div className='text-base sm:text-lg text-light-text mb-8 sm:mb-12 lg:mb-[75px]'>
           {hasExternalLink
             ? 'این طرح از طریق لینک اختصاصی ادامه پیدا می‌کند؛ مبلغ و اقساط در این صفحه نمایش داده نمی‌شود.'
             : 'لطفا مبلغ درخواستی و مدت بازپرداخت را انتخاب کنید.'}
@@ -116,7 +118,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
         {selectedPlan && !hasExternalLink && (
           <div
             key={selectedPlan.id}
-            className='pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-pink-light p-3 sm:p-4 rounded-lg border border-[#F5F0FF]'
+            className='pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-boom-blue-light p-3 sm:p-4 rounded-xl border border-brand/10'
           >
             <div className='mb-8 sm:mb-10 lg:mb-12 text-light-text text-sm sm:text-base'>
               مبلغ مورد نظر
@@ -158,7 +160,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
 
         <div
           className={cn(
-            'pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-pink-light p-3 sm:p-4 rounded-lg border border-[#F5F0FF]',
+            'pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-boom-blue-light p-3 sm:p-4 rounded-xl border border-brand/10',
             !hasExternalLink && 'mt-4 sm:mt-6 lg:mt-9',
           )}
         >
@@ -173,8 +175,8 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
                     className={cn(
                       'text-xs px-2 py-2 flex-shrink-0 rounded transition-colors inline-flex items-center gap-1.5',
                       item?.id === selectedPlan?.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+                        ? 'bg-brand text-white'
+                        : 'bg-boom-blue-light text-[#334155] hover:bg-brand/10',
                     )}
                     onClick={() => handlePlanClick(item)}
                   >
@@ -197,7 +199,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
             variant='landing'
           />
         ) : (
-          <div className='p-4 sm:p-5 lg:p-[17px] px-4 sm:px-5 calculator-shadow rounded-2xl h-full'>
+          <div className='p-4 sm:p-5 lg:p-[17px] px-4 sm:px-5 calculator-shadow rounded-2xl h-full bg-white border border-brand/10'>
             <div className='mb-8 sm:mb-12 lg:mb-[74px]'>
               {logoUrl ? (
                 <Image
@@ -220,7 +222,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
                 <div>اعتبار دریافتی شما</div>
                 <div>{formatNumber(totalRecived.toString())} ریال</div>
               </div>
-              <div className='flex justify-between text-sm sm:text-base lg:text-lg pb-4 border-b border-[#F5F0FF] text-darker-text font-light'>
+              <div className='flex justify-between text-sm sm:text-base lg:text-lg pb-4 border-b border-brand/10 text-darker-text font-light'>
                 <div>سود پرداختی</div>
                 <div>{formatNumber(totalInterest.toString())} ریال</div>
               </div>
@@ -232,7 +234,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
 
             <div className='w-full mt-8 sm:mt-12 lg:mt-16 flex items-end'>
               <button
-                className='w-full bg-secondary-green text-white h-12 sm:h-14 rounded text-sm sm:text-base font-medium transition-colors bg-primary hover:bg-green-600'
+                className='w-full bg-brand text-white h-12 sm:h-14 rounded-xl text-sm sm:text-base font-medium transition-colors hover:bg-brand/90'
                 onClick={handleRequestCredit}
               >
                 درخواست اعتبار

@@ -24,12 +24,10 @@ const NAVBAR: NavItem[] = [
   { title: 'ثبت نام فروشگاه‌ها', href: '/merchant-signup' },
 ];
 
-const WITH_INVERTED_HEADERS = new Set<Href>(['/login']);
-
 export function Header() {
   const pathname = usePathname() as Href;
-  const inverted = WITH_INVERTED_HEADERS.has(pathname);
-  const transparent = !inverted;
+  const inverted = true;
+  const transparent = false;
   const { brandName, getImageUrl } = useSiteTemplate();
   const logoUrl = getImageUrl(inverted ? 'darkLogo' : 'lightLogo') || getImageUrl('logo');
 
@@ -83,9 +81,8 @@ export function Header() {
     <>
       <header
         className={cn(
-          'h-[58px] md:h-[78px] w-full flex justify-between items-center px-4 md:px-6 lg:px-10 sticky top-0 inset-x-0 z-10 transition-[color,background-color,translate]',
-          inverted ? 'bg-muted text-brand font-medium' : 'bg-transparent text-white absolute',
-          !inverted && hasScrolled && 'bg-brand',
+          'h-[58px] md:h-[78px] w-full flex justify-between items-center px-4 md:px-6 lg:px-10 sticky top-0 inset-x-0 z-10 transition-[color,background-color,translate] bg-white/90 text-[#0f172a] font-medium backdrop-blur-md border-b border-brand/10',
+          hasScrolled && 'shadow-[0_8px_24px_-16px_rgba(15,23,42,0.25)]',
           !visible && '-translate-y-full',
         )}
       >
@@ -142,12 +139,7 @@ export function Header() {
             {!isAuthenticated ? (
               <Link
                 href='/login'
-                className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
-                  transparent
-                    ? 'text-white border-white hover:bg-white/10'
-                    : 'text-black border-black hover:bg-black/10',
-                )}
+                className='inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-white transition-colors hover:bg-brand/90'
               >
                 <User size={18} />
                 <span>ورود / ثبت نام</span>
@@ -155,12 +147,7 @@ export function Header() {
             ) : (
               <Link
                 href='/dashboard'
-                className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
-                  inverted
-                    ? 'text-black border-black hover:bg-white/10'
-                    : 'text-white border-white hover:bg-white/10',
-                )}
+                className='inline-flex items-center gap-2 rounded-xl border-2 border-brand px-5 py-2.5 text-brand transition-colors hover:bg-brand/5'
               >
                 <User size={18} />
                 <span>پروفایل</span>

@@ -1,12 +1,10 @@
 'use client';
 
-import Image from 'next/image';
-
+import { Link } from '@/i18n/navigation';
 import { useSiteTemplate } from '@/providers/site-template';
 
 export function MerchantSignupBanner() {
-  const { brandName, getImageUrl, withBrand } = useSiteTemplate();
-  const bannerUrl = getImageUrl('merchantSignupBanner');
+  const { withBrand } = useSiteTemplate();
 
   const scrollToForm = () => {
     const formSection = document.getElementById('merchant-signup-form');
@@ -16,39 +14,37 @@ export function MerchantSignupBanner() {
   };
 
   return (
-    <div className='h-[300px] lg:h-[750px] relative overflow-hidden mb-11 md:mb-[70px]'>
-      <div className='absolute text-white right-5 lg:right-24 bottom-1/3 z-10'>
-        <div className='text-sm lg:text-2xl font-bold pb-3'>به جمع فروشگاه‌های ما بپیوندید.</div>
-        <div className='text-xs lg:text-lg'>
-          {withBrand('با ثبت نام در کارالند، فروشگاه خود را به هزاران مشتری معرفی کنید.')}
+    <section className='relative overflow-hidden'>
+      <div
+        aria-hidden
+        className='pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#dbeafe_0%,transparent_55%),radial-gradient(ellipse_at_bottom_left,#eff6ff_0%,transparent_50%)]'
+      />
+      <div className='container relative py-16 md:py-24'>
+        <div className='max-w-2xl'>
+          <p className='mb-3 text-xs font-medium tracking-[0.28em] text-brand/70'>MERCHANTS</p>
+          <h1 className='mb-4 text-3xl font-bold leading-tight text-[#0f172a] md:text-4xl lg:text-5xl'>
+            به جمع فروشگاه‌های ما بپیوندید
+          </h1>
+          <p className='mb-8 max-w-xl text-base leading-8 text-[#64748b] md:text-lg'>
+            {withBrand('با ثبت نام در کارالند، فروشگاه خود را به هزاران مشتری معرفی کنید.')}
+          </p>
+          <div className='flex flex-wrap gap-3'>
+            <button
+              type='button'
+              onClick={scrollToForm}
+              className='inline-flex h-12 min-w-40 items-center justify-center rounded-xl bg-brand px-8 text-sm font-medium text-white transition-colors hover:bg-brand/90 md:h-14 md:text-base'
+            >
+              ثبت درخواست
+            </button>
+            <Link
+              href='/shops'
+              className='inline-flex h-12 items-center justify-center rounded-xl border border-brand/25 bg-white px-8 text-sm font-medium text-brand transition-colors hover:bg-brand/5 md:h-14 md:text-base'
+            >
+              فروشگاه‌های فعال
+            </Link>
+          </div>
         </div>
-        <button
-          onClick={scrollToForm}
-          className='bg-[#00C057] w-20 lg:w-56 h-10 text-xs lg:text-base lg:h-14 flex items-center justify-center rounded mt-3 lg:mt-16 cursor-pointer hover:bg-[#00A04B] transition-colors'
-        >
-          ثبت درخواست
-        </button>
       </div>
-      {bannerUrl ? (
-        <>
-          <Image
-            className='w-full h-full object-cover hidden md:block'
-            src={bannerUrl}
-            alt={brandName}
-            fill
-            priority
-            unoptimized
-          />
-          <Image
-            className='w-full h-full block md:hidden object-cover'
-            src={bannerUrl}
-            alt={brandName}
-            fill
-            priority
-            unoptimized
-          />
-        </>
-      ) : null}
-    </div>
+    </section>
   );
 }

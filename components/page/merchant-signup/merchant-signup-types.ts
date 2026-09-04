@@ -1,5 +1,4 @@
 import { StaticImageData } from 'next/image';
-import { ReactNode } from 'react';
 
 export type MerchantCategory = 0 | 1 | 3;
 
@@ -28,6 +27,6 @@ export type MerchantSignupResponse = {
 export type ProcessStep = {
   step: number;
   title: string;
-  img: StaticImageData;
+  img?: StaticImageData | string;
   description: string;
 };

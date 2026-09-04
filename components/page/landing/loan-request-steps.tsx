@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
+import { Card, CardContent, CardDescription, CardTitle } from '../../ui/card';
 
 import StepHelpImage1 from '@/assets/images/illustrations/step1help.png';
 import StepHelpImage2 from '@/assets/images/illustrations/step2help.png';
@@ -37,37 +37,42 @@ export function LoanRequestSteps() {
 
   return (
     <section className='container'>
-      <hgroup className='flex flex-col items-center gap-y-4 mb-10'>
-        <h3 className='text-lg text-center font-semibold'>
+      <div className='mb-12 flex flex-col items-center gap-y-4 text-center'>
+        <p className='text-xs font-medium tracking-[0.28em] text-brand/70'>STEPS</p>
+        <h3 className='text-2xl font-bold text-[#0f172a] md:text-3xl'>
           {withBrand('مراحل دریافت وام از کارالند')}
         </h3>
-        <p className='max-w-md text-center leading-7 text-pretty'>
+        <p className='max-w-xl text-base leading-8 text-[#64748b]'>
           با طی کردن چند مرحله ساده، می‌توانید وام مورد نیاز خود را به‌سرعت دریافت کنید و از مزایای
           خرید اعتباری بهره‌مند شوید.
         </p>
-      </hgroup>
+      </div>
 
-      <section className='grid sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+      <section className='grid gap-4 sm:grid-cols-2 lg:gap-6'>
         {STEPS.map(({ title, image, description }, index) => (
           <Card
             key={index}
-            className='border-brand shadow-md hover:shadow-none gap-y-0 py-4 transition-shadow'
+            className='overflow-hidden border-brand/10 bg-white boom-card-shadow gap-y-0 py-0 transition-shadow hover:shadow-[0_16px_48px_-16px_rgba(0,85,255,0.18)]'
           >
-            <CardHeader className='px-3'>
-              <div className='flex items-center size-10 rounded-sm text-brand font-semibold border border-brand/75 tabular-nums -mt-1'>
-                <span className='mx-auto'>{index + 1}</span>
-              </div>
-            </CardHeader>
-            <CardContent className='flex flex-col items-center gap-y-3 px-4'>
+            <div className='aspect-[16/10] w-full bg-[#eef2f7]'>
               <Image
                 src={image}
                 alt={title}
-                width={200}
-                height={200}
-                className='w-33 aspect-square'
+                width={400}
+                height={250}
+                className='h-full w-full object-cover'
               />
-              <CardTitle className='text-center mt-4'>{title}</CardTitle>
-              <CardDescription className='text-center leading-6'>{description}</CardDescription>
+            </div>
+            <CardContent className='flex flex-col gap-y-3 px-5 py-6'>
+              <div className='flex items-center gap-3'>
+                <span className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand text-sm font-bold text-white'>
+                  {(index + 1).toLocaleString('fa')}
+                </span>
+                <CardTitle className='text-base md:text-lg'>{title}</CardTitle>
+              </div>
+              <CardDescription className='text-right leading-7 text-[#64748b]'>
+                {description}
+              </CardDescription>
             </CardContent>
           </Card>
         ))}

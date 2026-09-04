@@ -97,15 +97,20 @@ export function MerchantSignupForm() {
   return (
     <div
       id='merchant-signup-form'
-      className='bg-linear-to-b from-light-blue/20 to-light-blue/10 flex items-center flex-col my-20 pb-32'
+      className='bg-boom-surface flex items-center flex-col pb-24 pt-8 md:pt-12'
     >
-      <div className='text-2xl font-bold py-14 text-center'>فرم ثبت درخواست همکاری</div>
+      <div className='text-2xl md:text-3xl font-bold py-10 text-center text-[#0f172a]'>
+        فرم ثبت درخواست همکاری
+      </div>
 
-      <div className='bg-white rounded-2xl w-full sm:w-11/12 md:w-4/5 lg:w-3/4 max-w-5xl mx-auto px-4 sm:px-6 md:px-9 py-10 sm:py-16 md:py-28'>
-        <form onSubmit={onFormSubmit} className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+      <div className='bg-white rounded-3xl w-full sm:w-11/12 md:w-4/5 lg:w-3/4 max-w-5xl mx-auto px-4 sm:px-6 md:px-9 py-10 sm:py-14 boom-card-shadow border border-brand/10'>
+        <form onSubmit={onFormSubmit} className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           {formFields.map(field => (
             <div key={field.name} className='w-full'>
-              <label htmlFor={field.name} className='block text-sm font-medium text-gray-700'>
+              <label
+                htmlFor={field.name}
+                className='block text-sm font-medium text-[#334155] mb-1.5'
+              >
                 {field.label} {field.required && <span className='text-red-500'>*</span>}
               </label>
               {field.type === 'select' ? (
@@ -115,7 +120,7 @@ export function MerchantSignupForm() {
                   value={formData.category}
                   onChange={handleInputChange}
                   required={field.required}
-                  className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand'
+                  className='mt-1 block w-full px-4 py-3 border border-[#e2e8f0] rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand'
                 >
                   <option value={0}>کالای بادوام</option>
                   <option value={1}>کالای مصرفی</option>
@@ -129,17 +134,17 @@ export function MerchantSignupForm() {
                   value={formData[field.name as keyof MerchantSignupFormData] || ''}
                   onChange={handleInputChange}
                   required={field.required}
-                  className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand'
+                  className='mt-1 block w-full px-4 py-3 border border-[#e2e8f0] rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand'
                 />
               )}
             </div>
           ))}
 
-          <div className='col-span-1 md:col-span-2 flex justify-end'>
+          <div className='col-span-1 md:col-span-2 flex justify-start'>
             <button
               type='submit'
               disabled={createMerchantSignup.isPending}
-              className={`bg-[#00C057] text-white w-full sm:w-56 h-14 flex items-center justify-center rounded mt-5 cursor-pointer transition-opacity ${
+              className={`bg-brand text-white w-full sm:w-56 h-14 flex items-center justify-center rounded-xl mt-5 cursor-pointer transition-opacity ${
                 createMerchantSignup.isPending
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:opacity-90'

@@ -151,14 +151,43 @@ html body {
   --color-brand: var(--brand);
   --color-success: var(--color-green-500);
   --color-success-dark: var(--color-green-600);
+  --color-light-blue: var(--light-blue);
+  --color-dark-blue: var(--dark-blue);
+  --color-boom-blue-light: var(--boom-blue-light);
+  --color-boom-surface: var(--boom-surface);
+  --color-pink-light: var(--boom-blue-light);
+  --color-light-text: var(--light-text);
+  --color-darker-text: var(--darker-text);
+  --color-purple-darker: var(--purple-darker);
+  --color-secondary-green: var(--secondary-green);
 }
 
 :root {
-  --brand: oklch(36.8%, 25.5%, 260.458%);
+  --brand: #0055ff;
+  --primary: #0055ff;
+  --primary-foreground: #ffffff;
+  --light-blue: #dbeafe;
+  --dark-blue: #1e3a8a;
+  --boom-blue-light: #eff6ff;
+  --boom-surface: #f8faff;
+  --light-text: #64748b;
+  --darker-text: #334155;
+  --purple-darker: #475569;
+  --secondary-green: #0055ff;
 }
 
 .dark {
-  --brand: oklch(36.8%, 25.5%, 260.458%);
+  --brand: #3b82f6;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --light-blue: #1e3a8a;
+  --dark-blue: #dbeafe;
+  --boom-blue-light: #172554;
+  --boom-surface: #0f172a;
+  --light-text: #94a3b8;
+  --darker-text: #e2e8f0;
+  --purple-darker: #cbd5e1;
+  --secondary-green: #3b82f6;
 }
 /* * customization */
 
@@ -382,5 +411,17 @@ html body {
 @layer utilities {
   .container {
     @apply h-full mx-auto px-4 xl:max-w-7xl;
+  }
+
+  .calculator-shadow {
+    box-shadow:
+      0 4px 24px -4px rgba(0, 85, 255, 0.08),
+      0 12px 48px -12px rgba(15, 23, 42, 0.12);
+  }
+
+  .boom-card-shadow {
+    box-shadow:
+      0 4px 20px -6px rgba(0, 85, 255, 0.1),
+      0 8px 32px -8px rgba(15, 23, 42, 0.08);
   }
 }

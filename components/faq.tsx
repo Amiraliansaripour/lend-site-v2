@@ -143,8 +143,8 @@ function CategoryChip({
       className={cn(
         'shrink-0 rounded-full border px-4 py-1.5 text-sm transition-all duration-300',
         active
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'border-border bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground',
+          ? 'border-brand bg-brand text-white'
+          : 'border-border bg-background text-muted-foreground hover:border-brand/30 hover:text-brand',
       )}
     >
       {label}
