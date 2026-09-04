@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import type { Request } from './request-types';
 import type { WalletInfo } from '@/api/wallet';
 import { useSiteTemplate } from '@/providers/site-template';
+import { BoomLogo } from '@/components/brand/boom-logo';
 
 type RequestsCardsProps = {
   walletInfo: WalletInfo | null;
@@ -42,6 +43,10 @@ export function RequestsCards({
   const [rawAmount, setRawAmount] = useState('');
 
   const allowNewRequest = canSubmitNewRequest(requests);
+
+  const cardGradientStyle = {
+    background: 'linear-gradient(135deg, #4c3ba8 0%, #292267 100%)',
+  };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -147,18 +152,9 @@ export function RequestsCards({
       <div className='grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3'>
         {/* Credit Wallet Card */}
         <WalletCard>
-          <WalletCard.Front>
-            <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-              {lightLogoUrl ? (
-                <Image
-                  src={lightLogoUrl}
-                  alt={brandName}
-                  width={86}
-                  height={86}
-                  className='w-28'
-                  unoptimized
-                />
-              ) : null}
+          <WalletCard.Front style={cardGradientStyle} className='p-5 text-white border-0'>
+            <div className='w-full flex justify-start items-start z-10' dir='ltr'>
+              <BoomLogo showWordmark={false} markClassName='size-8' />
             </div>
 
             <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
@@ -171,7 +167,10 @@ export function RequestsCards({
                 </span>
               </div>
               <Link href='/requests/request-credit'>
-                <Button variant='outline' className='w-fit mr-auto text-primary!'>
+                <Button
+                  variant='outline'
+                  className='w-fit mr-auto  bg-boom-surface/20  text-white!'
+                >
                   درخواست اعتبار
                 </Button>
               </Link>
@@ -181,18 +180,9 @@ export function RequestsCards({
 
         {/* Cash Wallet Card */}
         <WalletCard>
-          <WalletCard.Front>
-            <div className='absolute left-0 top-0 w-full flex items-center justify-end'>
-              {lightLogoUrl ? (
-                <Image
-                  src={lightLogoUrl}
-                  alt={brandName}
-                  width={86}
-                  height={86}
-                  className='w-28'
-                  unoptimized
-                />
-              ) : null}
+          <WalletCard.Front style={cardGradientStyle} className='p-5 text-white border-0'>
+            <div className='w-full flex justify-start items-start z-10' dir='ltr'>
+              <BoomLogo showWordmark={false} markClassName='size-8' />
             </div>
 
             <div className='mt-20 flex flex-col justify-end gap-y-4 h-[calc(100%-80px)]'>
@@ -209,7 +199,7 @@ export function RequestsCards({
 
               <Button
                 variant='outline'
-                className='w-fit mr-auto cursor-pointer text-primary!'
+                className='w-fit mr-auto bg-boom-surface/20 cursor-pointer text-white!'
                 onClick={() => setModalOpen(true)}
               >
                 شارژ کیف پول
@@ -236,7 +226,7 @@ export function RequestsCards({
               inputMode='numeric'
               className='flex-1'
             />
-            <Button onClick={handleCreateCashCard} disabled={loading} className='shrink-0'>
+            <Button onClick={handleCreateCashCard} disabled={loading} className='shrink-0 '>
               {loading ? (
                 <div className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
               ) : (
