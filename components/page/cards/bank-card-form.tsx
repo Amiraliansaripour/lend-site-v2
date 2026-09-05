@@ -32,16 +32,21 @@ type BankCardFormProps = {
 };
 
 const CardSchema = z.object({
-  cardNumber: z.string().length(16, { error: 'شماره کارت باید 16 رقم باشد' }),
-  cvv2: z
-    .string()
-    .min(3, { error: 'CVV2 باید حداقل 3 رقم باشد' })
-    .max(4, { error: 'CVV2 باید حداکثر 4 رقم باشد' })
-    .regex(/^\d+$/, { error: 'CVV2 باید فقط شامل عدد باشد' }),
+  cardNumber: z.string().length(16, {
+    error: 'شماره کارت باید 16 رقم باشد',
+  }),
+
+  lban: z.string().length(24, {
+    error: 'شماره شبا باید 24 رقم باشد',
+  }),
+
   expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/\d{4}$/, {
     error: 'فرمت تاریخ انقضا باید مانند 12/1405 باشد',
   }),
-  bankName: z.string().min(1, { error: 'بانک کارت شناسایی نشد' }),
+
+  bankName: z.string().min(1, {
+    error: 'بانک کارت شناسایی نشد',
+  }),
 });
 
 export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
@@ -53,10 +58,11 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
   const form = useAppForm({
     defaultValues: {
       cardNumber: card?.cardNumber || '',
-      cvv2: card?.cvv2 || '',
+      lban: card?.lban || '',
       expiryDate: card?.expiryDate || '',
       bankName: card?.bankName || '',
     },
+
     onSubmit: async ({ value }) => {
       const validation = CardSchema.safeParse(value);
 
@@ -105,8 +111,11 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
   });
 
   const cardNumber = useStore(form.store, state => state.values.cardNumber);
-  const cvv2 = useStore(form.store, state => state.values.cvv2);
+
+  const lban = useStore(form.store, state => state.values.lban);
+
   const expiryDate = useStore(form.store, state => state.values.expiryDate);
+
   const bankName = useStore(form.store, state => state.values.bankName);
 
   const bankInfo = getCardBankInfo(cardNumber);
@@ -130,7 +139,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
     >
       <BankCardPreview
         cardNumber={cardNumber}
-        cvv2={cvv2}
+        lban={lban}
         expiryDate={expiryDate}
         bankName={bankName}
       />
@@ -173,34 +182,51 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
           )}
         </form.AppField>
 
-        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-          <form.AppField name='cvv2'>
-            {field => (
+        {/* شماره شبا */}
+        <form.AppField name='lban'>
+          {field => {
+            const digits = normalizeDigits(field.state.value || '')
+              .replace(/\D/g, '')
+              .slice(0, 24);
+
+            const formattedLban = digits.replace(/(.{4})/g, '$1 ').trim();
+
+            return (
               <FormFieldWrapper>
                 <Label htmlFor={field.name} className='mb-2 block'>
-                  CVV2
+                  شماره شبا
                   <span className='mr-1 text-red-500'>*</span>
                 </Label>
 
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={event =>
-                    field.handleChange(
-                      normalizeDigits(event.target.value).replace(/\D/g, '').slice(0, 4),
-                    )
-                  }
-                  placeholder='123'
-                  inputMode='numeric'
-                  autoComplete='off'
-                  maxLength={4}
-                  dir='ltr'
-                  className='font-mono'
-                />
-              </FormFieldWrapper>
-            )}
-          </form.AppField>
+                <div className='relative'>
+                  <span className='pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 font-mono text-sm font-semibold text-muted-foreground'>
+                    IR
+                  </span>
 
+                  <Input
+                    id={field.name}
+                    value={formattedLban}
+                    onChange={event => {
+                      const value = normalizeDigits(event.target.value)
+                        .replace(/\D/g, '')
+                        .slice(0, 24);
+
+                      field.handleChange(value);
+                    }}
+                    placeholder='12 0170 0000 1234 5678 9012'
+                    inputMode='numeric'
+                    autoComplete='off'
+                    dir='ltr'
+                    maxLength={29}
+                    className='pl-10 font-mono tracking-wider'
+                  />
+                </div>
+              </FormFieldWrapper>
+            );
+          }}
+        </form.AppField>
+
+        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
           <form.AppField name='expiryDate'>
             {field => (
               <FormFieldWrapper>
@@ -235,25 +261,6 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
             )}
           </form.AppField>
         </div>
-
-        {/* <form.AppField name='bankName'>
-          {field => (
-            <FormFieldWrapper>
-              <Label htmlFor={field.name} className='mb-2 block'>
-                بانک
-              </Label>
-
-              <Input
-                id={field.name}
-                value={field.state.value}
-                readOnly
-                disabled
-                autoComplete='off'
-                placeholder='پس از وارد کردن شماره کارت شناسایی می‌شود'
-              />
-            </FormFieldWrapper>
-          )}
-        </form.AppField> */}
       </div>
 
       <div className='flex flex-col-reverse gap-3 sm:flex-row sm:justify-end'>

@@ -8,7 +8,8 @@ import { formatCardNumber, getCardBankInfo, maskCardNumber, maskCvv2 } from './c
 
 type BankCardPreviewProps = {
   cardNumber: string;
-  cvv2: string;
+  // cvv2: string;
+  lban: string;
   expiryDate: string;
   bankName: string;
   masked?: boolean;
@@ -17,7 +18,8 @@ type BankCardPreviewProps = {
 
 export function BankCardPreview({
   cardNumber,
-  cvv2,
+  // cvv2,
+  lban,
   expiryDate,
   bankName,
   masked = false,
@@ -25,6 +27,13 @@ export function BankCardPreview({
 }: BankCardPreviewProps) {
   const bankInfo = getCardBankInfo(cardNumber);
 
+  const formatIban = (iban: string) => {
+    if (!iban) return 'IR•• •••• •••• •••• •••• •••• ••';
+
+    const normalized = iban.replace(/\s/g, '').toUpperCase();
+
+    return normalized.replace(/(.{4})/g, '$1 ').trim();
+  };
   const displayBankName = bankName || bankInfo?.name || 'بانک';
 
   const displayCardNumber = cardNumber
@@ -89,16 +98,26 @@ export function BankCardPreview({
           </div>
         </div>
 
-        <div className='mt-6'>
+        <div className='mt-5'>
+          {/* IBAN */}
           <p
             dir='ltr'
-            className='[unicode-bidi:isolate] text-left font-mono text-[20px] tracking-[3px] text-white/95 sm:text-[22px]'
-            style={{ textShadow: '0 1px 0 rgba(255,255,255,0.12), 0 -1px 0 rgba(0,0,0,0.5)' }}
+            className='[unicode-bidi:isolate] text-left font-mono text-[10px] tracking-[1.5px] text-white/55 sm:text-[11px]'
+          >
+            {formatIban(lban)}
+          </p>
+
+          {/* Card Number */}
+          <p
+            dir='ltr'
+            className='mt-2 [unicode-bidi:isolate] text-left font-mono text-[20px] tracking-[3px] text-white/95 sm:text-[22px]'
+            style={{
+              textShadow: '0 1px 0 rgba(255,255,255,0.12), 0 -1px 0 rgba(0,0,0,0.5)',
+            }}
           >
             {displayCardNumber}
           </p>
         </div>
-
         <div className='mt-6 flex items-end justify-between'>
           <div>
             <p className='text-[9px] tracking-wider text-white/35'>VALID THRU</p>
@@ -110,14 +129,14 @@ export function BankCardPreview({
               {expiryDate || '••/••••'}
             </p>
           </div>
-
+          {/* 
           <div className='text-left'>
             <p className='text-[9px] tracking-wider text-white/35'>CVV2</p>
 
             <p className='mt-1 font-mono text-sm tracking-widest text-white/90'>
-              {masked ? '••••' : maskCvv2(cvv2)}
+              {masked ? '••••' : lban}
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
