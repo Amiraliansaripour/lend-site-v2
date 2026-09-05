@@ -9,7 +9,7 @@ import { formatCardNumber, getCardBankInfo, maskCardNumber, maskCvv2 } from './c
 type BankCardPreviewProps = {
   cardNumber: string;
   // cvv2: string;
-  lban: string;
+  iban: string;
   expiryDate: string;
   bankName: string;
   masked?: boolean;
@@ -19,7 +19,7 @@ type BankCardPreviewProps = {
 export function BankCardPreview({
   cardNumber,
   // cvv2,
-  lban,
+  iban,
   expiryDate,
   bankName,
   masked = false,
@@ -115,7 +115,7 @@ export function BankCardPreview({
             dir='ltr'
             className='[unicode-bidi:isolate] text-left font-mono text-[10px] tracking-[1.5px] text-white/55 sm:text-[11px]'
           >
-            {maskIban(lban)}
+            {maskIban(iban)}
           </p>
 
           {/* Card Number */}
@@ -145,7 +145,7 @@ export function BankCardPreview({
             <p className='text-[9px] tracking-wider text-white/35'>CVV2</p>
 
             <p className='mt-1 font-mono text-sm tracking-widest text-white/90'>
-              {masked ? '••••' : lban}
+              {masked ? '••••' : iban}
             </p>
           </div> */}
         </div>

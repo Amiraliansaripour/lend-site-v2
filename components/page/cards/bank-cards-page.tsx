@@ -147,10 +147,14 @@ export function BankCardsPage() {
         }}
       >
         <DialogContent dir='rtl' className='max-h-[95vh] overflow-y-auto sm:max-w-140'>
-          <DialogHeader className='items-start pl-10 text-right sm:text-right'>
-            <DialogTitle>{selectedCard ? 'ویرایش کارت بانکی' : 'افزودن کارت بانکی'}</DialogTitle>
+          <DialogHeader className='w-full space-y-1.5 text-right sm:text-right'>
+            <DialogTitle className='w-full pl-10 text-right'>
+              {selectedCard ? 'ویرایش کارت بانکی' : 'افزودن کارت بانکی'}
+            </DialogTitle>
 
-            <DialogDescription>اطلاعات کارت بانکی خود را وارد کنید.</DialogDescription>
+            <DialogDescription className='w-full text-right'>
+              اطلاعات کارت بانکی خود را وارد کنید.
+            </DialogDescription>
           </DialogHeader>
 
           <BankCardForm

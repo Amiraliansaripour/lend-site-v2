@@ -36,7 +36,7 @@ const CardSchema = z.object({
     error: 'شماره کارت باید 16 رقم باشد',
   }),
 
-  lban: z.string().length(24, {
+  iban: z.string().length(24, {
     error: 'شماره شبا باید 24 رقم باشد',
   }),
 
@@ -58,7 +58,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
   const form = useAppForm({
     defaultValues: {
       cardNumber: card?.cardNumber || '',
-      lban: card?.lban || '',
+      iban: card?.iban || '',
       expiryDate: card?.expiryDate || '',
       bankName: card?.bankName || '',
     },
@@ -112,7 +112,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
 
   const cardNumber = useStore(form.store, state => state.values.cardNumber);
 
-  const lban = useStore(form.store, state => state.values.lban);
+  const iban = useStore(form.store, state => state.values.iban);
 
   const expiryDate = useStore(form.store, state => state.values.expiryDate);
 
@@ -129,6 +129,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
   return (
     <form
       noValidate
+      autoComplete='off'
       dir='rtl'
       className='space-y-6'
       onSubmit={event => {
@@ -139,7 +140,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
     >
       <BankCardPreview
         cardNumber={cardNumber}
-        lban={lban}
+        iban={iban}
         expiryDate={expiryDate}
         bankName={bankName}
       />
@@ -155,11 +156,15 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
 
               <Input
                 id={field.name}
+                name='card-pan'
                 value={formatCardNumber(field.state.value)}
                 onChange={event => field.handleChange(normalizeCardNumber(event.target.value))}
                 placeholder='6037 9912 3456 7890'
                 inputMode='numeric'
                 autoComplete='off'
+                data-lpignore='true'
+                data-1p-ignore
+                data-form-type='other'
                 dir='ltr'
                 maxLength={19}
                 className='text-center font-mono tracking-wider'
@@ -183,13 +188,13 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
         </form.AppField>
 
         {/* شماره شبا */}
-        <form.AppField name='lban'>
+        <form.AppField name='iban'>
           {field => {
             const digits = normalizeDigits(field.state.value || '')
               .replace(/\D/g, '')
               .slice(0, 24);
 
-            const formattedLban = digits.replace(/(.{4})/g, '$1 ').trim();
+            const formattediban = digits.replace(/(.{4})/g, '$1 ').trim();
 
             return (
               <FormFieldWrapper>
@@ -205,7 +210,8 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
 
                   <Input
                     id={field.name}
-                    value={formattedLban}
+                    name='iban-number'
+                    value={formattediban}
                     onChange={event => {
                       const value = normalizeDigits(event.target.value)
                         .replace(/\D/g, '')
@@ -216,6 +222,9 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
                     placeholder='12 0170 0000 1234 5678 9012'
                     inputMode='numeric'
                     autoComplete='off'
+                    data-lpignore='true'
+                    data-1p-ignore
+                    data-form-type='other'
                     dir='ltr'
                     maxLength={29}
                     className='pl-10 font-mono tracking-wider'
@@ -237,6 +246,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
 
                 <Input
                   id={field.name}
+                  name='card-expire'
                   value={field.state.value}
                   onChange={event => {
                     const normalized = normalizeDigits(event.target.value)
@@ -253,6 +263,9 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
                   placeholder='12/1405'
                   inputMode='numeric'
                   autoComplete='off'
+                  data-lpignore='true'
+                  data-1p-ignore
+                  data-form-type='other'
                   maxLength={7}
                   dir='ltr'
                   className='font-mono'
