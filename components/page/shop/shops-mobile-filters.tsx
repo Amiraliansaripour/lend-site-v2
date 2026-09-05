@@ -51,8 +51,10 @@ export function ShopsMobileFilters({
 
       params.delete('page');
 
+      const query = params.toString();
+
       startTransition(() => {
-        router.push(`?${params.toString()}`, { scroll: false });
+        router.replace(query ? `?${query}` : '?', { scroll: false });
       });
     },
     [searchParams, router],

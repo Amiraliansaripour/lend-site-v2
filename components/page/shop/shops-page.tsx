@@ -10,6 +10,7 @@ type ShopsPageProps = {
   shops: Shop[];
   totalPages: number;
   isLoading?: boolean;
+  isFetching?: boolean;
   categories?: HomeCategory[];
   isCategoriesLoading?: boolean;
 };
@@ -18,6 +19,7 @@ export function ShopsPage({
   shops,
   totalPages,
   isLoading,
+  isFetching,
   categories = [],
   isCategoriesLoading,
 }: ShopsPageProps) {
@@ -35,7 +37,12 @@ export function ShopsPage({
             <ShopsFilters categories={categories} isCategoriesLoading={isCategoriesLoading} />
           </div>
 
-          <ShopsList shops={shops} totalPages={totalPages} isLoading={isLoading} />
+          <ShopsList
+            shops={shops}
+            totalPages={totalPages}
+            isLoading={isLoading}
+            isFetching={isFetching}
+          />
         </div>
       </div>
     </div>

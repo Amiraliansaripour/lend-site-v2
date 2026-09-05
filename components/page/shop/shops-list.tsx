@@ -12,9 +12,10 @@ type ShopsListProps = {
   shops: Shop[];
   totalPages: number;
   isLoading?: boolean;
+  isFetching?: boolean;
 };
 
-export function ShopsList({ shops, totalPages, isLoading }: ShopsListProps) {
+export function ShopsList({ shops, totalPages, isLoading, isFetching }: ShopsListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -53,7 +54,7 @@ export function ShopsList({ shops, totalPages, isLoading }: ShopsListProps) {
   }
 
   return (
-    <div className='flex-1'>
+    <div className={cn('flex-1', isFetching && 'opacity-60 transition-opacity')}>
       <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
         {shops.map(shop => (
           <ShopCard key={shop.id} shop={shop} />
