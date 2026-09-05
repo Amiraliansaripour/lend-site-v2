@@ -9,7 +9,7 @@ import { formatCardNumber, getCardBankInfo, maskCardNumber, maskCvv2 } from './c
 type BankCardPreviewProps = {
   cardNumber: string;
   // cvv2: string;
-  lban: string;
+  lban: string | undefined;
   expiryDate: string;
   bankName: string;
   masked?: boolean;
@@ -27,12 +27,23 @@ export function BankCardPreview({
 }: BankCardPreviewProps) {
   const bankInfo = getCardBankInfo(cardNumber);
 
-  const formatIban = (iban: string) => {
+  const maskIban = (iban: string) => {
     if (!iban) return 'IR•• •••• •••• •••• •••• •••• ••';
 
     const normalized = iban.replace(/\s/g, '').toUpperCase();
 
-    return normalized.replace(/(.{4})/g, '$1 ').trim();
+    const countryCode = normalized.startsWith('IR') ? normalized.slice(0, 2) : 'IR';
+
+    const digits = normalized.startsWith('IR') ? normalized.slice(2) : normalized;
+
+    if (digits.length <= 8) {
+      return `${countryCode}${'•'.repeat(Math.max(0, digits.length))}`;
+    }
+
+    const firstFour = digits.slice(0, 4);
+    const lastFour = digits.slice(-4);
+
+    return `${countryCode}${firstFour} •••• •••• •••• •••• ${lastFour}`;
   };
   const displayBankName = bankName || bankInfo?.name || 'بانک';
 
@@ -104,7 +115,7 @@ export function BankCardPreview({
             dir='ltr'
             className='[unicode-bidi:isolate] text-left font-mono text-[10px] tracking-[1.5px] text-white/55 sm:text-[11px]'
           >
-            {formatIban(lban)}
+            {maskIban(lban)}
           </p>
 
           {/* Card Number */}
