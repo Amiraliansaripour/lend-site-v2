@@ -147,10 +147,14 @@ export function BankCardsPage() {
         }}
       >
         <DialogContent dir='rtl' className='max-h-[95vh] overflow-y-auto sm:max-w-140'>
-          <DialogHeader className='items-start pl-10 text-right sm:text-right'>
-            <DialogTitle>{selectedCard ? 'ویرایش کارت بانکی' : 'افزودن کارت بانکی'}</DialogTitle>
+          <DialogHeader className='items-end pl-10 text-right sm:!text-right'>
+            <DialogTitle className='w-full text-right'>
+              {selectedCard ? 'ویرایش کارت بانکی' : 'افزودن کارت بانکی'}
+            </DialogTitle>
 
-            <DialogDescription>اطلاعات کارت بانکی خود را وارد کنید.</DialogDescription>
+            <DialogDescription className='w-full text-right'>
+              اطلاعات کارت بانکی خود را وارد کنید.
+            </DialogDescription>
           </DialogHeader>
 
           <BankCardForm
@@ -171,13 +175,13 @@ export function BankCardsPage() {
         }}
       >
         <AlertDialogContent dir='rtl'>
-          <AlertDialogHeader className='items-start text-right sm:text-right'>
-            <AlertDialogTitle className='flex items-center gap-2'>
+          <AlertDialogHeader className='items-end text-right sm:!text-right'>
+            <AlertDialogTitle className='flex w-full items-center justify-start gap-2 text-right'>
               <Trash2 className='size-5 text-destructive' />
               حذف کارت بانکی
             </AlertDialogTitle>
 
-            <AlertDialogDescription>
+            <AlertDialogDescription className='w-full text-right'>
               آیا از حذف این کارت بانکی اطمینان دارید؟ این عملیات قابل بازگشت نیست.
             </AlertDialogDescription>
           </AlertDialogHeader>

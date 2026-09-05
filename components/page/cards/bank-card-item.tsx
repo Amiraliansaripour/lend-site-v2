@@ -38,7 +38,7 @@ export function BankCardItem({ card, onEdit, onDelete }: BankCardItemProps) {
         <BankCardPreview
           cardNumber={card.cardNumber}
           // cvv2={card.cvv2}
-          lban={card?.lban}
+          iban={card.iban}
           expiryDate={card.expiryDate}
           bankName={card.bankName}
           masked

@@ -2,7 +2,7 @@ export type BankCard = {
   id: string;
   cardNumber: string;
   // cvv2: string;
-  lban?: string;
+  iban: string;
   expiryDate: string;
   bankName: string;
 };
@@ -10,7 +10,7 @@ export type BankCard = {
 export type CreateCardPayload = {
   cardNumber: string;
   // cvv2: string;
-  lban?: string;
+  iban: string;
   expiryDate: string;
   bankName: string;
 };
