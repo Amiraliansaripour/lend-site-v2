@@ -37,6 +37,8 @@ export const useShopsFullPagination = (params: MerchantPaginationParams = {}) =>
   return useQuery({
     queryKey: shopsKeys.paginatedList(params),
     queryFn: () => getMerchantsFullPagination(params),
+    // Keep previous shops visible while filters change so the list does not
+    // collapse into a skeleton (which jumps scroll to the banner).
     placeholderData: keepPreviousData,
   });
 };
