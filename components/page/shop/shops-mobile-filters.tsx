@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useState, useTransition } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -12,51 +11,26 @@ type ShopsMobileFiltersProps = {
   className?: string;
   categories?: HomeCategory[];
   isCategoriesLoading?: boolean;
+  selectedType: ShopType;
+  selectedCategories: string[];
+  onTypeChange: (type: ShopType) => void;
+  onCategoriesChange: (categories: string[]) => void;
 };
 
 export function ShopsMobileFilters({
   className,
   categories = [],
   isCategoriesLoading,
+  selectedType,
+  selectedCategories,
+  onTypeChange,
+  onCategoriesChange,
 }: ShopsMobileFiltersProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-
   const [isTypeOpen, setIsTypeOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
-  const selectedType = (searchParams.get('type') as ShopType) || '2';
-  const selectedCategories = searchParams.getAll('category');
-
   const onlineEnabled = selectedType === '0' || selectedType === '2';
   const physicalEnabled = selectedType === '1' || selectedType === '2';
-
-  const updateURL = useCallback(
-    (updates: { type?: ShopType; categories?: string[] }) => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      if (updates.type !== undefined) {
-        if (updates.type === '2') {
-          params.delete('type');
-        } else {
-          params.set('type', updates.type);
-        }
-      }
-
-      if (updates.categories !== undefined) {
-        params.delete('category');
-        updates.categories.forEach(id => params.append('category', id));
-      }
-
-      params.delete('page');
-
-      startTransition(() => {
-        router.replace(`?${params.toString()}`, { scroll: false });
-      });
-    },
-    [searchParams, router],
-  );
 
   const handleTypeChange = (online: boolean, physical: boolean) => {
     let newType: ShopType;
@@ -69,19 +43,20 @@ export function ShopsMobileFilters({
     } else {
       newType = '3';
     }
-    updateURL({ type: newType });
+    onTypeChange(newType);
   };
 
   const handleCategoryToggle = (categoryId: string, checked: boolean) => {
     const next = checked
       ? [...selectedCategories, categoryId]
       : selectedCategories.filter(id => id !== categoryId);
-    updateURL({ categories: next });
+    onCategoriesChange(next);
   };
 
   return (
     <div className={cn('flex gap-4 mb-6', className)}>
       <button
+        type='button'
         onClick={() => setIsTypeOpen(true)}
         className='flex-1 bg-white rounded-lg shadow-md py-3 px-4 text-center'
       >
@@ -89,6 +64,7 @@ export function ShopsMobileFilters({
       </button>
 
       <button
+        type='button'
         onClick={() => setIsCategoryOpen(true)}
         className='flex-1 bg-white rounded-lg shadow-md py-3 px-4 text-center'
       >
@@ -105,6 +81,7 @@ export function ShopsMobileFilters({
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-lg font-semibold'>نوع فروشگاه</h3>
               <button
+                type='button'
                 onClick={() => setIsTypeOpen(false)}
                 className='p-1 hover:bg-gray-100 rounded-full'
               >
@@ -118,7 +95,6 @@ export function ShopsMobileFilters({
                   type='checkbox'
                   checked={onlineEnabled}
                   onChange={e => handleTypeChange(e.target.checked, physicalEnabled)}
-                  disabled={isPending}
                   className='w-4 h-4'
                 />
               </label>
@@ -128,16 +104,11 @@ export function ShopsMobileFilters({
                   type='checkbox'
                   checked={physicalEnabled}
                   onChange={e => handleTypeChange(onlineEnabled, e.target.checked)}
-                  disabled={isPending}
                   className='w-4 h-4'
                 />
               </label>
             </div>
-            <Button
-              onClick={() => setIsTypeOpen(false)}
-              className='w-full mt-6'
-              disabled={isPending}
-            >
+            <Button onClick={() => setIsTypeOpen(false)} className='w-full mt-6'>
               اعمال فیلتر
             </Button>
           </div>
@@ -151,6 +122,7 @@ export function ShopsMobileFilters({
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-lg font-semibold'>دسته‌بندی</h3>
               <button
+                type='button'
                 onClick={() => setIsCategoryOpen(false)}
                 className='p-1 hover:bg-gray-100 rounded-full'
               >
@@ -173,18 +145,13 @@ export function ShopsMobileFilters({
                       type='checkbox'
                       checked={selectedCategories.includes(category.id)}
                       onChange={e => handleCategoryToggle(category.id, e.target.checked)}
-                      disabled={isPending}
                       className='w-4 h-4 shrink-0'
                     />
                   </label>
                 ))
               )}
             </div>
-            <Button
-              onClick={() => setIsCategoryOpen(false)}
-              className='w-full mt-6'
-              disabled={isPending}
-            >
+            <Button onClick={() => setIsCategoryOpen(false)} className='w-full mt-6'>
               اعمال فیلتر
             </Button>
           </div>

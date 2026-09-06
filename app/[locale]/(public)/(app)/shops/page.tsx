@@ -1,29 +1,33 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { Suspense, useMemo } from 'react';
 
 import { ShopsPage, ShopListSkeleton } from '@/components/page/shop';
+import { useShopsFilters } from '@/components/page/shop/use-shops-filters';
 import { useHomeCategories, useShopsFullPagination } from '@/queries/shop';
-import type { ShopType } from '@/components/page/shop/shop-types';
 
 const ITEMS_PER_PAGE = 12;
 
 function ShopsPageContent() {
-  const searchParams = useSearchParams();
+  const {
+    type,
+    categories: selectedCategories,
+    page,
+    setShopType,
+    setShopCategories,
+    setShopPage,
+  } = useShopsFilters();
 
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const type = (searchParams.get('type') as ShopType) || '2';
-  const selectedCategories = useMemo(() => searchParams.getAll('category'), [searchParams]);
+  const filterKey = useMemo(() => [...selectedCategories].sort().join(','), [selectedCategories]);
 
   const paginationParams = useMemo(
     () => ({
       pageNumber: page,
       pageSize: ITEMS_PER_PAGE,
       status: type,
-      filter: selectedCategories,
+      filter: filterKey ? filterKey.split(',') : [],
     }),
-    [page, type, selectedCategories],
+    [page, type, filterKey],
   );
 
   const { data, isLoading, isFetching } = useShopsFullPagination(paginationParams);
@@ -36,10 +40,16 @@ function ShopsPageContent() {
     <ShopsPage
       shops={shops}
       totalPages={totalPages}
+      page={page}
       isLoading={isLoading && shops.length === 0}
       isFetching={isFetching}
       categories={categories}
       isCategoriesLoading={isCategoriesLoading}
+      selectedType={type}
+      selectedCategories={selectedCategories}
+      onTypeChange={setShopType}
+      onCategoriesChange={setShopCategories}
+      onPageChange={setShopPage}
     />
   );
 }
