@@ -307,6 +307,8 @@ export type ConfirmOrderPayload = {
 };
 
 export type ConfirmOrderResult = {
+  id?: string;
+  creditId?: string;
   orderId?: number;
   freezAmount?: number;
   resultMessage?: string;

@@ -129,7 +129,7 @@ export function MerchantSimulator() {
           }
 
           const origin = window.location.origin;
-          const returnUrl = value.returnUrl.trim() || `${origin}/payment/verify`;
+          const returnUrl = value.returnUrl.trim() || `${origin}/merchant-simulator/callback`;
           const params = new URLSearchParams({
             amount: String(Number(value.amount)),
             nationalcode: value.nationalcode.trim(),
@@ -317,7 +317,7 @@ export function MerchantSimulator() {
                 children={(field: any) => (
                   <field.TextField
                     label='returnUrl'
-                    placeholder='خالی = /payment/verify همین سایت'
+                    placeholder='خالی = /merchant-simulator/callback'
                     dir='ltr'
                   />
                 )}
