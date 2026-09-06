@@ -54,7 +54,7 @@ export function WalletsPage({
 
   return (
     <div>
-      <WalletInfoBar />
+      {/* <WalletInfoBar /> */}
 
       <div className='mb-6'>
         <WalletBalanceCards walletInfo={walletInfo} onWalletUpdate={onWalletUpdate} />
