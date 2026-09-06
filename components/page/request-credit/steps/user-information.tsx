@@ -24,6 +24,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import type { UserInfo } from '@/types/request-credit';
 import { getShopImageUrl } from '@/lib/shop-utils';
 import { normalizedFormatJalaliDate } from '@/utils/format';
+import { parseCalendarDate } from '@/utils/date';
 import {
   useUploadUserAttachments,
   useValidateUserIdentityInfo,
@@ -32,8 +33,9 @@ import {
 
 function formatBirthDate(date?: string) {
   if (!date) return '';
-  const shifted = new Date(date);
-  return normalizedFormatJalaliDate(shifted, {
+  const calendarDate = parseCalendarDate(date);
+  if (!calendarDate) return '';
+  return normalizedFormatJalaliDate(calendarDate, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
