@@ -1,12 +1,10 @@
 'use client';
 
 import {
-  Home,
   Store,
   User,
   Wallet,
   FileText,
-  ShoppingBasket,
   MessagesSquare,
   CalendarClock,
   CircleQuestionMark,
@@ -31,7 +29,6 @@ import { TOTAL_UNREAD } from '@/components/page/messages/messages-page-content';
 import { BoomLogo } from './brand/boom-logo';
 
 const items = [
-  { title: 'داشبورد', url: '/dashboard', icon: Home, badge: 0 },
   { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet, badge: 0 },
   // { title: 'سبد خرید', url: '/cart', icon: ShoppingBasket, badge: 0 },
   { title: 'درخواست های من', url: '/requests', icon: FileText, badge: 0 },

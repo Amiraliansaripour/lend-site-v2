@@ -6,7 +6,7 @@ import { CartWorkflowPage } from '@/components/page/cart/cart-workflow-page';
 
 export default function CartPage() {
   const breadcrumbs: Breadcrumbs = [
-    { label: 'داشبورد', href: '/dashboard' },
+    { label: 'کیف پول های من', href: '/wallets' },
     { label: 'سبد خرید', href: '/cart' },
   ];
 

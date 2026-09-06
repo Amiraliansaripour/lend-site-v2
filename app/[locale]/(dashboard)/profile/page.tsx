@@ -22,7 +22,7 @@ export default function ProfilePage() {
     return <div>کاربر یافت نشد</div>;
   }
   const breadcrumbs: Breadcrumbs = [
-    { label: 'داشبورد', href: '/dashboard' },
+    { label: 'کیف پول های من', href: '/wallets' },
     { label: 'پروفایل', href: '/profile' },
   ];
   return (

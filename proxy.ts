@@ -16,11 +16,34 @@ export async function proxy(request: NextRequest) {
 
   if (isLocale(maybeLocale)) {
     const pathname = `/${pathSegments.join('/')}`;
+
+    // External-site entry: /wallets?nationalCode&phoneNumber without a session cookie
+    // must not hit the dashboard auth layout (that redirects to /login).
+    // Route them to the public Platform GetValidation page first.
+    const isWalletsEntry = pathname === '/wallets';
+    const nationalCode =
+      request.nextUrl.searchParams.get('nationalCode') ||
+      request.nextUrl.searchParams.get('nationalcode');
+    const phoneNumber =
+      request.nextUrl.searchParams.get('phoneNumber') ||
+      request.nextUrl.searchParams.get('phonenumber') ||
+      request.nextUrl.searchParams.get('mobile') ||
+      request.nextUrl.searchParams.get('phone');
+    const hasPlatformParams = Boolean(nationalCode?.trim() && phoneNumber?.trim());
+    const accessTokenCookie = request.cookies.get(ACCESS_TOKEN_KEY)?.value;
+
+    if (isWalletsEntry && hasPlatformParams && !accessTokenCookie) {
+      const validateUrl = request.nextUrl.clone();
+      validateUrl.pathname = `/${maybeLocale}/platform/validate`;
+      return NextResponse.redirect(validateUrl);
+    }
+
     const isDashboard = pathname.startsWith('/dashboard');
 
     if (!isDashboard) return response;
 
-    const accessToken = request.cookies.get(ACCESS_TOKEN_KEY)?.value;
+    // const accessToken = request.cookies.get(ACCESS_TOKEN_KEY)?.value;
+    const accessToken = accessTokenCookie;
     const authenticated = accessToken !== undefined;
     if (authenticated) return response;
 

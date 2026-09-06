@@ -133,7 +133,7 @@ export function Header() {
                 </Link>
               ) : (
                 <Link
-                  href='/dashboard'
+                  href='/wallets'
                   className='inline-flex items-center gap-1.5 rounded-full border border-brand px-4 py-1.5 text-brand text-xs font-semibold transition-colors hover:bg-brand/5'
                 >
                   <User size={15} />
@@ -154,7 +154,7 @@ export function Header() {
             ) : (
               <Link
                 className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
-                href='/dashboard'
+                href='/wallets'
                 aria-label='پروفایل'
               >
                 <User size={20} />
