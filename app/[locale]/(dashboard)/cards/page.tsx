@@ -6,7 +6,7 @@ import { BankCardsPage } from '@/components/page/cards';
 
 export default function CardsPage() {
   const breadcrumbs: Breadcrumbs = [
-    { label: 'داشبورد', href: '/dashboard' },
+    { label: 'کیف پول های من', href: '/wallets' },
     { label: 'کارت‌های بانکی', href: '/cards' },
   ];
 

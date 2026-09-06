@@ -154,7 +154,7 @@ export function Header() {
               </Link>
             ) : (
               <Link
-                href='/dashboard'
+                href='/wallets'
                 className={cn(
                   'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
                   inverted
@@ -180,7 +180,7 @@ export function Header() {
           ) : (
             <Link
               className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
-              href='/dashboard'
+              href='/wallets'
               aria-label='پروفایل'
             >
               <User size={23} />

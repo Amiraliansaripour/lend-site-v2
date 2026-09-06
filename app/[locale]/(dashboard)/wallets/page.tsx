@@ -4,14 +4,21 @@ import { Suspense } from 'react';
 
 import { Breadcrumbs, PageContainer } from '@/components/page-container';
 import { PageContent } from '@/components/page-content';
-import { WalletsPage, WalletsPageSkeleton } from '@/components/page/wallets';
+import { WalletsPage, WalletsPageSkeleton, WalletActivitySummary } from '@/components/page/wallets';
 import { useWalletInfo, useWalletTransactions } from '@/queries/wallet';
+import { useUserWithStore } from '@/queries/users';
 import { getUserId } from '@/lib/auth/client/user-info';
 
 function WalletsContent() {
   const userId = getUserId();
 
-  const { data: walletInfo, isLoading: isLoadingInfo } = useWalletInfo();
+  useUserWithStore(userId || '');
+
+  const {
+    data: walletInfo,
+    isLoading: isLoadingInfo,
+    refetch: refetchWalletInfo,
+  } = useWalletInfo();
   const { data: transactions, isLoading: isLoadingTransactions } = useWalletTransactions();
 
   const isLoading = isLoadingInfo || isLoadingTransactions;
@@ -47,15 +54,15 @@ function WalletsContent() {
       walletInfo={walletInfo || null}
       transactions={transactions || []}
       isLoading={isLoading}
+      onWalletUpdate={() => {
+        void refetchWalletInfo();
+      }}
     />
   );
 }
 
 export default function WalletPageRoute() {
-  const breadcrumbs: Breadcrumbs = [
-    { label: 'داشبورد', href: '/dashboard' },
-    { label: 'کیف پول های من', href: '/wallets' },
-  ];
+  const breadcrumbs: Breadcrumbs = [{ label: 'کیف پول های من', href: '/wallets' }];
 
   return (
     <PageContainer breadcrumbs={breadcrumbs}>
@@ -63,6 +70,10 @@ export default function WalletPageRoute() {
         <Suspense fallback={<WalletsPageSkeleton />}>
           <WalletsContent />
         </Suspense>
+      </PageContent>
+
+      <PageContent title='خلاصه فعالیت'>
+        <WalletActivitySummary />
       </PageContent>
     </PageContainer>
   );
