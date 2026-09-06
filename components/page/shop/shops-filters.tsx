@@ -51,7 +51,7 @@ export function ShopsFilters({
       params.delete('page');
 
       startTransition(() => {
-        router.push(`?${params.toString()}`, { scroll: false });
+        router.replace(`?${params.toString()}`, { scroll: false });
       });
     },
     [searchParams, router],

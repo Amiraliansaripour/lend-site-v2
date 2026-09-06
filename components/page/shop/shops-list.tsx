@@ -39,7 +39,7 @@ export function ShopsList({ shops, totalPages, isLoading }: ShopsListProps) {
     [searchParams, router, totalPages],
   );
 
-  if (isLoading) {
+  if (isLoading && shops.length === 0) {
     return <ShopListSkeleton count={6} />;
   }
 

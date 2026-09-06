@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { ShopsBanner } from './shops-banner';
 import { ShopsFilters } from './shops-filters';
 import { ShopsMobileFilters } from './shops-mobile-filters';
@@ -10,6 +11,7 @@ type ShopsPageProps = {
   shops: Shop[];
   totalPages: number;
   isLoading?: boolean;
+  isFetching?: boolean;
   categories?: HomeCategory[];
   isCategoriesLoading?: boolean;
 };
@@ -18,6 +20,7 @@ export function ShopsPage({
   shops,
   totalPages,
   isLoading,
+  isFetching,
   categories = [],
   isCategoriesLoading,
 }: ShopsPageProps) {
@@ -35,7 +38,14 @@ export function ShopsPage({
             <ShopsFilters categories={categories} isCategoriesLoading={isCategoriesLoading} />
           </div>
 
-          <ShopsList shops={shops} totalPages={totalPages} isLoading={isLoading} />
+          <div
+            className={cn(
+              'min-w-0 flex-1 transition-opacity',
+              isFetching && !isLoading && 'opacity-70',
+            )}
+          >
+            <ShopsList shops={shops} totalPages={totalPages} isLoading={isLoading} />
+          </div>
         </div>
       </div>
     </div>

@@ -26,7 +26,7 @@ function ShopsPageContent() {
     [page, type, selectedCategories],
   );
 
-  const { data, isLoading } = useShopsFullPagination(paginationParams);
+  const { data, isLoading, isFetching } = useShopsFullPagination(paginationParams);
   const { data: categories = [], isLoading: isCategoriesLoading } = useHomeCategories();
 
   const shops = data?.items ?? [];
@@ -36,7 +36,8 @@ function ShopsPageContent() {
     <ShopsPage
       shops={shops}
       totalPages={totalPages}
-      isLoading={isLoading}
+      isLoading={isLoading && shops.length === 0}
+      isFetching={isFetching}
       categories={categories}
       isCategoriesLoading={isCategoriesLoading}
     />

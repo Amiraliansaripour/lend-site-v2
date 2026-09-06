@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import {
   getHomeCategories,
@@ -37,6 +37,9 @@ export const useShopsFullPagination = (params: MerchantPaginationParams = {}) =>
   return useQuery({
     queryKey: shopsKeys.paginatedList(params),
     queryFn: () => getMerchantsFullPagination(params),
+    // Keep previous shops visible while the filter/page query refetches so the
+    // list does not collapse into a skeleton (which jumps scroll to the banner).
+    placeholderData: keepPreviousData,
   });
 };
 
