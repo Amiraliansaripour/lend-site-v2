@@ -7,9 +7,16 @@ export type GetValidationCredentials = {
   phoneNumber: string;
 };
 
-const formatPhoneNumber = (phoneNumber: string) => {
-  if (phoneNumber.startsWith('0')) return `+98${phoneNumber.replace(/^0/, '')}`;
-  return phoneNumber;
+/** Backend always expects E.164 Iran numbers: +98XXXXXXXXXX */
+export const formatPlatformPhoneNumber = (phoneNumber: string) => {
+  let phone = phoneNumber.trim().replace(/[\s-]/g, '');
+
+  if (phone.startsWith('+98')) return phone;
+  if (phone.startsWith('98')) return `+${phone}`;
+  if (phone.startsWith('0')) return `+98${phone.slice(1)}`;
+  if (/^9\d{9}$/.test(phone)) return `+98${phone}`;
+
+  return phone.startsWith('+') ? phone : `+98${phone}`;
 };
 
 /**
@@ -22,7 +29,7 @@ export const getValidation = async (credentials: GetValidationCredentials) => {
     '/Platform/GetValidation',
     {
       nationalCode: credentials.nationalCode.trim(),
-      phoneNumber: formatPhoneNumber(credentials.phoneNumber.trim()),
+      phoneNumber: formatPlatformPhoneNumber(credentials.phoneNumber),
     },
     {
       skipAuth: true,

@@ -2,91 +2,70 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { useRouter } from '@/i18n/navigation';
-import { useUser } from '@/queries/users';
-import { getUserId } from '@/lib/auth/client/user-info';
 import {
   readPlatformEntryParams,
   validatePlatformEntry,
   clearPlatformSession,
 } from '@/lib/auth/client/platform-validation';
 
+const LANDING_REDIRECT_DELAY_MS = 2500;
+
 type PlatformWalletsGateProps = {
   children: React.ReactNode;
 };
 
 /**
- * Runs Platform GetValidation when entering /wallets.
+ * When /wallets is opened with nationalCode + phoneNumber query params
+ * (external entry while a session may already exist), re-validate via GetValidation.
  *
- * Credential sources (priority):
- * 1) Query params from external-site link (nationalCode + phoneNumber)
- * 2) Logged-in user profile (nationalCode + phoneNumber)
- *
- * Success → stay on wallets (tokens refreshed). Failure → landing (/).
+ * Normal /wallets visits without those params are untouched (OTP login flow).
  */
 export function PlatformWalletsGate({ children }: PlatformWalletsGateProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const startedKeyRef = useRef<string | null>(null);
+  const startedRef = useRef(false);
 
-  const queryParams = readPlatformEntryParams(searchParams);
-  const userId = getUserId();
-  const { data: user, isLoading: isUserLoading, isFetched } = useUser(userId || '');
+  const entryKey = searchParams.toString();
+  const entryParams = readPlatformEntryParams(searchParams);
+  const shouldValidate = Boolean(entryParams);
 
-  const profileNationalCode = (user?.nationalCode || user?.personInfo?.nationalCode || '').trim();
-  const profilePhoneNumber = (user?.phoneNumber || user?.personInfo?.phoneNumber || '').trim();
-  const hasQueryParams = Boolean(queryParams);
-
-  const waitingForProfile = !hasQueryParams && Boolean(userId) && (isUserLoading || !isFetched);
-
-  const nationalCode = (queryParams?.nationalCode || profileNationalCode).trim();
-  const phoneNumber = (queryParams?.phoneNumber || profilePhoneNumber).trim();
-  const canValidate = Boolean(nationalCode && phoneNumber);
-  const validationKey = canValidate
-    ? `${nationalCode}|${phoneNumber}|${hasQueryParams ? 'q' : 'p'}`
-    : null;
-
-  const [status, setStatus] = useState<'validating' | 'done'>('validating');
+  const [status, setStatus] = useState<'idle' | 'validating' | 'error' | 'done'>(
+    shouldValidate ? 'validating' : 'done',
+  );
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    if (waitingForProfile) {
-      setStatus('validating');
-      return;
-    }
-
-    if (!canValidate || !validationKey) {
+    if (!shouldValidate || !entryParams) {
       setStatus('done');
       return;
     }
-
-    if (startedKeyRef.current === validationKey) return;
-    startedKeyRef.current = validationKey;
+    if (startedRef.current) return;
+    startedRef.current = true;
     setStatus('validating');
 
     void (async () => {
-      const result = await validatePlatformEntry({ nationalCode, phoneNumber });
+      const result = await validatePlatformEntry(entryParams);
       if (result.ok) {
-        if (hasQueryParams) {
-          router.replace('/wallets');
-        }
+        router.replace('/wallets');
         setStatus('done');
         return;
       }
 
+      setErrorMessage(result.message);
+      setStatus('error');
+      toast.error(result.message);
       clearPlatformSession();
-      router.replace('/');
+      window.setTimeout(() => {
+        router.replace('/');
+      }, LANDING_REDIRECT_DELAY_MS);
     })();
-  }, [
-    waitingForProfile,
-    canValidate,
-    validationKey,
-    nationalCode,
-    phoneNumber,
-    hasQueryParams,
-    router,
-  ]);
+    // entryKey captures query string; entryParams is derived from it for this run.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot per query
+  }, [entryKey, shouldValidate, router]);
 
-  if (status === 'validating' || waitingForProfile) {
+  if (status === 'validating') {
     return (
       <div className='flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4'>
         <div
@@ -94,6 +73,15 @@ export function PlatformWalletsGate({ children }: PlatformWalletsGateProps) {
           aria-hidden
         />
         <p className='text-muted-foreground text-center text-sm'>در حال احراز هویت...</p>
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className='flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4'>
+        <p className='text-destructive max-w-md text-center text-sm font-medium'>{errorMessage}</p>
+        <p className='text-muted-foreground text-center text-xs'>در حال انتقال به صفحه اصلی...</p>
       </div>
     );
   }

@@ -4,10 +4,22 @@ import { accessToken } from '@/lib/auth/client/cookies';
 import { clearUserInfo, setUserInfo } from '@/lib/auth/client/user-info';
 import { getValidation } from '@/api/platform';
 import type { LoginByOtpResult } from '@/types/auth';
+import type { APIResult } from '@/types/api';
 
 export type PlatformEntryParams = {
   nationalCode: string;
   phoneNumber: string;
+};
+
+export type PlatformValidationSuccess = {
+  ok: true;
+  data: LoginByOtpResult;
+};
+
+export type PlatformValidationFailure = {
+  ok: false;
+  status?: number;
+  message: string;
 };
 
 /** Query keys accepted from the external site link. */
@@ -43,13 +55,15 @@ export const clearPlatformSession = () => {
   accessToken.delete();
 };
 
+const DEFAULT_ERROR_MESSAGE = 'احراز هویت ناموفق بود.';
+
 /**
  * Calls GetValidation and applies session on success.
- * Returns true when the user is authorized (HTTP 200 + isSuccess + access_token).
+ * On failure (e.g. HTTP 400 mismatch) returns the backend message for UI display.
  */
 export const validatePlatformEntry = async (
   params: PlatformEntryParams,
-): Promise<{ ok: true; data: LoginByOtpResult } | { ok: false }> => {
+): Promise<PlatformValidationSuccess | PlatformValidationFailure> => {
   try {
     const { data, resp } = await getValidation(params);
 
@@ -58,8 +72,14 @@ export const validatePlatformEntry = async (
       return { ok: true, data: data.data };
     }
 
-    return { ok: false };
+    const apiMessage = (data as APIResult<LoginByOtpResult> | undefined)?.message?.trim();
+
+    return {
+      ok: false,
+      status: resp.status,
+      message: apiMessage || DEFAULT_ERROR_MESSAGE,
+    };
   } catch {
-    return { ok: false };
+    return { ok: false, message: DEFAULT_ERROR_MESSAGE };
   }
 };
