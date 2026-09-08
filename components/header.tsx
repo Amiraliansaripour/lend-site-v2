@@ -122,14 +122,22 @@ export function Header() {
               ))}
             </nav>
 
-            <div className='hidden lg:flex items-center'>
+            <div className='hidden lg:flex items-center gap-2'>
+              <a
+                href='https://my2-test.tci.ir'
+                target='_blank'
+                rel='noopener noreferrer'
+                className='inline-flex items-center rounded-full border border-brand px-4 py-1.5 text-brand text-xs font-semibold transition-colors hover:bg-brand/5'
+              >
+                باشگاه مشتریان
+              </a>
               {!isAuthenticated ? (
                 <Link
                   href='/login'
                   className='inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-white text-xs font-semibold transition-all hover:bg-brand/90 hover:shadow-md hover:shadow-brand/20'
                 >
                   <User size={15} />
-                  <span>ورود / ثبت نام</span>
+                  <span>ورود</span>
                 </Link>
               ) : (
                 <Link
@@ -143,23 +151,37 @@ export function Header() {
             </div>
 
             {/* Mobile Auth Button */}
-            {!isAuthenticated ? (
-              <Link
-                className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
-                href='/login'
-                aria-label='ورود / ثبت نام'
+            <div className='lg:hidden flex items-center gap-1'>
+              <a
+                href='https://tcclub.ir/app'
+                target='_blank'
+                rel='noopener noreferrer'
+                className={cn(
+                  'px-2 py-1 text-[11px] font-semibold text-brand',
+                  transparent && 'text-white',
+                )}
+                aria-label='باشگاه مشتریان'
               >
-                <LogIn size={18} />
-              </Link>
-            ) : (
-              <Link
-                className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
-                href='/wallets'
-                aria-label='پروفایل'
-              >
-                <User size={20} />
-              </Link>
-            )}
+                باشگاه
+              </a>
+              {!isAuthenticated ? (
+                <Link
+                  className={cn('p-2', transparent ? 'text-white' : 'text-black')}
+                  href='/login'
+                  aria-label='ورود'
+                >
+                  <LogIn size={18} />
+                </Link>
+              ) : (
+                <Link
+                  className={cn('p-2', transparent ? 'text-white' : 'text-black')}
+                  href='/dashboard'
+                  aria-label='پروفایل'
+                >
+                  <User size={20} />
+                </Link>
+              )}
+            </div>
           </div>
         </header>
       </div>
