@@ -7,6 +7,35 @@ export type GetValidationCredentials = {
   phoneNumber: string;
 };
 
+export type LendtechLoginPayload = {
+  phoneNumber: string;
+};
+
+/** Inner payload from TCI, as returned by Platform/lendtech-login */
+export type LendtechLoginData = {
+  token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  login_url?: string;
+  deep_link?: string;
+  message?: string;
+  user?: {
+    id?: string;
+    phone?: string;
+    name?: string;
+    lastname?: string;
+    national_id?: string;
+    kyc_level?: number;
+    is_new?: boolean;
+  };
+  /** Some backends nest the TCI body again under data */
+  data?: {
+    login_url?: string;
+    deep_link?: string;
+    message?: string;
+  };
+};
+
 /** Backend always expects E.164 Iran numbers: +98XXXXXXXXXX */
 export const formatPlatformPhoneNumber = (phoneNumber: string) => {
   let phone = phoneNumber.trim().replace(/[\s-]/g, '');
@@ -38,4 +67,24 @@ export const getValidation = async (credentials: GetValidationCredentials) => {
   );
 
   return { data, resp };
+};
+
+/**
+ * Mokhaberat SSO — logged-in users with a phone.
+ * POST /Platform/lendtech-login → { login_url } (possibly nested under data.data)
+ */
+export const lendtechLogin = async (phoneNumber: string) => {
+  const { data, resp } = await api.post<LendtechLoginPayload, APIResult<LendtechLoginData>>(
+    '/Platform/lendtech-login',
+    { phoneNumber: formatPlatformPhoneNumber(phoneNumber) },
+    { suppressErrorToast: true },
+  );
+
+  return { data, resp };
+};
+
+export const extractLendtechLoginUrl = (result?: APIResult<LendtechLoginData> | null) => {
+  const payload = result?.data;
+  if (!payload) return undefined;
+  return payload.login_url || payload.data?.login_url || undefined;
 };

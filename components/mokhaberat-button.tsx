@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { getUserId, getUserInfo } from '@/lib/auth/client/user-info';
 import { getUser } from '@/api/users';
+import { extractLendtechLoginUrl, lendtechLogin } from '@/api/platform';
 
 type MokhaberatButtonProps = {
   className?: string;
@@ -14,15 +15,7 @@ type MokhaberatButtonProps = {
   onNavigating?: () => void;
 };
 
-const TCI_LOGIN_URL = 'https://my2-test.tci.ir/api/v1/auth/lendtech/login';
 const GUEST_LOGIN_URL = 'https://my.tci.ir/login';
-
-type TciLoginResponse = {
-  data?: {
-    login_url?: string;
-  };
-  message?: string;
-};
 
 const toIranMobile = (phone: string) => {
   let value = phone.trim().replace(/[\s-]/g, '');
@@ -53,6 +46,7 @@ const readCachedPhone = (): string | null => {
 };
 
 async function resolvePhoneNumber(): Promise<string | undefined> {
+  // Not logged in → no phone for lendtech flow
   if (!getUserInfo()) return undefined;
 
   const cached = readCachedPhone();
@@ -72,13 +66,13 @@ async function resolvePhoneNumber(): Promise<string | undefined> {
   }
 }
 
-const isUnregisteredPhoneMessage = (message?: string) => {
-  if (!message) return false;
-  return message.includes('درسامانه ثبت نشده') || message.includes('در سامانه ثبت نشده');
-};
-
 export function MokhaberatButton({ className, compact, onNavigating }: MokhaberatButtonProps) {
   const [loading, setLoading] = useState(false);
+
+  const goGuestLogin = () => {
+    onNavigating?.();
+    window.location.assign(GUEST_LOGIN_URL);
+  };
 
   const handleClick = async () => {
     if (loading) return;
@@ -87,48 +81,26 @@ export function MokhaberatButton({ className, compact, onNavigating }: Mokhabera
     try {
       const phoneNumber = await resolvePhoneNumber();
 
-      // Guest / no phone → public TCI login page
+      // Not logged in / no phone → public TCI login
       if (!phoneNumber) {
-        onNavigating?.();
-        window.location.assign(GUEST_LOGIN_URL);
+        goGuestLogin();
         return;
       }
 
-      const secret = process.env.NEXT_PUBLIC_TCI_LENDTECH_SECRET?.trim();
-      if (!secret) {
-        toast.error('پیکربندی سرویس مخابرات ناقص است');
-        return;
-      }
+      // Logged in + phone → our backend Platform/lendtech-login
+      const { data, resp } = await lendtechLogin(phoneNumber);
+      const loginUrl = extractLendtechLoginUrl(data);
 
-      // Direct browser → TCI (same as curl)
-      const resp = await fetch(TCI_LOGIN_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Lendtech-Secret': secret,
-        },
-        body: JSON.stringify({ phone_number: phoneNumber }),
-      });
-
-      const data = (await resp.json().catch(() => null)) as TciLoginResponse | null;
-      const loginUrl = data?.data?.login_url;
-
-      if (!resp.ok || !loginUrl) {
-        if (isUnregisteredPhoneMessage(data?.message)) {
-          onNavigating?.();
-          window.location.assign(GUEST_LOGIN_URL);
-          return;
-        }
-
+      if (!resp.ok || !data?.isSuccess || !loginUrl) {
         toast.error(data?.message || 'ورود به مخابرات ناموفق بود.');
+        setLoading(false);
         return;
       }
 
       onNavigating?.();
       window.location.assign(loginUrl);
     } catch {
-      toast.error('خطا در ارتباط با سرویس مخابرات. (احتمالاً CORS)');
-    } finally {
+      toast.error('خطا در ارتباط با سرویس مخابرات.');
       setLoading(false);
     }
   };
