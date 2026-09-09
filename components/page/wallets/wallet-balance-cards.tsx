@@ -159,7 +159,9 @@ export function WalletBalanceCards({ walletInfo, onWalletUpdate }: WalletBalance
                 </span>
               </div>
               <Link href='/requests/request-credit'>
-                <Button className='mr-auto w-fit bg-white text-brand '>درخواست اعتبار</Button>
+                <Button className='mr-auto w-fit bg-white text-brand hover:bg-blue-500/90 hover:text-white '>
+                  درخواست اعتبار
+                </Button>
               </Link>
             </div>
           </WalletCard.Front>
@@ -186,7 +188,7 @@ export function WalletBalanceCards({ walletInfo, onWalletUpdate }: WalletBalance
               </div>
 
               <Button
-                className='mr-auto w-fit cursor-pointer bg-white text-brand'
+                className='mr-auto w-fit cursor-pointer hover:bg-blue-500/90 hover:text-white bg-white text-brand'
                 onClick={() => setModalOpen(true)}
               >
                 شارژ کیف پول
