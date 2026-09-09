@@ -4,7 +4,13 @@ import { CreditCard } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-import { formatCardNumber, getCardBankInfo, maskCardNumber, maskCvv2 } from './cards-utils';
+import {
+  formatCardNumber,
+  getCardBankInfo,
+  maskCardNumber,
+  maskCvv2,
+  toExpiryDisplay,
+} from './cards-utils';
 
 type BankCardPreviewProps = {
   cardNumber: string;
@@ -137,7 +143,7 @@ export function BankCardPreview({
               dir='ltr'
               className='mt-1 [unicode-bidi:isolate] text-left font-mono text-sm text-white/90'
             >
-              {expiryDate || '••/••••'}
+              {expiryDate ? toExpiryDisplay(expiryDate) : '••••/••'}
             </p>
           </div>
           {/* 

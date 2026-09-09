@@ -18,9 +18,12 @@ import type { BankCard } from '@/types/cards';
 
 import {
   formatCardNumber,
+  formatExpiryInput,
   getCardBankInfo,
   normalizeCardNumber,
   normalizeDigits,
+  toExpiryApi,
+  toExpiryDisplay,
 } from './cards-utils';
 
 import { BankCardPreview } from './bank-card-preview';
@@ -40,8 +43,8 @@ const CardSchema = z.object({
     error: 'شماره شبا باید 24 رقم باشد',
   }),
 
-  expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/\d{4}$/, {
-    error: 'فرمت تاریخ انقضا باید مانند 12/1405 باشد',
+  expiryDate: z.string().regex(/^\d{4}\/(0[1-9]|1[0-2])$/, {
+    error: 'فرمت تاریخ انقضا باید مانند 1405/12 باشد',
   }),
 
   bankName: z.string().min(1, {
@@ -59,7 +62,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
     defaultValues: {
       cardNumber: card?.cardNumber || '',
       iban: card?.iban || '',
-      expiryDate: card?.expiryDate || '',
+      expiryDate: toExpiryDisplay(card?.expiryDate || ''),
       bankName: card?.bankName || '',
     },
 
@@ -80,6 +83,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
 
       const payload = {
         ...value,
+        expiryDate: toExpiryApi(value.expiryDate),
         bankName: bankInfo.name,
       };
 
@@ -247,18 +251,9 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
                   name='bank-exp'
                   value={field.state.value}
                   onChange={event => {
-                    const normalized = normalizeDigits(event.target.value)
-                      .replace(/\D/g, '')
-                      .slice(0, 6);
-
-                    if (normalized.length <= 2) {
-                      field.handleChange(normalized);
-                      return;
-                    }
-
-                    field.handleChange(`${normalized.slice(0, 2)}/${normalized.slice(2)}`);
+                    field.handleChange(formatExpiryInput(event.target.value));
                   }}
-                  placeholder='12/1405'
+                  placeholder='1405/12'
                   inputMode='numeric'
                   autoComplete='one-time-code'
                   data-lpignore='true'
