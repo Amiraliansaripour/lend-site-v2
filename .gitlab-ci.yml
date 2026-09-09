@@ -31,6 +31,7 @@ variables:
         --build-arg NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
         --build-arg NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
         --build-arg NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
+        --build-arg NEXT_PUBLIC_TCI_LENDTECH_SECRET="$NEXT_PUBLIC_TCI_LENDTECH_SECRET" \
         -t "$IMAGE_NAME:latest" \
         .
     - docker stop "$CONTAINER_NAME" || true

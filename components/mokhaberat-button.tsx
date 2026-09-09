@@ -14,18 +14,36 @@ type MokhaberatButtonProps = {
   onNavigating?: () => void;
 };
 
+const TCI_LOGIN_URL = 'https://my2-test.tci.ir/api/v1/auth/lendtech/login';
+const GUEST_LOGIN_URL = 'https://my.tci.ir/login';
+
+type TciLoginResponse = {
+  data?: {
+    login_url?: string;
+  };
+  message?: string;
+};
+
+const toIranMobile = (phone: string) => {
+  let value = phone.trim().replace(/[\s-]/g, '');
+  if (value.startsWith('+98')) value = `0${value.slice(3)}`;
+  else if (value.startsWith('98') && value.length >= 12) value = `0${value.slice(2)}`;
+  return value;
+};
+
 const readCachedPhone = (): string | null => {
   if (typeof window === 'undefined') return null;
 
   try {
-    const profileRaw = localStorage.getItem('userInfo');
-    if (profileRaw) {
+    for (const key of ['userInfo', 'USER_INFO'] as const) {
+      const profileRaw = localStorage.getItem(key);
+      if (!profileRaw) continue;
       const profile = JSON.parse(profileRaw) as {
         phoneNumber?: string;
         personInfo?: { phoneNumber?: string };
       };
       const phone = profile.personInfo?.phoneNumber || profile.phoneNumber;
-      if (phone?.trim()) return phone.trim();
+      if (phone?.trim()) return toIranMobile(phone);
     }
   } catch {
     // ignore corrupt cache
@@ -38,20 +56,21 @@ async function resolvePhoneNumber(): Promise<string | undefined> {
   if (!getUserInfo()) return undefined;
 
   const cached = readCachedPhone();
-  if (cached) return cached;
+  if (cached && /^09\d{9}$/.test(cached)) return cached;
 
   const userId = getUserId();
   if (!userId) return undefined;
 
   try {
     const user = await getUser(userId);
-    return user?.personInfo?.phoneNumber || user?.phoneNumber || undefined;
+    const phone = user?.personInfo?.phoneNumber || user?.phoneNumber;
+    if (!phone) return undefined;
+    const normalized = toIranMobile(phone);
+    return /^09\d{9}$/.test(normalized) ? normalized : undefined;
   } catch {
     return undefined;
   }
 }
-
-const GUEST_LOGIN_URL = 'https://my.tci.ir/login';
 
 const isUnregisteredPhoneMessage = (message?: string) => {
   if (!message) return false;
@@ -68,37 +87,47 @@ export function MokhaberatButton({ className, compact, onNavigating }: Mokhabera
     try {
       const phoneNumber = await resolvePhoneNumber();
 
-      // Guest / no phone → public TCI login page (no lendtech API call)
+      // Guest / no phone → public TCI login page
       if (!phoneNumber) {
         onNavigating?.();
         window.location.assign(GUEST_LOGIN_URL);
         return;
       }
 
-      const resp = await fetch('/api/tci/mokhaberat-login', {
+      const secret = process.env.NEXT_PUBLIC_TCI_LENDTECH_SECRET?.trim();
+      if (!secret) {
+        toast.error('پیکربندی سرویس مخابرات ناقص است');
+        return;
+      }
+
+      // Direct browser → TCI (same as curl)
+      const resp = await fetch(TCI_LOGIN_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Lendtech-Secret': secret,
+        },
+        body: JSON.stringify({ phone_number: phoneNumber }),
       });
 
-      const data = (await resp.json()) as { loginUrl?: string; message?: string };
+      const data = (await resp.json().catch(() => null)) as TciLoginResponse | null;
+      const loginUrl = data?.data?.login_url;
 
-      if (!resp.ok || !data.loginUrl) {
-        // Logged-in phone not registered on TCI → fall back to public login
-        if (isUnregisteredPhoneMessage(data.message)) {
+      if (!resp.ok || !loginUrl) {
+        if (isUnregisteredPhoneMessage(data?.message)) {
           onNavigating?.();
           window.location.assign(GUEST_LOGIN_URL);
           return;
         }
 
-        toast.error(data.message || 'ورود به مخابرات ناموفق بود.');
+        toast.error(data?.message || 'ورود به مخابرات ناموفق بود.');
         return;
       }
 
       onNavigating?.();
-      window.location.assign(data.loginUrl);
+      window.location.assign(loginUrl);
     } catch {
-      toast.error('خطا در ارتباط با سرویس مخابرات.');
+      toast.error('خطا در ارتباط با سرویس مخابرات. (احتمالاً CORS)');
     } finally {
       setLoading(false);
     }
