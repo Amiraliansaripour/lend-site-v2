@@ -33,7 +33,8 @@ const items = [
   { title: 'درخواست های من', url: '/requests', icon: FileText, badge: 0 },
   { title: 'اقساط من', url: '/installments', icon: CalendarClock, badge: 0 },
   { title: 'اطلاعات من', url: '/profile', icon: User, badge: 0 },
-  // { title: 'کارت‌های بانکی', url: '/cards', icon: CreditCard, badge: 0 },
+  // { title: 'کارت‌ها
+  // ی بانکی', url: '/cards', icon: CreditCard, badge: 0 },
   { title: 'راهنما و پشتیبانی', url: '/help', icon: CircleQuestionMark, badge: 0 },
   { title: 'فروشگاه‌ها', url: '/shops', icon: Store, badge: 0 },
   { title: 'صندوق پیام', url: '/messages', icon: MessagesSquare, badge: TOTAL_UNREAD },
