@@ -36,9 +36,10 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     payload.body = JSON.stringify(body);
   }
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  const headers: HeadersInit = {};
+  if (options?.method !== 'GET' && options?.method !== 'HEAD') {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const token = accessToken.get();
   if (!skipAuth && token) {
