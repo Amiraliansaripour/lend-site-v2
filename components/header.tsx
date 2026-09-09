@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
 import { getUserInfo } from '@/lib/auth/client/user-info';
 import { BoomLogo } from '@/components/brand/boom-logo';
+import { MokhaberatButton } from '@/components/mokhaberat-button';
 
 type Href = `/${string}`;
 
@@ -123,6 +124,7 @@ export function Header() {
             </nav>
 
             <div className='hidden lg:flex items-center gap-2'>
+              <MokhaberatButton />
               <a
                 href='https://tcclub.ir/app'
                 target='_blank'
@@ -152,6 +154,13 @@ export function Header() {
 
             {/* Mobile Auth Button */}
             <div className='lg:hidden flex items-center gap-1'>
+              <MokhaberatButton
+                compact
+                className={cn(
+                  'border-0 px-2 py-1 text-[11px] shadow-none',
+                  transparent && 'text-white border-white/40',
+                )}
+              />
               <a
                 href='https://tcclub.ir/app'
                 target='_blank'
@@ -209,6 +218,9 @@ export function Header() {
                   {item.title}
                 </Link>
               ))}
+              <div className='px-6 py-3.5 border-b border-gray-200'>
+                <MokhaberatButton className='w-full' onNavigating={closeMenu} />
+              </div>
             </nav>
           </div>
         </div>
