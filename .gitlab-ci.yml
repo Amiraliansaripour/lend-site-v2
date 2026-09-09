@@ -159,14 +159,20 @@ deploy:lend365:
   script:
     - docker version
     - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml build
-    - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml up -d
+    # Python docker-compose 1.x crashes on recreate with newer Docker (KeyError: ContainerConfig).
+    - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml stop || true
+    - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml rm -f || true
+    - docker stop "${CONTAINER_NAME}" || true
+    - docker rm "${CONTAINER_NAME}" || true
+    - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml up -d --no-recreate
     - docker image prune -f
-    - docker builder prune -f
+    - docker builder prune -f || true
 
 deploy:karalend:
   <<: *deploy_karalend_compose
   variables:
     COMPOSE_PROJECT_NAME: lend-site-v2
+    CONTAINER_NAME: lend-site-v2_app_1
     PORT: "14000"
     NEXT_PUBLIC_API_BASE_URL: "http://185.105.101.110:8080/api/v1"
     NEXT_PUBLIC_API_REPORT_URL: "http://185.105.101.110:8081/api/v1"
