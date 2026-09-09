@@ -66,6 +66,11 @@ async function resolvePhoneNumber(): Promise<string | undefined> {
   }
 }
 
+const isUnregisteredPhoneMessage = (message?: string) => {
+  if (!message) return false;
+  return message.includes('درسامانه ثبت نشده') || message.includes('در سامانه ثبت نشده');
+};
+
 export function MokhaberatButton({ className, compact, onNavigating }: MokhaberatButtonProps) {
   const [loading, setLoading] = useState(false);
 
@@ -90,9 +95,19 @@ export function MokhaberatButton({ className, compact, onNavigating }: Mokhabera
       // Logged in + phone → our backend Platform/lendtech-login
       const { data, resp } = await lendtechLogin(phoneNumber);
       const loginUrl = extractLendtechLoginUrl(data);
+      const message = data?.message || data?.data?.message;
+
+      // Phone not registered on TCI → show message, then same guest login as logged-out users
+      if (resp.status === 400 && isUnregisteredPhoneMessage(message)) {
+        toast.error(message || 'شماره موبایل وارد شده درسامانه ثبت نشده است');
+        window.setTimeout(() => {
+          goGuestLogin();
+        }, 1000);
+        return;
+      }
 
       if (!resp.ok || !data?.isSuccess || !loginUrl) {
-        toast.error(data?.message || 'ورود به مخابرات ناموفق بود.');
+        toast.error(message || 'ورود به مخابرات ناموفق بود.');
         setLoading(false);
         return;
       }
