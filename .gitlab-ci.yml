@@ -158,8 +158,8 @@ deploy:lend365:
     - karalend
   script:
     - docker version
-    - docker compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml build
-    - docker compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml up -d
+    - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml build
+    - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml up -d
     - docker image prune -f
     - docker builder prune -f
 
