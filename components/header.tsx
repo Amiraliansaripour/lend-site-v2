@@ -124,7 +124,7 @@ export function Header() {
 
             <div className='hidden lg:flex items-center gap-2'>
               <a
-                href='https://my2-test.tci.ir'
+                href='https://tcclub.ir/app'
                 target='_blank'
                 rel='noopener noreferrer'
                 className='inline-flex items-center rounded-full border border-brand px-4 py-1.5 text-brand text-xs font-semibold transition-colors hover:bg-brand/5'
