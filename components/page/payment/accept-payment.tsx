@@ -24,17 +24,24 @@ import {
   createHasInstallment,
   getHasInstallmentPlans,
   getUserLoan,
+  getPayToken,
+  payInvoice,
+  INSTALLMENT_PAY_TYPE,
   type MerchantInfo,
   type ValidWallet,
   type HasInstallmentPlan,
   type PaymentLoanHeader,
   type PaymentLoanDetail,
 } from '@/api/wallet';
+import { accessToken } from '@/lib/auth/client/cookies';
+
+const RECIPIENT_RETURN_URL_KEY = 'recipientReturnUrl';
 
 type Props = {
   amount: number;
   merchantId: string;
   orderId: string;
+  merchantOrderId?: string;
   nationalcode: string;
   userToken: string;
   wallets: ValidWallet[];
@@ -46,6 +53,8 @@ type Props = {
   installmentNumber?: number | null;
   rateValue?: number | null;
   mobile?: string;
+  firstName?: string;
+  lastName?: string;
 };
 
 const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
@@ -69,6 +78,7 @@ export function AcceptPayment({
   amount,
   merchantId,
   orderId,
+  merchantOrderId,
   nationalcode,
   userToken,
   wallets,
@@ -80,6 +90,8 @@ export function AcceptPayment({
   installmentNumber,
   rateValue,
   mobile,
+  firstName,
+  lastName,
 }: Props) {
   const [merchant, setMerchant] = useState<MerchantInfo | null>(null);
   const [merchantLoading, setMerchantLoading] = useState(true);
@@ -313,11 +325,67 @@ export function AcceptPayment({
     await convertToInstallment(selectedPlanId);
   };
 
-  const handleConfirmInstallment = () => {
-    setStatus('success');
-    toast.success('خرید اقساطی با موفقیت ثبت شد');
-    // Merchant Confirm runs on returnUrl (/payment/verify) with merchant token
-    redirectAfterSuccess(orderId);
+  const handleConfirmInstallment = async () => {
+    const firstInstallment = installments[0];
+    if (!firstInstallment?.id) {
+      toast.error('قسط اول یافت نشد');
+      return;
+    }
+    if (!merchantOrderId) {
+      toast.error('شناسه فاکتور فروشنده (merchantOrderId) موجود نیست');
+      return;
+    }
+
+    setStatus('loading');
+    try {
+      const tokenResult = await getPayToken(
+        {
+          payType: INSTALLMENT_PAY_TYPE,
+          loanDetailId: firstInstallment.id,
+          amount: firstInstallment.amount,
+        },
+        userToken,
+      );
+
+      if (!tokenResult?.isSuccess || !tokenResult.data?.access_token) {
+        setStatus('error');
+        toast.error(tokenResult?.message ?? 'خطا در دریافت توکن پرداخت');
+        return;
+      }
+
+      const invoiceResult = await payInvoice(
+        {
+          invoiceId: merchantOrderId,
+          accessToken: tokenResult.data.access_token,
+          customerInfo: {
+            nationalCode: nationalcode,
+            firstName: firstName ?? '',
+            lastName: lastName ?? '',
+            mobileNumber: mobile ?? '',
+            customerId: nationalcode,
+          },
+        },
+        userToken,
+      );
+
+      if (!invoiceResult?.isSuccess || !invoiceResult.data?.url) {
+        setStatus('error');
+        toast.error(invoiceResult?.message ?? 'خطا در ایجاد فاکتور پرداخت');
+        return;
+      }
+
+      if (returnUrl) {
+        localStorage.setItem(RECIPIENT_RETURN_URL_KEY, returnUrl);
+      }
+      localStorage.setItem('pendingPayType', String(INSTALLMENT_PAY_TYPE));
+      // Allow /CallBack under dashboard-like auth checks if cookie is required elsewhere.
+      accessToken.set(userToken);
+
+      window.location.href = invoiceResult.data.url;
+    } catch {
+      setStatus('error');
+      toast.error('خطا در شروع پرداخت قسط اول');
+    }
   };
 
   if (status === 'success') {
@@ -338,7 +406,13 @@ export function AcceptPayment({
         <CardContent className='flex flex-col items-center gap-4 pt-8'>
           <XCircle className='size-16 text-destructive' />
           <p className='text-lg font-semibold'>پرداخت ناموفق</p>
-          <Button variant='outline' onClick={() => setStatus('idle')}>
+          <Button
+            variant='outline'
+            onClick={() => {
+              setStatus('idle');
+              if (installments.length > 0) setView('installment-review');
+            }}
+          >
             تلاش مجدد
           </Button>
         </CardContent>
@@ -503,13 +577,22 @@ export function AcceptPayment({
               </p>
             ) : (
               <div className='flex flex-col gap-2 max-h-72 overflow-y-auto'>
-                {installments.map(item => (
+                {installments.map((item, index) => (
                   <div
                     key={item.id}
-                    className='rounded-lg border p-3 flex items-center justify-between gap-3 text-sm'
+                    className={`rounded-lg border p-3 flex items-center justify-between gap-3 text-sm ${
+                      index === 0 ? 'border-primary bg-primary/5' : ''
+                    }`}
                   >
                     <div className='min-w-0'>
-                      <p className='font-medium'>قسط {item.loanIndex}</p>
+                      <p className='font-medium'>
+                        قسط {item.loanIndex}
+                        {index === 0 ? (
+                          <span className='ms-2 text-xs text-primary font-normal'>
+                            (قابل پرداخت اکنون)
+                          </span>
+                        ) : null}
+                      </p>
                       <p className='text-xs text-muted-foreground mt-0.5'>
                         سررسید: {formatDate(item.dueDate)}
                       </p>
@@ -524,10 +607,17 @@ export function AcceptPayment({
           <Button
             className='w-full'
             size='lg'
-            disabled={installments.length === 0}
-            onClick={handleConfirmInstallment}
+            disabled={installments.length === 0 || status === 'loading'}
+            onClick={() => void handleConfirmInstallment()}
           >
-            تایید نهایی خرید اقساطی
+            {status === 'loading' ? (
+              <>
+                <Loader2 className='size-4 animate-spin me-2' />
+                در حال انتقال به درگاه...
+              </>
+            ) : (
+              'پرداخت قسط اول'
+            )}
           </Button>
         </CardContent>
       </Card>

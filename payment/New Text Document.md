@@ -153,7 +153,16 @@ The merchant opens this link (or sends it to the customer) to start payment.
 
 
 /recipient?amount=500000&nationalcode=0025645137&installmentNumber=4&merchantId=ad01803c-18f4-48bb-95b0-50d5a37c8863&orderId=1000216&description=خریدکالا&returnUrl=https://example.com/payment/verify
+
+
+/recipient?amount=50000&merchantId=MERCHANT123&installmentNumber=4
+&rateValue=3.5&mobile=091024421085&orderId=1000001&merchantOrderId
+=a461c046-6103-4e40-b1cc-b2a4e155581c&nationalcode=0025645137&desc
+ription=‫د‬‫ی‬‫خر‬%20‫محصول‬&firstName=امیرعلی&lastName= خانوادگی&نام‬returnUrl=https://merchant-
+site.com/payment-callback
 ```
+
+a461c046-6103-4e40-b1cc-b2a4e155581c
 
 ### Steps (state machine)
 

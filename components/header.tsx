@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
 import { getUserInfo } from '@/lib/auth/client/user-info';
 import { BoomLogo } from '@/components/brand/boom-logo';
+import { MokhaberatButton } from '@/components/mokhaberat-button';
 
 type Href = `/${string}`;
 
@@ -122,18 +123,27 @@ export function Header() {
               ))}
             </nav>
 
-            <div className='hidden lg:flex items-center'>
+            <div className='hidden lg:flex items-center gap-2'>
+              <MokhaberatButton />
+              <a
+                href='https://tcclub.ir/app'
+                target='_blank'
+                rel='noopener noreferrer'
+                className='inline-flex items-center rounded-full border border-brand px-4 py-1.5 text-brand text-xs font-semibold transition-colors hover:bg-brand/5'
+              >
+                باشگاه مشتریان
+              </a>
               {!isAuthenticated ? (
                 <Link
                   href='/login'
                   className='inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-white text-xs font-semibold transition-all hover:bg-brand/90 hover:shadow-md hover:shadow-brand/20'
                 >
                   <User size={15} />
-                  <span>ورود / ثبت نام</span>
+                  <span>ورود</span>
                 </Link>
               ) : (
                 <Link
-                  href='/dashboard'
+                  href='/wallets'
                   className='inline-flex items-center gap-1.5 rounded-full border border-brand px-4 py-1.5 text-brand text-xs font-semibold transition-colors hover:bg-brand/5'
                 >
                   <User size={15} />
@@ -143,23 +153,44 @@ export function Header() {
             </div>
 
             {/* Mobile Auth Button */}
-            {!isAuthenticated ? (
-              <Link
-                className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
-                href='/login'
-                aria-label='ورود / ثبت نام'
+            <div className='lg:hidden flex items-center gap-1'>
+              <MokhaberatButton
+                compact
+                className={cn(
+                  'border-0 px-2 py-1 text-[11px] shadow-none',
+                  transparent && 'text-white border-white/40',
+                )}
+              />
+              <a
+                href='https://tcclub.ir/app'
+                target='_blank'
+                rel='noopener noreferrer'
+                className={cn(
+                  'px-2 py-1 text-[11px] font-semibold text-brand',
+                  transparent && 'text-white',
+                )}
+                aria-label='باشگاه مشتریان'
               >
-                <LogIn size={18} />
-              </Link>
-            ) : (
-              <Link
-                className={cn('lg:hidden p-2', transparent ? 'text-white' : 'text-black')}
-                href='/dashboard'
-                aria-label='پروفایل'
-              >
-                <User size={20} />
-              </Link>
-            )}
+                باشگاه
+              </a>
+              {!isAuthenticated ? (
+                <Link
+                  className={cn('p-2', transparent ? 'text-white' : 'text-black')}
+                  href='/login'
+                  aria-label='ورود'
+                >
+                  <LogIn size={18} />
+                </Link>
+              ) : (
+                <Link
+                  className={cn('p-2', transparent ? 'text-white' : 'text-black')}
+                  href='/dashboard'
+                  aria-label='پروفایل'
+                >
+                  <User size={20} />
+                </Link>
+              )}
+            </div>
           </div>
         </header>
       </div>
@@ -187,6 +218,9 @@ export function Header() {
                   {item.title}
                 </Link>
               ))}
+              <div className='px-6 py-3.5 border-b border-gray-200'>
+                <MokhaberatButton className='w-full' onNavigating={closeMenu} />
+              </div>
             </nav>
           </div>
         </div>

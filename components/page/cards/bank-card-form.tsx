@@ -129,6 +129,7 @@ export function BankCardForm({ card, onSuccess, onCancel }: BankCardFormProps) {
   return (
     <form
       noValidate
+      autoComplete='off'
       dir='rtl'
       className='space-y-6'
       onSubmit={event => {

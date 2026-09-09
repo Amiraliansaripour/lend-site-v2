@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useState, useTransition } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -11,53 +10,26 @@ type ShopsFiltersProps = {
   className?: string;
   categories?: HomeCategory[];
   isCategoriesLoading?: boolean;
+  selectedType: ShopType;
+  selectedCategories: string[];
+  onTypeChange: (type: ShopType) => void;
+  onCategoriesChange: (categories: string[]) => void;
 };
 
 export function ShopsFilters({
   className,
   categories = [],
   isCategoriesLoading,
+  selectedType,
+  selectedCategories,
+  onTypeChange,
+  onCategoriesChange,
 }: ShopsFiltersProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-
   const [typeIsOpen, setTypeIsOpen] = useState(true);
   const [categoryIsOpen, setCategoryIsOpen] = useState(true);
 
-  const selectedType = (searchParams.get('type') as ShopType) || '2';
-  const selectedCategories = searchParams.getAll('category');
-
   const onlineEnabled = selectedType === '0' || selectedType === '2';
   const physicalEnabled = selectedType === '1' || selectedType === '2';
-
-  const updateURL = useCallback(
-    (updates: { type?: ShopType; categories?: string[] }) => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      if (updates.type !== undefined) {
-        if (updates.type === '2') {
-          params.delete('type');
-        } else {
-          params.set('type', updates.type);
-        }
-      }
-
-      if (updates.categories !== undefined) {
-        params.delete('category');
-        updates.categories.forEach(id => params.append('category', id));
-      }
-
-      params.delete('page');
-
-      const query = params.toString();
-
-      startTransition(() => {
-        router.replace(query ? `?${query}` : '?', { scroll: false });
-      });
-    },
-    [searchParams, router],
-  );
 
   const handleTypeChange = (online: boolean, physical: boolean) => {
     let newType: ShopType;
@@ -70,14 +42,14 @@ export function ShopsFilters({
     } else {
       newType = '3';
     }
-    updateURL({ type: newType });
+    onTypeChange(newType);
   };
 
   const handleCategoryToggle = (categoryId: string, checked: boolean) => {
     const next = checked
       ? [...selectedCategories, categoryId]
       : selectedCategories.filter(id => id !== categoryId);
-    updateURL({ categories: next });
+    onCategoriesChange(next);
   };
 
   return (
@@ -109,7 +81,6 @@ export function ShopsFilters({
                     type='checkbox'
                     checked={onlineEnabled}
                     onChange={e => handleTypeChange(e.target.checked, physicalEnabled)}
-                    disabled={isPending}
                     className='w-4 h-4'
                   />
                 </label>
@@ -119,7 +90,6 @@ export function ShopsFilters({
                     type='checkbox'
                     checked={physicalEnabled}
                     onChange={e => handleTypeChange(onlineEnabled, e.target.checked)}
-                    disabled={isPending}
                     className='w-4 h-4'
                   />
                 </label>
@@ -163,7 +133,6 @@ export function ShopsFilters({
                         type='checkbox'
                         checked={selectedCategories.includes(category.id)}
                         onChange={e => handleCategoryToggle(category.id, e.target.checked)}
-                        disabled={isPending}
                         className='w-4 h-4 shrink-0'
                       />
                     </label>

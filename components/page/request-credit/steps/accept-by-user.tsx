@@ -148,11 +148,12 @@ export function AcceptByUser({
     }
   };
 
-  // کارمزد اولیه به درصد است؛ تقسیم بر صفر (وقتی کارمزد 0 باشد) باعث -∞ می‌شد
+  // first*Fee values are percentage rates (same as loan-calculator), not divisors
   const firstFeeRate =
     (requestData?.planFirstSystemFee || 0) + (requestData?.planFirstBankFee || 0);
-  const recieveAmount = requestData?.creditAmount
-    ? Math.round(requestData.creditAmount - (requestData.creditAmount * firstFeeRate) / 100)
+  const creditAmount = requestData?.creditAmount || 0;
+  const recieveAmount = creditAmount
+    ? Math.round(creditAmount - (creditAmount * firstFeeRate) / 100)
     : 0;
 
   const identityImages = [
@@ -196,6 +197,14 @@ export function AcceptByUser({
   const invoiceImageSrc = resolveImageSrc(
     requestData?.invoiceFileImage,
     requestData?.invoiceAttachmentFilePath,
+  );
+
+  const hasCreditInfoContent = Boolean(
+    requestData?.chequeSayadId ||
+    chequeImageSrc ||
+    chequeBackImageSrc ||
+    promissoryImageSrc ||
+    salaryDeductionImageSrc,
   );
 
   if (loading) {
@@ -271,11 +280,7 @@ export function AcceptByUser({
               </CardTitle>
             </CardHeader>
             <CardContent className='space-y-3 pt-6'>
-              {requestData?.chequeSayadId ||
-              chequeImageSrc ||
-              chequeBackImageSrc ||
-              promissoryImageSrc ||
-              salaryDeductionImageSrc ? (
+              {hasCreditInfoContent ? (
                 <>
                   {requestData?.chequeSayadId && (
                     <div className='flex justify-between'>
@@ -388,7 +393,9 @@ export function AcceptByUser({
                 <div className='flex justify-between'>
                   <span className='font-medium'>درصد سود:</span>
                   <span>
-                    {requestData?.planPercentage ? `${requestData.planPercentage}%` : 'نامشخص'}
+                    {requestData?.planDuringBankFee && requestData?.planDuringSystemFee
+                      ? `${requestData?.planDuringBankFee + requestData?.planDuringSystemFee}%`
+                      : 'نامشخص'}
                   </span>
                 </div>
                 <div className='flex justify-between'>

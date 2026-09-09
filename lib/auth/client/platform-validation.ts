@@ -1,0 +1,85 @@
+import 'client-only';
+
+import { accessToken } from '@/lib/auth/client/cookies';
+import { clearUserInfo, setUserInfo } from '@/lib/auth/client/user-info';
+import { getValidation } from '@/api/platform';
+import type { LoginByOtpResult } from '@/types/auth';
+import type { APIResult } from '@/types/api';
+
+export type PlatformEntryParams = {
+  nationalCode: string;
+  phoneNumber: string;
+};
+
+export type PlatformValidationSuccess = {
+  ok: true;
+  data: LoginByOtpResult;
+};
+
+export type PlatformValidationFailure = {
+  ok: false;
+  status?: number;
+  message: string;
+};
+
+/** Query keys accepted from the external site link. */
+export const readPlatformEntryParams = (
+  searchParams: URLSearchParams,
+): PlatformEntryParams | null => {
+  const nationalCode =
+    searchParams.get('nationalCode') ||
+    searchParams.get('nationalcode') ||
+    searchParams.get('NationalCode') ||
+    '';
+  const phoneNumber =
+    searchParams.get('phoneNumber') ||
+    searchParams.get('phonenumber') ||
+    searchParams.get('mobile') ||
+    searchParams.get('phone') ||
+    '';
+
+  if (!nationalCode.trim() || !phoneNumber.trim()) return null;
+  return {
+    nationalCode: nationalCode.trim(),
+    phoneNumber: phoneNumber.trim(),
+  };
+};
+
+export const applyPlatformSession = (data: LoginByOtpResult) => {
+  accessToken.set(data.access_token);
+  setUserInfo(data);
+};
+
+export const clearPlatformSession = () => {
+  clearUserInfo();
+  accessToken.delete();
+};
+
+const DEFAULT_ERROR_MESSAGE = 'احراز هویت ناموفق بود.';
+
+/**
+ * Calls GetValidation and applies session on success.
+ * On failure (e.g. HTTP 400 mismatch) returns the backend message for UI display.
+ */
+export const validatePlatformEntry = async (
+  params: PlatformEntryParams,
+): Promise<PlatformValidationSuccess | PlatformValidationFailure> => {
+  try {
+    const { data, resp } = await getValidation(params);
+
+    if (resp.status === 200 && data?.isSuccess && data?.data?.access_token && data?.data?.id) {
+      applyPlatformSession(data.data);
+      return { ok: true, data: data.data };
+    }
+
+    const apiMessage = (data as APIResult<LoginByOtpResult> | undefined)?.message?.trim();
+
+    return {
+      ok: false,
+      status: resp.status,
+      message: apiMessage || DEFAULT_ERROR_MESSAGE,
+    };
+  } catch {
+    return { ok: false, message: DEFAULT_ERROR_MESSAGE };
+  }
+};

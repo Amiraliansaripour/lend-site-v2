@@ -20,6 +20,9 @@ type OrderFormValues = {
   rateValue: string;
   description: string;
   returnUrl: string;
+  merchantOrderId: string;
+  firstName: string;
+  lastName: string;
 };
 
 export function MerchantSimulator() {
@@ -83,6 +86,9 @@ export function MerchantSimulator() {
       rateValue: '',
       description: 'خریدکالا',
       returnUrl: '',
+      merchantOrderId: '',
+      firstName: '',
+      lastName: '',
     },
     onSubmit: async ({ value }) => {
       if (!merchantToken.trim()) {
@@ -147,6 +153,15 @@ export function MerchantSimulator() {
           }
           if (value.mobile.trim()) {
             params.set('mobile', value.mobile.trim());
+          }
+          if (value.merchantOrderId.trim()) {
+            params.set('merchantOrderId', value.merchantOrderId.trim());
+          }
+          if (value.firstName.trim()) {
+            params.set('firstName', value.firstName.trim());
+          }
+          if (value.lastName.trim()) {
+            params.set('lastName', value.lastName.trim());
           }
 
           const link = `${origin}/recipient?${params.toString()}`;
@@ -311,6 +326,30 @@ export function MerchantSimulator() {
                   <field.TextField label='توضیحات' placeholder='خریدکالا' />
                 )}
               />
+
+              <orderForm.AppField
+                name='merchantOrderId'
+                children={(field: any) => (
+                  <field.TextField
+                    label='merchantOrderId (فاکتور فروشنده)'
+                    placeholder='invoice-001'
+                    dir='ltr'
+                  />
+                )}
+              />
+
+              <div className='grid grid-cols-2 gap-3'>
+                <orderForm.AppField
+                  name='firstName'
+                  children={(field: any) => <field.TextField label='نام' placeholder='نام' />}
+                />
+                <orderForm.AppField
+                  name='lastName'
+                  children={(field: any) => (
+                    <field.TextField label='نام خانوادگی' placeholder='نام خانوادگی' />
+                  )}
+                />
+              </div>
 
               <orderForm.AppField
                 name='returnUrl'

@@ -447,3 +447,70 @@ export const getUserLoan = async (userToken: string): Promise<PaymentLoanHeader[
   if (data?.isSuccess && Array.isArray(data.data)) return data.data;
   return [];
 };
+
+/** Installment first-payment gateway (payType: 4) */
+export const INSTALLMENT_PAY_TYPE = 4;
+
+export type PayTokenPayload = {
+  payType: number;
+  loanDetailId: string;
+  amount: number;
+};
+
+export type PayTokenResult = {
+  access_token: string;
+  expires_in: number;
+  refresh_token?: string;
+  refresh_expires_in?: number;
+  token_type?: string;
+};
+
+export const getPayToken = async (
+  payload: PayTokenPayload,
+  userToken: string,
+): Promise<APIResult<PayTokenResult> | null> => {
+  const { data } = await api.post<PayTokenPayload, APIResult<PayTokenResult>>(
+    '/Pay/pay-token',
+    payload,
+    {
+      skipAuth: true,
+      headers: { Authorization: `Bearer ${userToken}` },
+    },
+  );
+  return data ?? null;
+};
+
+export type PayInvoiceCustomerInfo = {
+  nationalCode: string;
+  firstName: string;
+  lastName: string;
+  mobileNumber: string;
+  customerId: string;
+};
+
+export type PayInvoicePayload = {
+  invoiceId: string;
+  customerInfo: PayInvoiceCustomerInfo;
+  accessToken: string;
+};
+
+export type PayInvoiceResult = {
+  refId: string;
+  expireAt: string;
+  url: string;
+};
+
+export const payInvoice = async (
+  payload: PayInvoicePayload,
+  userToken: string,
+): Promise<APIResult<PayInvoiceResult> | null> => {
+  const { data } = await api.post<PayInvoicePayload, APIResult<PayInvoiceResult>>(
+    '/Pay/pay-invoice',
+    payload,
+    {
+      skipAuth: true,
+      headers: { Authorization: `Bearer ${userToken}` },
+    },
+  );
+  return data ?? null;
+};
