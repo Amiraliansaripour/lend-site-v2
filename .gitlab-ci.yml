@@ -3,11 +3,11 @@
 # Keep old behavior:
 #   - main => default lend site deployment
 # Add tag-triggered prod tenants:
-#   - lianlend-vX.Y.Z
 #   - lend360-vX.Y.Z
-#   - toplend-vX.Y.Z
 #   - lend365-vX.Y.Z (manual approval)
-# karalend is hosted elsewhere and intentionally excluded.
+#   - karalend-vX.Y.Z (karalend runner, docker compose)
+#   - all-vX.Y.Z, all-lend365-vX.Y.Z
+# lianlend (mylianpay) and toplend are commented out for now.
 
 stages:
   - deploy
@@ -50,6 +50,7 @@ variables:
         -e NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
         "$IMAGE_NAME:latest"
     - docker image prune -f
+    - docker builder prune -f
 
 # Existing default deployment (unchanged behavior)
 deploy:default-main:
@@ -71,21 +72,39 @@ deploy:default-main:
 
 # Tag-based tenant deploys
 
-deploy:lianlend:
-  <<: *deploy_template
-  variables:
-    IMAGE_NAME: lend-site-lianlend
-    CONTAINER_NAME: lend-site-lianlend
-    DEPLOY_HOST_PORT: "3001"
-    NEXT_PUBLIC_API_BASE_URL: "https://api.mylianpay.com/api/v1"
-    NEXT_PUBLIC_API_REPORT_URL: "https://report.mylianpay.com/api/v1"
-    NEXT_PUBLIC_QUERY_GC_TIME: "300000"
-    NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
-    NEXT_PUBLIC_QUERY_RETRY: "1"
-  environment:
-    name: production/lianlend-site
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^lianlend-v\d+\.\d+\.\d+$/'
+# .deploy_tenant_rules_lianlend: &deploy_tenant_rules_lianlend
+#   - if: '$CI_COMMIT_TAG =~ /^lianlend-v\d+\.\d+\.\d+$/'
+#   - if: '$CI_COMMIT_TAG =~ /^all-v\d+\.\d+\.\d+$/'
+#   - if: '$CI_COMMIT_TAG =~ /^all-lend365-v\d+\.\d+\.\d+$/'
+
+.deploy_tenant_rules_lend360: &deploy_tenant_rules_lend360
+  - if: '$CI_COMMIT_TAG =~ /^lend360-v\d+\.\d+\.\d+$/'
+  - if: '$CI_COMMIT_TAG =~ /^all-v\d+\.\d+\.\d+$/'
+  - if: '$CI_COMMIT_TAG =~ /^all-lend365-v\d+\.\d+\.\d+$/'
+
+# .deploy_tenant_rules_toplend: &deploy_tenant_rules_toplend
+#   - if: '$CI_COMMIT_TAG =~ /^toplend-v\d+\.\d+\.\d+$/'
+#   - if: '$CI_COMMIT_TAG =~ /^all-v\d+\.\d+\.\d+$/'
+#   - if: '$CI_COMMIT_TAG =~ /^all-lend365-v\d+\.\d+\.\d+$/'
+
+.deploy_tenant_rules_lend365: &deploy_tenant_rules_lend365
+  - if: '$CI_COMMIT_TAG =~ /^lend365-v\d+\.\d+\.\d+$/'
+  - if: '$CI_COMMIT_TAG =~ /^all-v\d+\.\d+\.\d+$/'
+
+# deploy:lianlend:
+#   <<: *deploy_template
+#   variables:
+#     IMAGE_NAME: lend-site-lianlend
+#     CONTAINER_NAME: lend-site-lianlend
+#     DEPLOY_HOST_PORT: "3001"
+#     NEXT_PUBLIC_API_BASE_URL: "https://api.mylianpay.com/api/v1"
+#     NEXT_PUBLIC_API_REPORT_URL: "https://report.mylianpay.com/api/v1"
+#     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
+#     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
+#     NEXT_PUBLIC_QUERY_RETRY: "1"
+#   environment:
+#     name: production/lianlend-site
+#   rules: *deploy_tenant_rules_lianlend
 
 deploy:lend360:
   <<: *deploy_template
@@ -100,24 +119,22 @@ deploy:lend360:
     NEXT_PUBLIC_QUERY_RETRY: "1"
   environment:
     name: production/lend360-site
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^lend360-v\d+\.\d+\.\d+$/'
+  rules: *deploy_tenant_rules_lend360
 
-deploy:toplend:
-  <<: *deploy_template
-  variables:
-    IMAGE_NAME: lend-site-toplend
-    CONTAINER_NAME: lend-site-toplend
-    DEPLOY_HOST_PORT: "3003"
-    NEXT_PUBLIC_API_BASE_URL: "https://lendapitest.persiansys.ir/api/v1"
-    NEXT_PUBLIC_API_REPORT_URL: "https://lendreporttest.persiansys.ir/api/v1"
-    NEXT_PUBLIC_QUERY_GC_TIME: "300000"
-    NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
-    NEXT_PUBLIC_QUERY_RETRY: "1"
-  environment:
-    name: production/toplend-site
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^toplend-v\d+\.\d+\.\d+$/'
+# deploy:toplend:
+#   <<: *deploy_template
+#   variables:
+#     IMAGE_NAME: lend-site-toplend
+#     CONTAINER_NAME: lend-site-toplend
+#     DEPLOY_HOST_PORT: "3003"
+#     NEXT_PUBLIC_API_BASE_URL: "https://lendapitest.persiansys.ir/api/v1"
+#     NEXT_PUBLIC_API_REPORT_URL: "https://lendreporttest.persiansys.ir/api/v1"
+#     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
+#     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
+#     NEXT_PUBLIC_QUERY_RETRY: "1"
+#   environment:
+#     name: production/toplend-site
+#   rules: *deploy_tenant_rules_toplend
 
 deploy:lend365:
   <<: *deploy_template
@@ -134,5 +151,33 @@ deploy:lend365:
     name: production/lend365-site
   when: manual
   allow_failure: false
+  rules: *deploy_tenant_rules_lend365
+
+.deploy_karalend_compose: &deploy_karalend_compose
+  stage: deploy
+  tags:
+    - karalend
+  script:
+    - docker version
+    - docker compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml build
+    - docker compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml up -d
+    - docker image prune -f
+    - docker builder prune -f
+
+deploy:karalend:
+  <<: *deploy_karalend_compose
+  variables:
+    COMPOSE_PROJECT_NAME: lend-site-v2
+    PORT: "14000"
+    NEXT_PUBLIC_API_BASE_URL: "http://185.105.101.110:8080/api/v1"
+    NEXT_PUBLIC_API_REPORT_URL: "http://185.105.101.110:8081/api/v1"
+    NEXT_PUBLIC_AUTH_API_URL: "http://185.105.101.110:8083/api/v1"
+    NEXT_PUBLIC_QUERY_GC_TIME: "300000"
+    NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
+    NEXT_PUBLIC_QUERY_RETRY: "1"
+    TCI_LENDTECH_SECRET: "EgPmxDvkadEfFfMVy3n4bqnTnmpMEa_Xq8qee0Hup0k2hdm9IHz34j4QDcQN63in"
+    TCI_LENDTECH_LOGIN_URL: "https://my2-test.tci.ir/api/v1/auth/lendtech/login"
+  environment:
+    name: production/karalend-site
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^lend365-v\d+\.\d+\.\d+$/'
+    - if: '$CI_COMMIT_TAG =~ /^karalend-v\d+\.\d+\.\d+$/'
