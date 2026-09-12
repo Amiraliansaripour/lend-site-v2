@@ -355,17 +355,19 @@ export function AcceptPayment({
       }
 
       const accessTok = tokenResult.data.access_token;
-      const firstAmount = firstInstallment.amount;
-      const dueDate =
-        firstInstallment.dueDate?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+      const totalAmount =
+        loan?.totalInstallmentAmount ||
+        loan?.amount ||
+        installments.reduce((sum, item) => sum + item.amount, 0) ||
+        amount;
 
       const createResult = await createInstallment(
         {
           invoiceId: merchantOrderId,
           currency: 'IRR',
           accessToken: accessTok,
-          totalAmount: firstAmount,
-          installmentsCount: 1,
+          totalAmount,
+          installmentsCount: installments.length,
           customer: {
             nationalCode: nationalcode,
             firstName: firstName ?? '',
@@ -373,13 +375,11 @@ export function AcceptPayment({
             mobileNumber: mobile ?? '',
             customerId: nationalcode,
           },
-          installments: [
-            {
-              number: firstInstallment.loanIndex,
-              amount: firstAmount,
-              dueDate,
-            },
-          ],
+          installments: installments.map(item => ({
+            number: item.loanIndex,
+            amount: item.amount,
+            dueDate: item.dueDate?.slice(0, 10) || item.dueDate,
+          })),
         },
         userToken,
       );
