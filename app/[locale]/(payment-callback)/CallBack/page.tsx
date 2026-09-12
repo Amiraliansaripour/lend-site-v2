@@ -7,7 +7,8 @@ import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 
-const FAILED_INVOICE_NO = 'Unkhown1';
+/** Gateway failure sentinel (also accept legacy misspelling). */
+const FAILED_INVOICE_NOS = new Set(['Unknown1', 'Unkhown1']);
 /** Validation / credit-check payment (see pay-validation payType: 2). */
 const PAY_TYPE_VALIDATION = '2';
 /** First installment payment from /recipient (see pay-token payType: 4). */
@@ -23,7 +24,8 @@ export default function CallBackPage() {
   const refId = searchParams.get('refId') ?? undefined;
   const refCode = searchParams.get('refCode') ?? undefined;
 
-  const isSuccess = Boolean(InvoiceNo) && InvoiceNo !== FAILED_INVOICE_NO;
+  const isSuccess =
+    InvoiceNo !== undefined && InvoiceNo.length > 0 && !FAILED_INVOICE_NOS.has(InvoiceNo);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [pendingPayType, setPendingPayType] = useState<string | null>(null);
   const [recipientReturnUrl, setRecipientReturnUrl] = useState<string | null>(null);

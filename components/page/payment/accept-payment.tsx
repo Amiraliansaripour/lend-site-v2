@@ -368,6 +368,7 @@ export function AcceptPayment({
           accessToken: accessTok,
           totalAmount,
           installmentsCount: installments.length,
+          gstNumber: 1,
           customer: {
             nationalCode: nationalcode,
             firstName: firstName ?? '',

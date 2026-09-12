@@ -502,6 +502,7 @@ export type CreateInstallmentPayload = {
   installmentsCount: number;
   installments: CreateInstallmentItem[];
   accessToken: string;
+  gstNumber: number;
 };
 
 export type CreateInstallmentResult = {

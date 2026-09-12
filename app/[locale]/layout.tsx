@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 
 import { NextIntlClientProvider } from 'next-intl';
 import { dirFor } from '@/i18n/routing';
@@ -13,16 +12,6 @@ import '@/lib/env';
 import '@/app/globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import { PwaInstallPrompt } from '@/components/pwa-install-prompt';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
 
 export const metadata: Metadata = {
   title: 'Lend Site',
@@ -60,7 +49,7 @@ export default async function RootLayout({ params, children }: LayoutProps<'/[lo
 
   return (
     <html lang={locale} dir={dirFor(locale)}>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className='antialiased'>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaDeferredPrompt=e;});})();`,
