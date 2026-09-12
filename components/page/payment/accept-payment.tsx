@@ -25,7 +25,8 @@ import {
   getHasInstallmentPlans,
   getUserLoan,
   getPayToken,
-  payInvoice,
+  createInstallment,
+  payInstallment,
   INSTALLMENT_PAY_TYPE,
   type MerchantInfo,
   type ValidWallet,
@@ -353,24 +354,54 @@ export function AcceptPayment({
         return;
       }
 
-      const invoiceResult = await payInvoice(
+      const accessTok = tokenResult.data.access_token;
+      const firstAmount = firstInstallment.amount;
+      const dueDate =
+        firstInstallment.dueDate?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+
+      const createResult = await createInstallment(
         {
           invoiceId: merchantOrderId,
-          accessToken: tokenResult.data.access_token,
-          customerInfo: {
+          currency: 'IRR',
+          accessToken: accessTok,
+          totalAmount: firstAmount,
+          installmentsCount: 1,
+          customer: {
             nationalCode: nationalcode,
             firstName: firstName ?? '',
             lastName: lastName ?? '',
             mobileNumber: mobile ?? '',
             customerId: nationalcode,
           },
+          installments: [
+            {
+              number: firstInstallment.loanIndex,
+              amount: firstAmount,
+              dueDate,
+            },
+          ],
         },
         userToken,
       );
 
-      if (!invoiceResult?.isSuccess || !invoiceResult.data?.url) {
+      if (!createResult?.isSuccess || !createResult.data?.installmentId) {
         setStatus('error');
-        toast.error(invoiceResult?.message ?? 'خطا در ایجاد فاکتور پرداخت');
+        toast.error(createResult?.message ?? 'خطا در ایجاد اقساط پرداخت');
+        return;
+      }
+
+      const payResult = await payInstallment(
+        {
+          installmentId: createResult.data.installmentId,
+          number: firstInstallment.loanIndex,
+          accessToken: accessTok,
+        },
+        userToken,
+      );
+
+      if (!payResult?.isSuccess || !payResult.data?.url) {
+        setStatus('error');
+        toast.error(payResult?.message ?? 'خطا در شروع پرداخت قسط');
         return;
       }
 
@@ -381,7 +412,7 @@ export function AcceptPayment({
       // Allow /CallBack under dashboard-like auth checks if cookie is required elsewhere.
       accessToken.set(userToken);
 
-      window.location.href = invoiceResult.data.url;
+      window.location.href = payResult.data.url;
     } catch {
       setStatus('error');
       toast.error('خطا در شروع پرداخت قسط اول');

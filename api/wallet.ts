@@ -480,7 +480,7 @@ export const getPayToken = async (
   return data ?? null;
 };
 
-export type PayInvoiceCustomerInfo = {
+export type InstallmentCustomer = {
   nationalCode: string;
   firstName: string;
   lastName: string;
@@ -488,24 +488,59 @@ export type PayInvoiceCustomerInfo = {
   customerId: string;
 };
 
-export type PayInvoicePayload = {
+export type CreateInstallmentItem = {
+  number: number;
+  amount: number;
+  dueDate: string;
+};
+
+export type CreateInstallmentPayload = {
   invoiceId: string;
-  customerInfo: PayInvoiceCustomerInfo;
+  currency: string;
+  customer: InstallmentCustomer;
+  totalAmount: number;
+  installmentsCount: number;
+  installments: CreateInstallmentItem[];
   accessToken: string;
 };
 
-export type PayInvoiceResult = {
+export type CreateInstallmentResult = {
+  installmentId: string;
+};
+
+export const createInstallment = async (
+  payload: CreateInstallmentPayload,
+  userToken: string,
+): Promise<APIResult<CreateInstallmentResult> | null> => {
+  const { data } = await api.post<CreateInstallmentPayload, APIResult<CreateInstallmentResult>>(
+    '/Pay/create-installment',
+    payload,
+    {
+      skipAuth: true,
+      headers: { Authorization: `Bearer ${userToken}` },
+    },
+  );
+  return data ?? null;
+};
+
+export type PayInstallmentPayload = {
+  installmentId: string;
+  number: number;
+  accessToken: string;
+};
+
+export type PayInstallmentResult = {
   refId: string;
   expireAt: string;
   url: string;
 };
 
-export const payInvoice = async (
-  payload: PayInvoicePayload,
+export const payInstallment = async (
+  payload: PayInstallmentPayload,
   userToken: string,
-): Promise<APIResult<PayInvoiceResult> | null> => {
-  const { data } = await api.post<PayInvoicePayload, APIResult<PayInvoiceResult>>(
-    '/Pay/pay-invoice',
+): Promise<APIResult<PayInstallmentResult> | null> => {
+  const { data } = await api.post<PayInstallmentPayload, APIResult<PayInstallmentResult>>(
+    '/Pay/pay-installment',
     payload,
     {
       skipAuth: true,
