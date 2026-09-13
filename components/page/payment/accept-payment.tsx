@@ -396,7 +396,7 @@ export function AcceptPayment({
       const payResult = await payInstallment(
         {
           installmentId: createResult.data.installmentId,
-          number: INSTALLMENT_PAY_TYPE,
+          number: 1,
           accessToken: accessTok,
           payId,
         },
