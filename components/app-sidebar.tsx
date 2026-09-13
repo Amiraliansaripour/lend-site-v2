@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut } from 'lucide-react';
+import { ArrowRight, LogOut } from 'lucide-react';
 
 import {
   Sidebar,
@@ -17,6 +17,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
 import { BoomLogo } from './brand/boom-logo';
 import { DASHBOARD_NAV_ITEMS, isDashboardNavActive } from '@/components/dashboard-nav';
+import { CUSTOMER_CLUB_URL } from '@/components/customer-club-back-button';
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -71,6 +72,14 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <a href={CUSTOMER_CLUB_URL} rel='noopener noreferrer' onClick={closeMobile}>
+                <ArrowRight />
+                <span>بازگشت به باشگاه مشتریان</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => dispatchEvent(AUTH_LOGOUT_EVENT)}

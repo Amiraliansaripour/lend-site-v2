@@ -124,7 +124,7 @@ export function Header() {
             </nav>
 
             <div className='hidden lg:flex items-center gap-2'>
-              {/* <MokhaberatButton /> */}
+              <MokhaberatButton />
               <a
                 href='https://tcclub.ir/app'
                 target='_blank'
@@ -154,13 +154,13 @@ export function Header() {
 
             {/* Mobile Auth Button */}
             <div className='lg:hidden flex items-center gap-1'>
-              {/* <MokhaberatButton
+              <MokhaberatButton
                 compact
                 className={cn(
                   'border-0 px-2 py-1 text-[11px] shadow-none',
                   transparent && 'text-white border-white/40',
                 )}
-              /> */}
+              />
               <a
                 href='https://tcclub.ir/app'
                 target='_blank'

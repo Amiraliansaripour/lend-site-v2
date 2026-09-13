@@ -3,14 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowRight } from 'lucide-react';
 
 import { RecipientLogin } from '@/components/page/payment/recipient-login';
 import { AcceptPayment } from '@/components/page/payment/accept-payment';
 import { getValidWallets, type ValidWallet } from '@/api/wallet';
-import { Button } from '@/components/ui/button';
-
-const CUSTOMER_CLUB_URL = 'https://tcclub.ir/app';
+import { CustomerClubBackButton } from '@/components/customer-club-back-button';
 
 const SESSION_SECONDS = 300;
 
@@ -102,12 +99,7 @@ export default function RecipientPage() {
     return (
       <div className='flex min-h-[70vh] flex-col items-center justify-center gap-4 p-6'>
         <p className='text-muted-foreground text-center'>اطلاعات پرداخت ناقص است.</p>
-        <Button asChild variant='outline'>
-          <a href={CUSTOMER_CLUB_URL}>
-            <ArrowRight className='size-4 me-1' />
-            بازگشت به باشگاه مشتریان
-          </a>
-        </Button>
+        <CustomerClubBackButton />
       </div>
     );
   }
@@ -137,12 +129,7 @@ export default function RecipientPage() {
           rateValue={rateValue}
         />
       )}
-      <Button asChild variant='outline'>
-        <a href={CUSTOMER_CLUB_URL}>
-          <ArrowRight className='size-4 me-1' />
-          بازگشت به باشگاه مشتریان
-        </a>
-      </Button>
+      <CustomerClubBackButton />
     </div>
   );
 }
