@@ -61,7 +61,7 @@ export type SiteTemplateImages = {
 };
 
 export const getSiteTemplateImages = async () => {
-  const { data, resp } = await api.get<APIResult<SiteTemplateImages>>('/SiteTemplate/GetImage', {
+  const { data, resp } = await api.get<APIResult<SiteTemplateImages>>('/SiteTemplatee/GetImagee', {
     skipAuth: true,
     suppressErrorToast: true,
   });
