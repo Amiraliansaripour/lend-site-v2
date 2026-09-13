@@ -3,6 +3,7 @@ import { accessToken } from '@/lib/auth/client/cookies';
 import { isMappedBaseURL, BASE_URLS, type BaseURL } from '@/lib/api/constants';
 import { toast } from 'sonner';
 import { clearUserInfo } from '@/lib/auth/client/user-info';
+import { captureHttpError } from '@/lib/sentry';
 
 import type { OverrideExtend, StrictOmit } from '@/types/utils';
 import type { RequestInit } from 'next/dist/server/web/spec-extension/request';
@@ -84,10 +85,24 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
       data = JSON.parse(text) as D;
     } catch {
       if (!resp.ok) {
+        captureHttpError({
+          status: resp.status,
+          method: opts.method,
+          url: _url,
+        });
         toast.error(`Request failed with status ${resp.status}`);
       }
       return { data, resp };
     }
+  }
+
+  if (!resp.ok) {
+    captureHttpError({
+      status: resp.status,
+      method: opts.method,
+      url: _url,
+      message: (data as APIResult<D>)?.message,
+    });
   }
 
   if (!resp.ok && !suppressErrorToast) {

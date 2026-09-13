@@ -5,6 +5,7 @@ import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 
 import { log } from '@/lib/log';
+import { captureHttpError, shouldCaptureHttpStatus } from '@/lib/sentry';
 
 declare module '@tanstack/react-query' {
   interface Register {
@@ -38,6 +39,16 @@ export const queryClient = new QueryClient({
         log.error(error);
 
         if (error instanceof AxiosError) {
+          const status = error.response?.status;
+          if (status != null && shouldCaptureHttpStatus(status)) {
+            captureHttpError({
+              status,
+              method: error.config?.method,
+              url: error.config?.url ?? 'unknown',
+              message: error.response?.data?.message || error.message,
+            });
+          }
+
           toast.error(error.response?.data?.message || error.message);
           return;
         }
@@ -55,6 +66,16 @@ export const queryClient = new QueryClient({
 
         if (uncaughtException) {
           if (error instanceof AxiosError) {
+            const status = error.response?.status;
+            if (status != null && shouldCaptureHttpStatus(status)) {
+              captureHttpError({
+                status,
+                method: error.config?.method,
+                url: error.config?.url ?? 'unknown',
+                message: error.response?.data?.message || error.message,
+              });
+            }
+
             toast.error(error.response?.data?.message || error.message);
             return;
           }
