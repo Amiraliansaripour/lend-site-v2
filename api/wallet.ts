@@ -463,6 +463,7 @@ export type PayTokenResult = {
   refresh_token?: string;
   refresh_expires_in?: number;
   token_type?: string;
+  payId: string;
 };
 
 export const getPayToken = async (
@@ -503,6 +504,7 @@ export type CreateInstallmentPayload = {
   installments: CreateInstallmentItem[];
   accessToken: string;
   gstNumber: number;
+  payId: string;
 };
 
 export type CreateInstallmentResult = {
@@ -526,8 +528,10 @@ export const createInstallment = async (
 
 export type PayInstallmentPayload = {
   installmentId: string;
+  /** Same as payType for installment payment (4). */
   number: number;
   accessToken: string;
+  payId: string;
 };
 
 export type PayInstallmentResult = {

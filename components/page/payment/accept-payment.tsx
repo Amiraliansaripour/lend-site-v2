@@ -348,13 +348,14 @@ export function AcceptPayment({
         userToken,
       );
 
-      if (!tokenResult?.isSuccess || !tokenResult.data?.access_token) {
+      if (!tokenResult?.isSuccess || !tokenResult.data?.access_token || !tokenResult.data?.payId) {
         setStatus('error');
         toast.error(tokenResult?.message ?? 'خطا در دریافت توکن پرداخت');
         return;
       }
 
       const accessTok = tokenResult.data.access_token;
+      const payId = tokenResult.data.payId;
       const totalAmount =
         loan?.totalInstallmentAmount ||
         loan?.amount ||
@@ -366,6 +367,7 @@ export function AcceptPayment({
           invoiceId: merchantOrderId,
           currency: 'IRR',
           accessToken: accessTok,
+          payId,
           totalAmount,
           installmentsCount: installments.length,
           gstNumber: 1,
@@ -394,8 +396,9 @@ export function AcceptPayment({
       const payResult = await payInstallment(
         {
           installmentId: createResult.data.installmentId,
-          number: firstInstallment.loanIndex,
+          number: INSTALLMENT_PAY_TYPE,
           accessToken: accessTok,
+          payId,
         },
         userToken,
       );
