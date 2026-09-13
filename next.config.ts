@@ -1,6 +1,7 @@
 import { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import withPWAInit from '@ducanh2912/next-pwa';
+import { withSentryConfig } from '@sentry/nextjs/config';
 
 const withPWA = withPWAInit({
   dest: 'public',
@@ -36,4 +37,11 @@ const nextConfig: NextConfig = {
 
 const withNextIntl = createNextIntlPlugin();
 
-export default withPWA(withNextIntl(nextConfig));
+export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
+  silent: true,
+  disableLogger: true,
+  automaticVercelMonitors: false,
+  sourcemaps: {
+    disable: true,
+  },
+});

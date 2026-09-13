@@ -10,6 +10,8 @@ const envSchema = z.looseObject({
   NEXT_PUBLIC_QUERY_GC_TIME: z.coerce.number().default(0),
   NEXT_PUBLIC_QUERY_STALE_TIME: z.coerce.number().default(0),
   NEXT_PUBLIC_QUERY_RETRY: z.coerce.number().default(1),
+  NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+  NEXT_PUBLIC_SENTRY_ENVIRONMENT: z.string().optional(),
 });
 
 const validateEnv = () => {

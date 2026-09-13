@@ -31,6 +31,8 @@ variables:
         --build-arg NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
         --build-arg NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
         --build-arg NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
+        --build-arg NEXT_PUBLIC_SENTRY_DSN="$NEXT_PUBLIC_SENTRY_DSN" \
+        --build-arg NEXT_PUBLIC_SENTRY_ENVIRONMENT="$NEXT_PUBLIC_SENTRY_ENVIRONMENT" \
         -t "$IMAGE_NAME:latest" \
         .
     - docker stop "$CONTAINER_NAME" || true
@@ -48,6 +50,8 @@ variables:
         -e NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
         -e NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
         -e NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
+        -e NEXT_PUBLIC_SENTRY_DSN="$NEXT_PUBLIC_SENTRY_DSN" \
+        -e NEXT_PUBLIC_SENTRY_ENVIRONMENT="$NEXT_PUBLIC_SENTRY_ENVIRONMENT" \
         "$IMAGE_NAME:latest"
     - docker image prune -f
     - docker builder prune -f
@@ -64,6 +68,8 @@ deploy:default-main:
     NEXT_PUBLIC_QUERY_GC_TIME: "0"
     NEXT_PUBLIC_QUERY_STALE_TIME: "0"
     NEXT_PUBLIC_QUERY_RETRY: "1"
+    NEXT_PUBLIC_SENTRY_DSN: "https://88688f168521bbcec92370126d2f6130@sentry.psaapp.ir/23"
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT: "test"
   environment:
     name: production
     url: https://lend.persiansys.ir
@@ -117,6 +123,8 @@ deploy:lend360:
     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
     NEXT_PUBLIC_QUERY_RETRY: "1"
+    NEXT_PUBLIC_SENTRY_DSN: "https://59e335770ace3440402e2b43e483719f@sentry.psaapp.ir/21"
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT: "lend360"
   environment:
     name: production/lend360-site
   rules: *deploy_tenant_rules_lend360
@@ -147,6 +155,8 @@ deploy:lend365:
     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
     NEXT_PUBLIC_QUERY_RETRY: "1"
+    NEXT_PUBLIC_SENTRY_DSN: "https://447451170de0697fb9d34a4e827187b7@sentry.psaapp.ir/22"
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT: "lend365"
   environment:
     name: production/lend365-site
   when: manual
@@ -177,6 +187,8 @@ deploy:karalend:
     NEXT_PUBLIC_QUERY_RETRY: "1"
     TCI_LENDTECH_SECRET: "EgPmxDvkadEfFfMVy3n4bqnTnmpMEa_Xq8qee0Hup0k2hdm9IHz34j4QDcQN63in"
     TCI_LENDTECH_LOGIN_URL: "https://my2-test.tci.ir/api/v1/auth/lendtech/login"
+    NEXT_PUBLIC_SENTRY_DSN: "https://18bb45c085d67931c25dc69bbfa2ecf4@sentry.psaapp.ir/20"
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT: "karalend"
   environment:
     name: production/karalend-site
   rules:
