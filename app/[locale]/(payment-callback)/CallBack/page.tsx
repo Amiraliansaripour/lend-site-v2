@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 const FAILED_INVOICE_NOS = new Set(['Unknown1', 'Unkhown1']);
 /** Validation / credit-check payment (see pay-validation payType: 2). */
 const PAY_TYPE_VALIDATION = '2';
-/** First installment payment from /recipient (see pay-token payType: 4). */
-const PAY_TYPE_INSTALLMENT = '4';
+/** First installment payment from /recipient (see pay-token payType: 1). */
+const PAY_TYPE_INSTALLMENT = '1';
 
 const RECIPIENT_RETURN_URL_KEY = 'recipientReturnUrl';
 const INSTALLMENT_REDIRECT_SECONDS = 4;

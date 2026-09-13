@@ -448,8 +448,8 @@ export const getUserLoan = async (userToken: string): Promise<PaymentLoanHeader[
   return [];
 };
 
-/** Installment first-payment gateway (payType: 4) */
-export const INSTALLMENT_PAY_TYPE = 4;
+/** Installment first-payment gateway (payType: 1) */
+export const INSTALLMENT_PAY_TYPE = 1;
 
 export type PayTokenPayload = {
   payType: number;
@@ -528,7 +528,7 @@ export const createInstallment = async (
 
 export type PayInstallmentPayload = {
   installmentId: string;
-  /** Same as payType for installment payment (4). */
+  /** Same as payType for installment payment (1). */
   number: number;
   accessToken: string;
   payId: string;
