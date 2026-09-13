@@ -22,10 +22,10 @@ export function DashboardBottomNav() {
   return (
     <nav
       aria-label='منوی داشبورد'
-      className='fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-white/95 backdrop-blur-md md:hidden'
-      style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      className='fixed inset-x-3 bottom-3 z-40 overflow-hidden rounded-[24px] border border-border/60 bg-background/90 shadow-[0_12px_40px_-18px_hsl(var(--foreground)/0.45)] backdrop-blur-2xl md:hidden'
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className='mx-auto flex h-14 max-w-lg items-stretch justify-between px-1'>
+      <ul className='mx-auto flex h-[62px] max-w-lg items-stretch gap-1 px-1.5'>
         {bottomItems.map(item => {
           const isActive = isDashboardNavActive(pathname, item.url);
           const Icon = item.icon;
@@ -36,18 +36,36 @@ export function DashboardBottomNav() {
                 href={item.url}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'relative flex w-full flex-col items-center justify-center gap-0.5 px-1 text-[11px] transition-colors',
-                  isActive ? 'font-bold text-brand' : 'font-medium text-muted-foreground',
+                  'group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-[18px] px-1 text-[11px] transition-all duration-300',
+                  isActive
+                    ? 'font-semibold text-brand'
+                    : 'font-medium text-muted-foreground hover:text-foreground',
                 )}
               >
-                {isActive && (
-                  <span
-                    aria-hidden
-                    className='absolute inset-x-3 top-0 h-[3px] rounded-b-full bg-brand'
+                <span
+                  className={cn(
+                    'relative flex size-9 items-center justify-center rounded-[15px] transition-all duration-300',
+                    isActive
+                      ? 'before:pointer-events-none before:absolute before:-inset-x-4 before:-bottom-3 before:-top-6 before:z-0 before:bg-[radial-gradient(ellipse_55%_65%_at_50%_0%,hsl(var(--brand)/0.28)_0%,hsl(var(--brand)/0.12)_38%,transparent_72%)] before:blur-[3px]'
+                      : 'group-hover:bg-muted/60',
+                  )}
+                >
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className='absolute -top-[5px] left-1/2 z-10 h-[3px] w-7 -translate-x-1/2 rounded-full bg-brand shadow-[0_0_7px_2px_hsl(var(--brand)/0.65),0_0_18px_5px_hsl(var(--brand)/0.28)]'
+                    />
+                  )}
+
+                  <Icon
+                    className='relative z-[1] size-[19px] transition-all duration-300 group-active:scale-95'
+                    strokeWidth={isActive ? 2.35 : 1.75}
                   />
-                )}
-                <Icon className='size-5' strokeWidth={isActive ? 2.25 : 1.75} />
-                <span className='truncate'>{item.shortTitle ?? item.title}</span>
+                </span>
+
+                <span className='relative z-[1] truncate leading-4'>
+                  {item.shortTitle ?? item.title}
+                </span>
               </Link>
             </li>
           );
@@ -60,18 +78,34 @@ export function DashboardBottomNav() {
             aria-label='باز کردن منو'
             aria-expanded={openMobile}
             className={cn(
-              'relative flex w-full flex-col items-center justify-center gap-0.5 px-1 text-[11px] transition-colors',
-              openMobile ? 'font-bold text-brand' : 'font-medium text-muted-foreground',
+              'group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-[18px] px-1 text-[11px] transition-all duration-300',
+              openMobile
+                ? 'font-semibold text-brand'
+                : 'font-medium text-muted-foreground hover:text-foreground',
             )}
           >
-            {openMobile && (
-              <span
-                aria-hidden
-                className='absolute inset-x-3 top-0 h-[3px] rounded-b-full bg-brand'
+            <span
+              className={cn(
+                'relative flex size-9 items-center justify-center rounded-[15px] transition-all duration-300',
+                openMobile
+                  ? 'before:pointer-events-none before:absolute before:-inset-x-4 before:-bottom-3 before:-top-6 before:z-0 before:bg-[radial-gradient(ellipse_55%_65%_at_50%_0%,hsl(var(--brand)/0.28)_0%,hsl(var(--brand)/0.12)_38%,transparent_72%)] before:blur-[3px]'
+                  : 'group-hover:bg-muted/60',
+              )}
+            >
+              {openMobile && (
+                <span
+                  aria-hidden
+                  className='absolute -top-[5px] left-1/2 z-10 h-[3px] w-7 -translate-x-1/2 rounded-full bg-brand shadow-[0_0_7px_2px_hsl(var(--brand)/0.65),0_0_18px_5px_hsl(var(--brand)/0.28)]'
+                />
+              )}
+
+              <Menu
+                className='relative z-[1] size-[19px] transition-all duration-300 group-active:scale-95'
+                strokeWidth={openMobile ? 2.35 : 1.75}
               />
-            )}
-            <Menu className='size-5' strokeWidth={openMobile ? 2.25 : 1.75} />
-            <span>منو</span>
+            </span>
+
+            <span className='relative z-[1] leading-4'>منو</span>
           </button>
         </li>
       </ul>
