@@ -1,16 +1,6 @@
 'use client';
 
-import {
-  Store,
-  User,
-  Wallet,
-  FileText,
-  MessagesSquare,
-  CalendarClock,
-  CircleQuestionMark,
-  LogOut,
-  CreditCard,
-} from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 import {
   Sidebar,
@@ -21,28 +11,20 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarGroupContent,
+  useSidebar,
 } from '@/components/ui/sidebar';
-import Link from 'next/link';
+import { Link, usePathname } from '@/i18n/navigation';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
-import { useSiteTemplate } from '@/providers/site-template';
-import { TOTAL_UNREAD } from '@/components/page/messages/messages-page-content';
 import { BoomLogo } from './brand/boom-logo';
-
-const items = [
-  { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet, badge: 0 },
-  // { title: 'سبد خرید', url: '/cart', icon: ShoppingBasket, badge: 0 },
-  { title: 'درخواست های من', url: '/requests', icon: FileText, badge: 0 },
-  { title: 'اقساط من', url: '/installments', icon: CalendarClock, badge: 0 },
-  { title: 'اطلاعات من', url: '/profile', icon: User, badge: 0 },
-  { title: 'کارت‌های بانکی', url: '/cards', icon: CreditCard, badge: 0 },
-  { title: 'راهنما و پشتیبانی', url: '/help', icon: CircleQuestionMark, badge: 0 },
-  { title: 'فروشگاه‌ها', url: '/shops', icon: Store, badge: 0 },
-  { title: 'صندوق پیام', url: '/messages', icon: MessagesSquare, badge: TOTAL_UNREAD },
-];
+import { DASHBOARD_NAV_ITEMS, isDashboardNavActive } from '@/components/dashboard-nav';
 
 export function AppSidebar() {
-  const { brandName, getImageUrl } = useSiteTemplate();
-  const logoUrl = getImageUrl('logo');
+  const pathname = usePathname();
+  const { setOpenMobile, isMobile } = useSidebar();
+
+  const closeMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <Sidebar>
@@ -50,29 +32,39 @@ export function AppSidebar() {
         <SidebarGroup>
           <Link
             href='/'
-            className='flex justify-center items-center mb-3 border-b border-gray-200 w-full py-4'
+            onClick={closeMobile}
+            className='mb-3 flex w-full items-center justify-center border-b border-gray-200 py-4'
           >
             <BoomLogo markClassName='size-9' wordmarkClassName='text-xl' />
           </Link>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map(item => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url} className='flex items-center justify-between w-full'>
-                      <span className='flex items-center gap-2'>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </span>
-                      {item.badge > 0 && (
-                        <span className='inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold'>
-                          {item.badge}
+              {DASHBOARD_NAV_ITEMS.map(item => {
+                const isActive = isDashboardNavActive(pathname, item.url);
+                const badge = item.badge ?? 0;
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link
+                        href={item.url}
+                        onClick={closeMobile}
+                        className='flex w-full items-center justify-between'
+                      >
+                        <span className='flex items-center gap-2'>
+                          <item.icon />
+                          <span>{item.title}</span>
                         </span>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                        {badge > 0 && (
+                          <span className='inline-flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground'>
+                            {badge}
+                          </span>
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

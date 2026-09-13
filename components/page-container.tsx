@@ -23,23 +23,22 @@ export const PageContainer = ({ children, breadcrumbs = [] }: PageContainerProps
     <>
       <header className='flex h-16 shrink-0 items-center gap-2'>
         <div className='flex items-center gap-2 px-4'>
-          <SidebarTrigger className='-ml-1' />
+          <SidebarTrigger className='-ml-1 hidden md:inline-flex' />
           {breadcrumbs.length > 0 && (
             <>
-              <Separator orientation='vertical' className='mr-2 data-[orientation=vertical]:h-4' />
+              <Separator
+                orientation='vertical'
+                className='mr-2 hidden data-[orientation=vertical]:h-4 md:block'
+              />
               <Breadcrumb>
                 <BreadcrumbList>
-                  {breadcrumbs.map(({ label, href = '#' }, index) => {
+                  {breadcrumbs.map(({ label }, index) => {
                     const isLast = index === breadcrumbs.length - 1;
 
                     return (
                       <Fragment key={label}>
-                        <BreadcrumbItem className='hidden md:block'>
-                          {isLast ? (
-                            <BreadcrumbPage>{label}</BreadcrumbPage>
-                          ) : (
-                            <BreadcrumbPage>{label}</BreadcrumbPage>
-                          )}
+                        <BreadcrumbItem className={isLast ? undefined : 'hidden md:block'}>
+                          <BreadcrumbPage>{label}</BreadcrumbPage>
                         </BreadcrumbItem>
 
                         {!isLast && (
