@@ -1,17 +1,38 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getWalletInfo, getUserTransactions } from '@/api/wallet';
+import {
+  getWalletDakhl,
+  getWalletInfo,
+  getUserTransactions,
+  mergeDakhlBalance,
+} from '@/api/wallet';
+import { accessToken } from '@/lib/auth/client/cookies';
 
 export const walletKeys = {
   all: ['wallet'] as const,
-  info: () => [...walletKeys.all, 'info'] as const,
+  info: (nationalCode?: string) => [...walletKeys.all, 'info', nationalCode ?? ''] as const,
   transactions: () => [...walletKeys.all, 'transactions'] as const,
 };
 
-export const useWalletInfo = () => {
+export const useWalletInfo = (nationalCode?: string) => {
   return useQuery({
-    queryKey: walletKeys.info(),
-    queryFn: getWalletInfo,
+    queryKey: walletKeys.info(nationalCode),
+    queryFn: async () => {
+      const walletInfo = await getWalletInfo();
+      const token = accessToken.get();
+      const code = nationalCode?.trim() || walletInfo?.nationalCode?.trim() || '';
+
+      if (!code || !token) {
+        return walletInfo;
+      }
+
+      try {
+        const dakhl = await getWalletDakhl({ nationalCode: code, accessToken: token });
+        return mergeDakhlBalance(walletInfo, dakhl?.balance ?? 0, code);
+      } catch {
+        return walletInfo;
+      }
+    },
   });
 };
 

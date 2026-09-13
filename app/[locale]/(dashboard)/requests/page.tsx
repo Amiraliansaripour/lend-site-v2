@@ -6,13 +6,20 @@ import { Breadcrumbs, PageContainer } from '@/components/page-container';
 import { PageContent } from '@/components/page-content';
 import { RequestsPageContent, RequestsCardsSkeleton } from '@/components/page/requests';
 import { useUserRequests } from '@/queries/request';
+import { useUser } from '@/queries/users';
 import { useWalletInfo } from '@/queries/wallet';
 import { getUserId } from '@/lib/auth/client/user-info';
 
 function RequestsContent() {
   const userId = getUserId();
 
-  const { data: walletInfo, isLoading: isLoadingWallet, refetch: refetchWallet } = useWalletInfo();
+  const { data: user } = useUser(userId || '');
+  const nationalCode = user?.nationalCode || user?.personInfo?.nationalCode || '';
+  const {
+    data: walletInfo,
+    isLoading: isLoadingWallet,
+    refetch: refetchWallet,
+  } = useWalletInfo(nationalCode);
   const { data: requests, isLoading: isLoadingRequests } = useUserRequests(userId || '');
 
   const handleWalletUpdate = () => {

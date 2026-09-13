@@ -75,6 +75,77 @@ export const getWalletInfo = async (): Promise<WalletInfo | null> => {
   return null;
 };
 
+export type WalletDakhlPayload = {
+  nationalCode: string;
+  accessToken: string;
+};
+
+export type WalletDakhlData = {
+  balance: number;
+  blockedBalance: number;
+  currency: string;
+};
+
+export const getWalletDakhl = async (
+  payload: WalletDakhlPayload,
+): Promise<WalletDakhlData | null> => {
+  const { data } = await api.post<WalletDakhlPayload, APIResult<WalletDakhlData>>(
+    '/Pay/get-wallet-dakhl',
+    payload,
+    { suppressErrorToast: true },
+  );
+
+  if (data?.isSuccess && data.data) {
+    return data.data;
+  }
+
+  return null;
+};
+
+const walletInfoFromDakhl = (nationalCode: string, balance: number): WalletInfo => ({
+  nationalCode,
+  creationTime: '',
+  cash: balance,
+  firstName: '',
+  lastName: '',
+  credit: 0,
+  id: '',
+  cachRemain: balance,
+  cachId: null,
+  cachMinDateCharg: null,
+  cachMaxDateCharg: null,
+  sumCachCharg: null,
+  cachMinDateBuy: null,
+  cachMaxDateBuy: null,
+  sumCachBuy: null,
+  creditMinDateCharg: null,
+  creditMaxDateCharg: null,
+  sumCreditCharg: null,
+  creditMinDateBuy: null,
+  creditMaxDateBuy: null,
+  sumCreditBuy: null,
+});
+
+/** Merges dakhl (درگاه) cash balance into wallet info for display. */
+export const mergeDakhlBalance = (
+  walletInfo: WalletInfo | null,
+  dakhlBalance: number,
+  nationalCode?: string,
+): WalletInfo | null => {
+  if (dakhlBalance === 0) return walletInfo;
+
+  if (!walletInfo) {
+    if (!nationalCode) return null;
+    return walletInfoFromDakhl(nationalCode, dakhlBalance);
+  }
+
+  return {
+    ...walletInfo,
+    cash: (walletInfo.cash ?? 0) + dakhlBalance,
+    cachRemain: (walletInfo.cachRemain ?? 0) + dakhlBalance,
+  };
+};
+
 export const getUserTransactions = async (): Promise<WalletTransaction[]> => {
   const { data } = await api.get<APIResult<WalletTransaction[]>>('/WalletReport/UserTransaction', {
     baseURL: 'REPORT',
