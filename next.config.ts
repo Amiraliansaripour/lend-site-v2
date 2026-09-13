@@ -41,7 +41,8 @@ export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
   silent: true,
   disableLogger: true,
   automaticVercelMonitors: false,
-  tunnelRoute: '/monitoring',
+  // App Router handler lives at app/monitoring/route.ts so it is in the
+  // standalone build. tunnelRoute rewrites are not emitted into .next/server/app.
   sourcemaps: {
     disable: true,
   },

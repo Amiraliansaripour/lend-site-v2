@@ -7,16 +7,24 @@ import { routing, isLocale } from '@/i18n/routing';
 // * constants
 import { ACCESS_TOKEN_KEY } from '@/lib/auth/constants/cookies';
 
+const SENTRY_TUNNEL_PATH = '/monitoring';
+
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Same-origin Sentry tunnel must not be locale-prefixed (HTTPS page → HTTP ingest).
+  if (pathname === SENTRY_TUNNEL_PATH || pathname.startsWith(`${SENTRY_TUNNEL_PATH}/`)) {
+    return NextResponse.next();
+  }
+
   const i18nProxy = createMiddleware(routing);
   const response = i18nProxy(request);
 
-  const pathname = request.nextUrl.pathname;
   const [maybeLocale, ...pathSegments] = pathname.split('/').filter(Boolean);
 
   if (isLocale(maybeLocale)) {
-    const pathname = `/${pathSegments.join('/')}`;
-    const isDashboard = pathname.startsWith('/dashboard');
+    const localePath = `/${pathSegments.join('/')}`;
+    const isDashboard = localePath.startsWith('/dashboard');
 
     if (!isDashboard) return response;
 
@@ -31,8 +39,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Match all pathnames except for
-  // - … if they start with `/api`, `/trpc`, `/_next` or `/_vercel`
-  // - … the ones containing a dot (e.g. `favicon.ico`)
-  matcher: '/((?!api|trpc|_next|_vercel|.*\\..*).*)',
+  // Keep next-intl off the Sentry tunnel. Next 16 runs this file as proxy.ts.
+  matcher: '/((?!api|trpc|_next|_vercel|monitoring|.*\\..*).*)',
 };
