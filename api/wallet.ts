@@ -80,27 +80,32 @@ export type WalletDakhlPayload = {
   accessToken: string;
 };
 
-export type WalletDakhlData = {
+export type WalletDakhlItem = {
   balance: number;
   blockedBalance: number;
   currency: string;
 };
 
-export const getWalletDakhl = async (
-  payload: WalletDakhlPayload,
-): Promise<WalletDakhlData | null> => {
-  const { data } = await api.post<WalletDakhlPayload, APIResult<WalletDakhlData>>(
+export const getWalletDakhl = async (payload: WalletDakhlPayload): Promise<WalletDakhlItem[]> => {
+  const { data } = await api.post<WalletDakhlPayload, APIResult<WalletDakhlItem[]>>(
     '/Pay/get-wallet-dakhl',
     payload,
     { suppressErrorToast: true },
   );
 
-  if (data?.isSuccess && data.data) {
+  if (data?.isSuccess && Array.isArray(data.data)) {
     return data.data;
   }
 
-  return null;
+  return [];
 };
+
+/** Sums IRR balances from dakhl wallet items (ignores IRRCRT / other currencies). */
+export const sumDakhlIrrBalance = (items: WalletDakhlItem[]): number =>
+  items.reduce((total, item) => {
+    if (item.currency !== 'IRR') return total;
+    return total + (item.balance ?? 0);
+  }, 0);
 
 const walletInfoFromDakhl = (nationalCode: string, balance: number): WalletInfo => ({
   nationalCode,
@@ -566,12 +571,12 @@ export const getDakhlWalletBalance = async (nationalCode: string): Promise<numbe
     return 0;
   }
 
-  const dakhl = await getWalletDakhl({
+  const dakhlItems = await getWalletDakhl({
     nationalCode,
     accessToken: payAccessToken,
   });
 
-  return dakhl?.balance ?? 0;
+  return sumDakhlIrrBalance(dakhlItems);
 };
 
 export type InstallmentCustomer = {
