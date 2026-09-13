@@ -41,6 +41,7 @@ variables:
       docker run -d \
         --name "$CONTAINER_NAME" \
         --restart always \
+        --add-host sentry.psaapp.ir:192.168.20.70 \
         -p "${DEPLOY_HOST_PORT}:${CONTAINER_PORT}" \
         -e NODE_ENV=production \
         -e PORT=3000 \
@@ -68,7 +69,7 @@ deploy:default-main:
     NEXT_PUBLIC_QUERY_GC_TIME: "0"
     NEXT_PUBLIC_QUERY_STALE_TIME: "0"
     NEXT_PUBLIC_QUERY_RETRY: "1"
-    NEXT_PUBLIC_SENTRY_DSN: "https://88688f168521bbcec92370126d2f6130@sentry.psaapp.ir/23"
+    NEXT_PUBLIC_SENTRY_DSN: "http://88688f168521bbcec92370126d2f6130@sentry.psaapp.ir/23"
     NEXT_PUBLIC_SENTRY_ENVIRONMENT: "test"
   environment:
     name: production
@@ -123,7 +124,7 @@ deploy:lend360:
     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
     NEXT_PUBLIC_QUERY_RETRY: "1"
-    NEXT_PUBLIC_SENTRY_DSN: "https://59e335770ace3440402e2b43e483719f@sentry.psaapp.ir/21"
+    NEXT_PUBLIC_SENTRY_DSN: "http://59e335770ace3440402e2b43e483719f@sentry.psaapp.ir/21"
     NEXT_PUBLIC_SENTRY_ENVIRONMENT: "lend360"
   environment:
     name: production/lend360-site
@@ -155,7 +156,7 @@ deploy:lend365:
     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
     NEXT_PUBLIC_QUERY_RETRY: "1"
-    NEXT_PUBLIC_SENTRY_DSN: "https://447451170de0697fb9d34a4e827187b7@sentry.psaapp.ir/22"
+    NEXT_PUBLIC_SENTRY_DSN: "http://447451170de0697fb9d34a4e827187b7@sentry.psaapp.ir/22"
     NEXT_PUBLIC_SENTRY_ENVIRONMENT: "lend365"
   environment:
     name: production/lend365-site
@@ -187,7 +188,7 @@ deploy:karalend:
     NEXT_PUBLIC_QUERY_RETRY: "1"
     TCI_LENDTECH_SECRET: "EgPmxDvkadEfFfMVy3n4bqnTnmpMEa_Xq8qee0Hup0k2hdm9IHz34j4QDcQN63in"
     TCI_LENDTECH_LOGIN_URL: "https://my2-test.tci.ir/api/v1/auth/lendtech/login"
-    NEXT_PUBLIC_SENTRY_DSN: "https://18bb45c085d67931c25dc69bbfa2ecf4@sentry.psaapp.ir/20"
+    NEXT_PUBLIC_SENTRY_DSN: "http://18bb45c085d67931c25dc69bbfa2ecf4@sentry.psaapp.ir/20"
     NEXT_PUBLIC_SENTRY_ENVIRONMENT: "karalend"
   environment:
     name: production/karalend-site

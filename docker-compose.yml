@@ -29,4 +29,6 @@ services:
       NEXT_PUBLIC_QUERY_RETRY: ${NEXT_PUBLIC_QUERY_RETRY:-1}
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
       NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${NEXT_PUBLIC_SENTRY_ENVIRONMENT:-}
+    extra_hosts:
+      - "sentry.psaapp.ir:192.168.20.70"
     restart: unless-stopped

@@ -41,6 +41,7 @@ export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
   silent: true,
   disableLogger: true,
   automaticVercelMonitors: false,
+  tunnelRoute: '/monitoring',
   sourcemaps: {
     disable: true,
   },
