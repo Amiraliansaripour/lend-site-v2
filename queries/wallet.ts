@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 
 import {
-  getWalletDakhl,
+  getDakhlWalletBalance,
   getWalletInfo,
   getUserTransactions,
   mergeDakhlBalance,
 } from '@/api/wallet';
-import { accessToken } from '@/lib/auth/client/cookies';
 
 export const walletKeys = {
   all: ['wallet'] as const,
@@ -19,16 +18,15 @@ export const useWalletInfo = (nationalCode?: string) => {
     queryKey: walletKeys.info(nationalCode),
     queryFn: async () => {
       const walletInfo = await getWalletInfo();
-      const token = accessToken.get();
       const code = nationalCode?.trim() || walletInfo?.nationalCode?.trim() || '';
 
-      if (!code || !token) {
+      if (!code) {
         return walletInfo;
       }
 
       try {
-        const dakhl = await getWalletDakhl({ nationalCode: code, accessToken: token });
-        return mergeDakhlBalance(walletInfo, dakhl?.balance ?? 0, code);
+        const dakhlBalance = await getDakhlWalletBalance(code);
+        return mergeDakhlBalance(walletInfo, dakhlBalance, code);
       } catch {
         return walletInfo;
       }

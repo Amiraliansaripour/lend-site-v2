@@ -522,10 +522,13 @@ export const getUserLoan = async (userToken: string): Promise<PaymentLoanHeader[
 /** Installment first-payment gateway (payType: 4) */
 export const INSTALLMENT_PAY_TYPE = 4;
 
+/** Dakhl cash-wallet balance gateway (payType: 5) */
+export const DAKHL_PAY_TYPE = 5;
+
 export type PayTokenPayload = {
   payType: number;
-  loanDetailId: string;
-  amount: number;
+  loanDetailId?: string;
+  amount?: number;
 };
 
 export type PayTokenResult = {
@@ -539,17 +542,36 @@ export type PayTokenResult = {
 
 export const getPayToken = async (
   payload: PayTokenPayload,
-  userToken: string,
+  userToken?: string,
 ): Promise<APIResult<PayTokenResult> | null> => {
   const { data } = await api.post<PayTokenPayload, APIResult<PayTokenResult>>(
     '/Pay/pay-token',
     payload,
-    {
-      skipAuth: true,
-      headers: { Authorization: `Bearer ${userToken}` },
-    },
+    userToken
+      ? {
+          skipAuth: true,
+          headers: { Authorization: `Bearer ${userToken}` },
+        }
+      : { suppressErrorToast: true },
   );
   return data ?? null;
+};
+
+/** Fetches dakhl cash balance via pay-token (payType 5) then get-wallet-dakhl. */
+export const getDakhlWalletBalance = async (nationalCode: string): Promise<number> => {
+  const tokenResult = await getPayToken({ payType: DAKHL_PAY_TYPE });
+  const payAccessToken = tokenResult?.data?.access_token;
+
+  if (!tokenResult?.isSuccess || !payAccessToken) {
+    return 0;
+  }
+
+  const dakhl = await getWalletDakhl({
+    nationalCode,
+    accessToken: payAccessToken,
+  });
+
+  return dakhl?.balance ?? 0;
 };
 
 export type InstallmentCustomer = {
