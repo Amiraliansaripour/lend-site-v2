@@ -5,6 +5,7 @@ import { isMappedBaseURL, BASE_URLS, type BaseURL } from '@/lib/api/constants';
 import type { OverrideExtend, StrictOmit } from '@/types/utils';
 import type { RequestInit } from 'next/dist/server/web/spec-extension/request';
 import { clearUserInfo } from '@/lib/auth/client/user-info';
+import { captureHttpError } from '@/lib/sentry';
 
 type $FetchOptions<P = never> = OverrideExtend<
   RequestInit,
@@ -49,6 +50,11 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     try {
       data = JSON.parse(text) as D;
     } catch {
+      captureHttpError({
+        status: resp.status,
+        method: opts.method,
+        url: _url,
+      });
       return { data, resp };
     }
   }
@@ -57,6 +63,15 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     clearUserInfo();
     return { data, resp };
   }
+
+  if (!resp.ok) {
+    captureHttpError({
+      status: resp.status,
+      method: opts.method,
+      url: _url,
+    });
+  }
+
   return { data, resp };
 };
 

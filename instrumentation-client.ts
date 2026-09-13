@@ -10,7 +10,13 @@ Sentry.init({
   tunnel: '/monitoring',
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.replayIntegration()],
+  integrations: [
+    Sentry.replayIntegration(),
+    Sentry.httpClientIntegration({
+      failedRequestStatusCodes: [400, [402, 599]],
+      failedRequestTargets: [/^(?!.*\/monitoring(?:\?|$)).*/],
+    }),
+  ],
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
