@@ -75,6 +75,77 @@ export const getWalletInfo = async (): Promise<WalletInfo | null> => {
   return null;
 };
 
+export type WalletDakhlPayload = {
+  nationalCode: string;
+  accessToken: string;
+};
+
+export type WalletDakhlData = {
+  balance: number;
+  blockedBalance: number;
+  currency: string;
+};
+
+export const getWalletDakhl = async (
+  payload: WalletDakhlPayload,
+): Promise<WalletDakhlData | null> => {
+  const { data } = await api.post<WalletDakhlPayload, APIResult<WalletDakhlData>>(
+    '/Pay/get-wallet-dakhl',
+    payload,
+    { suppressErrorToast: true },
+  );
+
+  if (data?.isSuccess && data.data) {
+    return data.data;
+  }
+
+  return null;
+};
+
+const walletInfoFromDakhl = (nationalCode: string, balance: number): WalletInfo => ({
+  nationalCode,
+  creationTime: '',
+  cash: balance,
+  firstName: '',
+  lastName: '',
+  credit: 0,
+  id: '',
+  cachRemain: balance,
+  cachId: null,
+  cachMinDateCharg: null,
+  cachMaxDateCharg: null,
+  sumCachCharg: null,
+  cachMinDateBuy: null,
+  cachMaxDateBuy: null,
+  sumCachBuy: null,
+  creditMinDateCharg: null,
+  creditMaxDateCharg: null,
+  sumCreditCharg: null,
+  creditMinDateBuy: null,
+  creditMaxDateBuy: null,
+  sumCreditBuy: null,
+});
+
+/** Merges dakhl (درگاه) cash balance into wallet info for display. */
+export const mergeDakhlBalance = (
+  walletInfo: WalletInfo | null,
+  dakhlBalance: number,
+  nationalCode?: string,
+): WalletInfo | null => {
+  if (dakhlBalance === 0) return walletInfo;
+
+  if (!walletInfo) {
+    if (!nationalCode) return null;
+    return walletInfoFromDakhl(nationalCode, dakhlBalance);
+  }
+
+  return {
+    ...walletInfo,
+    cash: (walletInfo.cash ?? 0) + dakhlBalance,
+    cachRemain: (walletInfo.cachRemain ?? 0) + dakhlBalance,
+  };
+};
+
 export const getUserTransactions = async (): Promise<WalletTransaction[]> => {
   const { data } = await api.get<APIResult<WalletTransaction[]>>('/WalletReport/UserTransaction', {
     baseURL: 'REPORT',
@@ -451,10 +522,13 @@ export const getUserLoan = async (userToken: string): Promise<PaymentLoanHeader[
 /** Installment first-payment gateway (payType: 4) */
 export const INSTALLMENT_PAY_TYPE = 4;
 
+/** Dakhl cash-wallet balance gateway (payType: 5) */
+export const DAKHL_PAY_TYPE = 5;
+
 export type PayTokenPayload = {
   payType: number;
-  loanDetailId: string;
-  amount: number;
+  loanDetailId?: string;
+  amount?: number;
 };
 
 export type PayTokenResult = {
@@ -468,17 +542,36 @@ export type PayTokenResult = {
 
 export const getPayToken = async (
   payload: PayTokenPayload,
-  userToken: string,
+  userToken?: string,
 ): Promise<APIResult<PayTokenResult> | null> => {
   const { data } = await api.post<PayTokenPayload, APIResult<PayTokenResult>>(
     '/Pay/pay-token',
     payload,
-    {
-      skipAuth: true,
-      headers: { Authorization: `Bearer ${userToken}` },
-    },
+    userToken
+      ? {
+          skipAuth: true,
+          headers: { Authorization: `Bearer ${userToken}` },
+        }
+      : { suppressErrorToast: true },
   );
   return data ?? null;
+};
+
+/** Fetches dakhl cash balance via pay-token (payType 5) then get-wallet-dakhl. */
+export const getDakhlWalletBalance = async (nationalCode: string): Promise<number> => {
+  const tokenResult = await getPayToken({ payType: DAKHL_PAY_TYPE });
+  const payAccessToken = tokenResult?.data?.access_token;
+
+  if (!tokenResult?.isSuccess || !payAccessToken) {
+    return 0;
+  }
+
+  const dakhl = await getWalletDakhl({
+    nationalCode,
+    accessToken: payAccessToken,
+  });
+
+  return dakhl?.balance ?? 0;
 };
 
 export type InstallmentCustomer = {

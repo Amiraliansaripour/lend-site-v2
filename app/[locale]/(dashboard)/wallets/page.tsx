@@ -16,16 +16,15 @@ function WalletsContent() {
 
   useUserWithStore(userId || '');
 
+  const { data: user } = useUser(userId || '');
+  const nationalCode = user?.nationalCode || user?.personInfo?.nationalCode || '';
   const {
     data: walletInfo,
     isLoading: isLoadingInfo,
     refetch: refetchWalletInfo,
-  } = useWalletInfo();
+  } = useWalletInfo(nationalCode);
   const { data: transactions, isLoading: isLoadingTransactions } = useWalletTransactions();
-  const { data: user } = useUser(userId || '');
-  const { data: userClub } = useUserClub(
-    user?.nationalCode || user?.personInfo?.nationalCode || '',
-  );
+  const { data: userClub } = useUserClub(nationalCode);
 
   const isLoading = isLoadingInfo || isLoadingTransactions;
 
