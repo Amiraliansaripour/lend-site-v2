@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Gift } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
@@ -14,9 +13,7 @@ type CustomerClubButtonProps = {
   /** Compact label for tight mobile slots */
   compact?: boolean;
   onNavigating?: () => void;
-  /** Show gift icon (header / dashboard) */
-  showIcon?: boolean;
-  /** Custom leading icon (overrides showIcon) */
+  /** Optional leading icon */
   icon?: ReactNode;
   /** Override visible label */
   label?: string;
@@ -30,15 +27,12 @@ type AssertionResponse = {
 };
 
 /**
- * Club SSO entry (guide §1 steps 2–3):
  * logged-in → server mints JWS → browser POSTs assertion to tcclub.
- * guest → public club app (no SSO; membership is via «مخابرات من»).
  */
 export function CustomerClubButton({
   className,
   compact,
   onNavigating,
-  showIcon = false,
   icon,
   label = 'باشگاه مشتریان',
   compactLabel = 'باشگاه',
@@ -103,9 +97,6 @@ export function CustomerClubButton({
     }
   };
 
-  const leadingIcon =
-    icon ?? (showIcon ? <Gift size={compact ? 13 : 14} className='shrink-0' aria-hidden /> : null);
-
   return (
     <button
       type='button'
@@ -121,7 +112,7 @@ export function CustomerClubButton({
         'در حال انتقال...'
       ) : (
         <>
-          {leadingIcon}
+          {icon}
           <span>{compact ? compactLabel : label}</span>
         </>
       )}

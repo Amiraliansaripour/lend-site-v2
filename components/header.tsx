@@ -126,7 +126,7 @@ export function Header() {
 
             <div className='hidden lg:flex items-center gap-2'>
               <MokhaberatButton />
-              <CustomerClubButton showIcon />
+              <CustomerClubButton />
               {!isAuthenticated ? (
                 <Link
                   href='/login'

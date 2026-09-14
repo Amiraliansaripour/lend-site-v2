@@ -15,10 +15,7 @@ export function DashboardHeader() {
 
         <div className='flex min-w-0 items-center gap-1.5 sm:gap-2'>
           <MokhaberatButton className='shrink-0 px-2.5 py-1.5 text-[11px] sm:px-3 sm:text-xs' />
-          <CustomerClubButton
-            showIcon
-            className='shrink-0 px-2.5 py-1.5 text-[11px] sm:px-3 sm:text-xs'
-          />
+          <CustomerClubButton className='shrink-0 px-2.5 py-1.5 text-[11px] sm:px-3 sm:text-xs' />
         </div>
       </div>
     </header>
