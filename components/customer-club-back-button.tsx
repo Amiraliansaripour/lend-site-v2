@@ -3,9 +3,11 @@
 import { ArrowRight } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { CustomerClubButton } from '@/components/customer-club-button';
+import { CUSTOMER_CLUB_APP_URL } from '@/lib/club-sso';
 
-export const CUSTOMER_CLUB_URL = 'https://tcclub.ir/app';
+/** @deprecated Prefer CUSTOMER_CLUB_APP_URL from `@/lib/club-sso` */
+export const CUSTOMER_CLUB_URL = CUSTOMER_CLUB_APP_URL;
 
 type CustomerClubBackButtonProps = {
   className?: string;
@@ -15,6 +17,9 @@ type CustomerClubBackButtonProps = {
   size?: 'default' | 'sm' | 'lg';
 };
 
+/**
+ * «بازگشت به باشگاه» — same SSO flow as the main club button when logged in.
+ */
 export function CustomerClubBackButton({
   className,
   compact = false,
@@ -22,11 +27,21 @@ export function CustomerClubBackButton({
   size = 'default',
 }: CustomerClubBackButtonProps) {
   return (
-    <Button asChild variant={variant} size={size} className={cn(className)}>
-      <a href={CUSTOMER_CLUB_URL} rel='noopener noreferrer'>
-        <ArrowRight className='size-4 me-1 shrink-0' aria-hidden />
-        {compact ? 'بازگشت به باشگاه' : 'بازگشت به باشگاه مشتریان'}
-      </a>
-    </Button>
+    <CustomerClubButton
+      compact={compact}
+      label='بازگشت به باشگاه مشتریان'
+      compactLabel='بازگشت به باشگاه'
+      icon={<ArrowRight className='size-4 shrink-0' aria-hidden />}
+      className={cn(
+        'rounded-md',
+        variant === 'outline' &&
+          'border-input bg-background hover:bg-accent hover:text-accent-foreground',
+        variant === 'ghost' && 'border-0 hover:bg-accent',
+        variant === 'link' && 'border-0 underline-offset-4 hover:underline',
+        size === 'sm' && 'h-8 px-3 text-xs',
+        size === 'lg' && 'h-10 px-6',
+        className,
+      )}
+    />
   );
 }

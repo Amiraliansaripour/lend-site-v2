@@ -8,6 +8,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 import { getUserInfo } from '@/lib/auth/client/user-info';
 import { BoomLogo } from '@/components/brand/boom-logo';
 import { MokhaberatButton } from '@/components/mokhaberat-button';
+import { CustomerClubButton } from '@/components/customer-club-button';
 
 type Href = `/${string}`;
 
@@ -125,14 +126,7 @@ export function Header() {
 
             <div className='hidden lg:flex items-center gap-2'>
               <MokhaberatButton />
-              <a
-                href='https://tcclub.ir/app'
-                target='_blank'
-                rel='noopener noreferrer'
-                className='inline-flex items-center rounded-full border border-brand px-4 py-1.5 text-brand text-xs font-semibold transition-colors hover:bg-brand/5'
-              >
-                باشگاه مشتریان
-              </a>
+              <CustomerClubButton showIcon />
               {!isAuthenticated ? (
                 <Link
                   href='/login'
@@ -161,18 +155,13 @@ export function Header() {
                   transparent && 'text-white border-white/40',
                 )}
               />
-              <a
-                href='https://tcclub.ir/app'
-                target='_blank'
-                rel='noopener noreferrer'
+              <CustomerClubButton
+                compact
                 className={cn(
-                  'px-2 py-1 text-[11px] font-semibold text-brand',
-                  transparent && 'text-white',
+                  'border-0 px-2 py-1 text-[11px] shadow-none',
+                  transparent && 'text-white border-white/40',
                 )}
-                aria-label='باشگاه مشتریان'
-              >
-                باشگاه
-              </a>
+              />
               {!isAuthenticated ? (
                 <Link
                   className={cn('p-2', transparent ? 'text-white' : 'text-black')}

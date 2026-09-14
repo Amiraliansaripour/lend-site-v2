@@ -48,6 +48,8 @@ variables:
         -e NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
         -e NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
         -e NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
+        -e CLUB_SSO_PRIVATE_KEY="$CLUB_SSO_PRIVATE_KEY" \
+        -e CLUB_SSO_KID="$CLUB_SSO_KID" \
         "$IMAGE_NAME:latest"
     - docker image prune -f
 

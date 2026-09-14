@@ -23,4 +23,7 @@ services:
       NEXT_PUBLIC_QUERY_GC_TIME: ${NEXT_PUBLIC_QUERY_GC_TIME:-0}
       NEXT_PUBLIC_QUERY_STALE_TIME: ${NEXT_PUBLIC_QUERY_STALE_TIME:-0}
       NEXT_PUBLIC_QUERY_RETRY: ${NEXT_PUBLIC_QUERY_RETRY:-1}
+      # Club SSO — set in CI/CD or host env; never commit the PEM private key
+      CLUB_SSO_PRIVATE_KEY: ${CLUB_SSO_PRIVATE_KEY:-}
+      CLUB_SSO_KID: ${CLUB_SSO_KID:-}
     restart: unless-stopped
