@@ -25,7 +25,7 @@ export function MembershipBanner() {
 
         <hgroup className='text-white space-y-4'>
           <h4 className='text-lg lg:text-xl font-bold'>
-            {withBrand('شما هم بخشی از خانواده بزرگ کارالند باشید.')}
+            {withBrand('شما هم بخشی از خانواده بزرگ بوم آپ باشید.')}
           </h4>
           <p className='text-sm lg:text-base leading-7'>
             بیش از ۶۰۰ کاربر فعال به ما اعتماد کرده اند، الان نوبت شماست.

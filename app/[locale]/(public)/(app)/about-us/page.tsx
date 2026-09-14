@@ -47,7 +47,7 @@ export default async function IndexPage() {
           <div className='absolute inset-x-4 bottom-82'>
             <hgroup className='space-y-4'>
               <BrandText as='h1' className='text-2xl font-bold'>
-                خریدهای سریع و آســـــــان زندگی با کارالند
+                خریدهای سریع و آســـــــان زندگی با بوم آپ
               </BrandText>
               <p className='text-sm lg:text-base max-w-lg text-balance leading-7'>
                 با ارائه تسهیلات خرید به‌ صورت شفاف، سریع و بدون نیاز به ضامن، کمک می‌کنیم تا با
@@ -112,7 +112,7 @@ export default async function IndexPage() {
 
       <section className='container overflow-x-hidden pb-2'>
         <BrandText as='h3' className='text-lg text-center font-semibold mb-8 lg:mb-10'>
-          شرکای تجاری کارالند
+          شرکای تجاری بوم آپ
         </BrandText>
 
         <Marquee>

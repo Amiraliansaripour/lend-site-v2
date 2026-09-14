@@ -1,4 +1,4 @@
-const PLACEHOLDER_BRANDS = ['کارالند', 'Karalend', 'karalend'] as const;
+const PLACEHOLDER_BRANDS = ['بوم آپ', 'BoomUp', 'boomUp'] as const;
 
 export const getUploadUrl = (filePath?: string | null): string => {
   if (!filePath) return '';

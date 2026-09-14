@@ -26,7 +26,7 @@ export function MerchantSignupBanner() {
             به جمع فروشگاه‌های ما بپیوندید
           </h1>
           <p className='mb-8 max-w-xl text-base leading-8 text-[#64748b] md:text-lg'>
-            {withBrand('با ثبت نام در کارالند، فروشگاه خود را به هزاران مشتری معرفی کنید.')}
+            {withBrand('با ثبت نام در بوم آپ، فروشگاه خود را به هزاران مشتری معرفی کنید.')}
           </p>
           <div className='flex flex-wrap gap-3'>
             <button

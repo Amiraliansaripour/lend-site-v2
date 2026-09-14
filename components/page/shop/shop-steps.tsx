@@ -15,7 +15,7 @@ type Step = {
 const STEPS: Step[] = [
   { img: shopWallet, text: 'دریافت آنلاین اعتبار' },
   { img: shopStore, text: 'بررسی فروشگاه‌ها' },
-  { img: shopPayment, text: 'پرداخت با کیف پول کارالند' },
+  { img: shopPayment, text: 'پرداخت با کیف پول بوم آپ' },
 ];
 
 type StepItemProps = {

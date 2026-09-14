@@ -40,7 +40,7 @@ export function LoanRequestSteps() {
       <div className='mb-12 flex flex-col items-center gap-y-4 text-center'>
         <p className='text-xs font-medium tracking-[0.28em] text-brand/70'>STEPS</p>
         <h3 className='text-2xl font-bold text-[#0f172a] md:text-3xl'>
-          {withBrand('مراحل دریافت وام از کارالند')}
+          {withBrand('مراحل دریافت وام از بوم آپ')}
         </h3>
         <p className='max-w-xl text-base leading-8 text-[#64748b]'>
           با طی کردن چند مرحله ساده، می‌توانید وام مورد نیاز خود را به‌سرعت دریافت کنید و از مزایای

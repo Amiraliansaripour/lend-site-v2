@@ -35,11 +35,11 @@ export function WhyUs() {
       <div className='mb-12 flex flex-col items-center gap-y-4 text-center md:mb-16'>
         <p className='text-xs font-medium tracking-[0.28em] text-brand/70'>WHY US</p>
         <h3 className='text-2xl font-bold text-[#0f172a] md:text-3xl'>
-          {withBrand('چرا کارالند؟')}
+          {withBrand('چرا بوم آپ؟')}
         </h3>
         <p className='max-w-2xl text-base leading-8 text-[#64748b]'>
           {withBrand(
-            'در کارالند مسیر دریافت اعتبار بانکی به شکلی ساده، سریع و شفاف طراحی شده تا همه بتوانند بدون پیچیدگی‌های رایج بانکی از آن استفاده کنند.',
+            'در بوم آپ مسیر دریافت اعتبار بانکی به شکلی ساده، سریع و شفاف طراحی شده تا همه بتوانند بدون پیچیدگی‌های رایج بانکی از آن استفاده کنند.',
           )}
         </p>
       </div>
