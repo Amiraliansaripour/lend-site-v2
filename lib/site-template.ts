@@ -1,8 +1,8 @@
 const PLACEHOLDER_BRANDS = ['کارالند', 'Karalend', 'karalend'] as const;
 
 /**
- * Subdomains that never map to a company tenant (infra / marketing hosts).
- * Company matching itself stays fully dynamic via API `companyName`.
+ * Labels that are never company tenants (infra hosts).
+ * Real company matching stays dynamic via API `companyName` ↔ subdomain.
  */
 const RESERVED_SUBDOMAINS = new Set([
   'www',
@@ -48,23 +48,44 @@ export const normalizeTenantKey = (value?: string | null): string => {
   return (value ?? '').trim().toLowerCase();
 };
 
+/**
+ * Default site row: companyName is null / undefined / blank.
+ * These builds (apex domain, no tenant subdomain) must always use this row.
+ */
 export const isDefaultCompanyName = (companyName?: string | null): boolean => {
   return normalizeTenantKey(companyName).length === 0;
 };
 
+const isIpv4Hostname = (host: string) => /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+
 /**
- * Reads the leftmost hostname label as a potential tenant slug.
- * Examples:
- * - foolad.lend360.ir → "foolad"
- * - tamin.localhost → "tamin"
- * - lend360.ir / www.lend360.ir / localhost → null (default site)
+ * Tenant slug = first hostname label when (and only when) it is a real subdomain.
+ *
+ * Returns null (→ default companyName=null template) for:
+ * - apex: lend360.ir
+ * - www: www.lend360.ir
+ * - localhost / 127.0.0.1 / raw server IPs (e.g. 185.x.x.x)
+ * - reserved infra labels
+ *
+ * Returns slug for:
+ * - fld.lend360.ir → "fld"
+ * - fld.localhost → "fld" (local multi-tenant)
  */
 export const getTenantSlugFromHostname = (hostname: string): string | null => {
   const host = hostname.split(':')[0]?.trim().toLowerCase() ?? '';
   if (!host) return null;
 
-  // foolad.localhost (local multi-tenant)
   if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    return null;
+  }
+
+  // Never treat bare IPv4 deploy hosts as tenants (e.g. 185.105.101.103)
+  if (isIpv4Hostname(host)) {
+    return null;
+  }
+
+  if (host.includes(':')) {
+    // IPv6
     return null;
   }
 
@@ -75,7 +96,7 @@ export const getTenantSlugFromHostname = (hostname: string): string | null => {
   }
 
   const parts = host.split('.').filter(Boolean);
-  // subdomain.domain.tld → at least 3 labels
+  // Need subdomain.domain.tld (3+ labels). Apex domain.tld → default.
   if (parts.length < 3) return null;
 
   const slug = parts[0] ?? '';

@@ -14,8 +14,10 @@ function isValidCssColor(value: string): boolean {
 }
 
 /**
- * Applies tenant brand color to CSS variables used across the app.
- * Default (empty companyName) clears overrides so globals.css colors apply.
+ * Theme rules:
+ * - Default site (companyName null / no tenant match) → clear overrides;
+ *   globals.css brand/primary stay as they are today. No visual change.
+ * - Matched tenant subdomain → set brand tokens from that row's colorMain.
  */
 export function applySiteThemeColor(
   template: SiteTemplateImages,

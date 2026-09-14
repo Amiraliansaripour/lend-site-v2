@@ -9,15 +9,32 @@ export type ResolvedSiteTemplate = {
   template: SiteTemplateImages;
   /** Subdomain slug when on a tenant host; null on apex / default. */
   tenantSlug: string | null;
-  /** True when the selected row has an empty companyName (apex default). */
+  /**
+   * True on the default site path:
+   * - apex / no subdomain, OR
+   * - subdomain with no matching companyName (falls back to default row)
+   * When true, CSS keeps the app's built-in brand color (colorMain is not applied).
+   */
   isDefaultTenant: boolean;
 };
 
+function findDefaultTemplate(list: SiteTemplateImages[]): SiteTemplateImages {
+  const byNullCompany = list.find(item => isDefaultCompanyName(item.companyName));
+  if (byNullCompany) return byNullCompany;
+
+  // Legacy: API returned a single object without companyName (or only tenant rows).
+  // Prefer first row but callers on apex still force default theming.
+  return list[0]!;
+}
+
 /**
- * Picks the active site template for the current host.
- * - Default host → first row with empty companyName (fallback: first row)
- * - Tenant host  → row whose companyName matches the subdomain (fallback: default)
- * Matching is dynamic: any future companyName / subdomain works without code changes.
+ * Resolve which SiteTemplate row to use for the current host.
+ *
+ * Rules (intentional, keep stable):
+ * 1) Main domain (lend360.ir, www, localhost, IP) → ALWAYS the row with companyName null/empty.
+ * 2) Subdomain (fld.lend360.ir) → ONLY if some row has companyName === "fld" (case-insensitive).
+ * 3) Subdomain without a matching companyName → fall back to the default (null) row.
+ * 4) No hard-coded company list — any future companyName / subdomain works automatically.
  */
 export function resolveSiteTemplate(
   templates: SiteTemplateImages[],
@@ -28,7 +45,7 @@ export function resolveSiteTemplate(
     throw new Error('No site templates available');
   }
 
-  const defaultTemplate = list.find(item => isDefaultCompanyName(item.companyName)) ?? list[0]!;
+  const defaultTemplate = findDefaultTemplate(list);
 
   const raw = hostnameOrSlug ?? null;
   const tenantSlug =
@@ -38,15 +55,21 @@ export function resolveSiteTemplate(
         ? getTenantSlugFromHostname(raw)
         : normalizeTenantKey(raw) || null;
 
+  // ── Main / default host ──────────────────────────────────────────────
+  // Never switch to a company-specific row just because it appears first in the array.
   if (!tenantSlug) {
     return {
       template: defaultTemplate,
       tenantSlug: null,
-      isDefaultTenant: isDefaultCompanyName(defaultTemplate.companyName),
+      isDefaultTenant: true,
     };
   }
 
-  const matched = list.find(item => normalizeTenantKey(item.companyName) === tenantSlug);
+  // ── Tenant subdomain ─────────────────────────────────────────────────
+  const matched = list.find(item => {
+    if (isDefaultCompanyName(item.companyName)) return false;
+    return normalizeTenantKey(item.companyName) === tenantSlug;
+  });
 
   if (!matched) {
     return {
@@ -59,6 +82,6 @@ export function resolveSiteTemplate(
   return {
     template: matched,
     tenantSlug,
-    isDefaultTenant: isDefaultCompanyName(matched.companyName),
+    isDefaultTenant: false,
   };
 }
