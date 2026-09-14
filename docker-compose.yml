@@ -26,4 +26,5 @@ services:
       # Club SSO — set in CI/CD or host env; never commit the PEM private key
       CLUB_SSO_PRIVATE_KEY: ${CLUB_SSO_PRIVATE_KEY:-}
       CLUB_SSO_KID: ${CLUB_SSO_KID:-}
+      CLUB_SSO_ALLOW_TEST: ${CLUB_SSO_ALLOW_TEST:-}
     restart: unless-stopped

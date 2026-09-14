@@ -50,6 +50,7 @@ variables:
         -e NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
         -e CLUB_SSO_PRIVATE_KEY="$CLUB_SSO_PRIVATE_KEY" \
         -e CLUB_SSO_KID="$CLUB_SSO_KID" \
+        -e CLUB_SSO_ALLOW_TEST="$CLUB_SSO_ALLOW_TEST" \
         "$IMAGE_NAME:latest"
     - docker image prune -f
 
@@ -160,6 +161,13 @@ deploy:lend365:
     - karalend
   script:
     - docker version
+    - |
+      if [ -z "$CLUB_SSO_PRIVATE_KEY" ]; then
+        echo "WARNING: CLUB_SSO_PRIVATE_KEY is empty — club SSO will return 500 on production"
+      else
+        echo "CLUB_SSO_PRIVATE_KEY is set (length ${#CLUB_SSO_PRIVATE_KEY})"
+      fi
+      echo "CLUB_SSO_ALLOW_TEST=${CLUB_SSO_ALLOW_TEST:-}"
     - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml build
     # Python docker-compose 1.x crashes on recreate with newer Docker (KeyError: ContainerConfig).
     - docker-compose -p "${COMPOSE_PROJECT_NAME}" -f docker-compose.yml -f docker-compose.karalend.yml stop || true
@@ -182,6 +190,8 @@ deploy:karalend:
     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
     NEXT_PUBLIC_QUERY_RETRY: "1"
+    # Temporary demo page /api/club-sso/test-assertion — remove after client demo
+    CLUB_SSO_ALLOW_TEST: "1"
   environment:
     name: production/karalend-site
   rules:
