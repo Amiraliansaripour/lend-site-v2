@@ -187,12 +187,12 @@ export function WalletBalanceCards({ walletInfo, onWalletUpdate }: WalletBalance
                 </span>
               </div>
 
-              <Button
+              {/* <Button
                 className='mr-auto w-fit cursor-pointer hover:bg-blue-500/90 hover:text-white bg-white text-brand'
                 onClick={() => setModalOpen(true)}
               >
                 شارژ کیف پول
-              </Button>
+              </Button> */}
             </div>
           </WalletCard.Front>
         </WalletCard>
