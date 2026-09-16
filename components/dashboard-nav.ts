@@ -10,14 +10,12 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import { TOTAL_UNREAD } from '@/components/page/messages/messages-page-content';
-
 export type DashboardNavItem = {
   title: string;
   shortTitle?: string;
   url: string;
   icon: LucideIcon;
-  badge?: number;
+  badgeKey?: 'messages';
 };
 
 /** Full dashboard navigation (sidebar). */
@@ -34,7 +32,7 @@ export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
     shortTitle: 'پیام‌ها',
     url: '/messages',
     icon: MessagesSquare,
-    badge: TOTAL_UNREAD,
+    badgeKey: 'messages',
   },
 ];
 

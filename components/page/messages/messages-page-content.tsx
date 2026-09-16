@@ -1,371 +1,278 @@
 'use client';
 
-import { useMemo, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Building2,
   Check,
   CheckCheck,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  FileText,
-  Image as ImageIcon,
+  Loader2,
   MessageCircle,
   Paperclip,
+  Plus,
+  Reply,
   Search,
   Send,
-  ShieldCheck,
-  Smile,
-  Store,
   UserCog,
+  X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
+import { uploadAttachment } from '@/api/facility';
+import {
+  MESSAGE_ATTACHMENT_TYPE,
+  MessageStatus,
+  type Conversation,
+  type Message,
+} from '@/api/message';
+import {
+  MessageAttachment,
+  isMessageImageAttachment,
+} from '@/components/page/messages/message-attachment';
+import { NewMessageDialog } from '@/components/page/messages/new-message-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { getUserId } from '@/lib/auth/client/user-info';
 import { cn } from '@/lib/utils';
+import { useMarkMessageAsRead, useReplyMessage, useSendMessage } from '@/mutations/message';
+import {
+  useConversationMessages,
+  useConversations,
+  useUnreadMessageCount,
+} from '@/queries/message';
 
-export type ConversationRole = 'admin' | 'store' | 'organization' | 'guarantor';
-type MessageKind = 'text' | 'image' | 'file';
-
-interface ChatMessage {
-  id: string;
-  sender: 'me' | 'other';
-  kind: MessageKind;
-  content: string;
-  time: string;
-  fileName?: string;
-  fileSize?: string;
-  read?: boolean;
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '؟';
+  if (parts.length === 1) return parts[0]!.slice(0, 2);
+  return `${parts[0]![0] ?? ''}${parts[parts.length - 1]![0] ?? ''}`;
 }
 
-interface Conversation {
-  id: string;
-  name: string;
-  role: ConversationRole;
-  roleLabel: string;
-  avatar: string;
-  phone?: string;
-  unread: number;
-  online?: boolean;
-  messages: ChatMessage[];
-}
+function formatMessageTime(dateString?: string | null): string {
+  if (!dateString) return '';
 
-export const ROLE_META: Record<
-  ConversationRole,
-  {
-    label: string;
-    color: string;
-    bg: string;
-    dot: string;
-    icon: React.ComponentType<{ className?: string }>;
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const sameDay = date.toDateString() === now.toDateString();
+
+    if (sameDay) {
+      return date.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    return date.toLocaleDateString('fa-IR', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return '';
   }
-> = {
-  admin: {
-    label: 'ادمین',
-    color: 'text-violet-600',
-    bg: 'bg-violet-50 border-violet-200',
-    dot: 'bg-violet-500',
-    icon: UserCog,
-  },
-  store: {
-    label: 'فروشگاه',
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50 border-emerald-200',
-    dot: 'bg-emerald-500',
-    icon: Store,
-  },
-  organization: {
-    label: 'سازمان',
-    color: 'text-sky-600',
-    bg: 'bg-sky-50 border-sky-200',
-    dot: 'bg-sky-500',
-    icon: Building2,
-  },
-  guarantor: {
-    label: 'تضمین‌کننده',
-    color: 'text-amber-600',
-    bg: 'bg-amber-50 border-amber-200',
-    dot: 'bg-amber-500',
-    icon: ShieldCheck,
-  },
-};
-
-const CONVERSATIONS: Conversation[] = [
-  {
-    id: '1',
-    name: 'پشتیبانی سیستم',
-    role: 'admin',
-    roleLabel: 'ادمین',
-    avatar: 'پش',
-    unread: 2,
-    online: true,
-    messages: [
-      {
-        id: 'm1',
-        sender: 'other',
-        kind: 'text',
-        content: 'سلام، مدارک شما بررسی شد و یک مورد نیاز به اصلاح دارد.',
-        time: '۳ ساعت پیش',
-        read: true,
-      },
-      {
-        id: 'm2',
-        sender: 'other',
-        kind: 'file',
-        content: 'فرم اصلاح اطلاعات',
-        fileName: 'correction-form.pdf',
-        fileSize: '۱.۲ مگابایت',
-        time: '۲ ساعت پیش',
-        read: true,
-      },
-      {
-        id: 'm3',
-        sender: 'me',
-        kind: 'text',
-        content: 'ممنون. الان بررسی می‌کنم.',
-        time: '۴۵ دقیقه پیش',
-        read: true,
-      },
-      {
-        id: 'm4',
-        sender: 'other',
-        kind: 'text',
-        content: 'بعد از اعمال اصلاحات روی همین گفتگو پیام دهید.',
-        time: '۲۰ دقیقه پیش',
-        read: false,
-      },
-      {
-        id: 'm5',
-        sender: 'other',
-        kind: 'text',
-        content: 'وضعیت درخواست اعتبار شما در حال بررسی است.',
-        time: '۵ دقیقه پیش',
-        read: false,
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'فروشگاه پوشاک مد',
-    role: 'store',
-    roleLabel: 'فروشگاه',
-    avatar: 'فپ',
-    phone: 'کد پذیرنده: M-902',
-    unread: 3,
-    online: true,
-    messages: [
-      {
-        id: 'm11',
-        sender: 'other',
-        kind: 'text',
-        content: 'سلام، سفارش شما آماده ارسال است. آدرس نهایی را تایید می‌کنید؟',
-        time: '۵۰ دقیقه پیش',
-        read: true,
-      },
-      {
-        id: 'm12',
-        sender: 'me',
-        kind: 'text',
-        content: 'بله، آدرس پروفایل صحیح است.',
-        time: '۴۵ دقیقه پیش',
-        read: true,
-      },
-      {
-        id: 'm13',
-        sender: 'other',
-        kind: 'image',
-        content: '/images/folderIcon.png',
-        time: '۳۵ دقیقه پیش',
-        read: false,
-      },
-      {
-        id: 'm14',
-        sender: 'other',
-        kind: 'text',
-        content: 'رسید پرداخت را بررسی کنید.',
-        time: '۳۰ دقیقه پیش',
-        read: false,
-      },
-      {
-        id: 'm15',
-        sender: 'other',
-        kind: 'text',
-        content: 'تراکنش شما با موفقیت ثبت شد.',
-        time: '۲۵ دقیقه پیش',
-        read: false,
-      },
-    ],
-  },
-  {
-    id: '3',
-    name: 'شرکت فناوری پارس',
-    role: 'organization',
-    roleLabel: 'سازمان',
-    avatar: 'شف',
-    phone: 'شناسه سازمان: ۱۰۲۴',
-    unread: 1,
-    messages: [
-      {
-        id: 'm21',
-        sender: 'other',
-        kind: 'text',
-        content: 'پرونده شما وارد مرحله بررسی نهایی شد.',
-        time: '۲ ساعت پیش',
-        read: true,
-      },
-      {
-        id: 'm22',
-        sender: 'other',
-        kind: 'file',
-        content: 'گزارش اعتبارسنجی',
-        fileName: 'credit-report.pdf',
-        fileSize: '۲.۱ مگابایت',
-        time: '۱ ساعت پیش',
-        read: true,
-      },
-      {
-        id: 'm23',
-        sender: 'other',
-        kind: 'text',
-        content: 'لیست کاربران جدید را ارسال کردیم.',
-        time: '۴۵ دقیقه پیش',
-        read: false,
-      },
-    ],
-  },
-  {
-    id: '4',
-    name: 'فروشگاه لوازم خانگی آریا',
-    role: 'store',
-    roleLabel: 'فروشگاه',
-    avatar: 'فل',
-    phone: 'کد پذیرنده: M-458',
-    unread: 0,
-    messages: [
-      {
-        id: 'm31',
-        sender: 'me',
-        kind: 'text',
-        content: 'سلام، فاکتور را ارسال کردم.',
-        time: '۳ ساعت پیش',
-        read: true,
-      },
-      {
-        id: 'm32',
-        sender: 'other',
-        kind: 'text',
-        content: 'تراکنش دیروز تسویه شد.',
-        time: '۲ ساعت پیش',
-        read: true,
-      },
-    ],
-  },
-  {
-    id: '5',
-    name: 'علی رضایی',
-    role: 'guarantor',
-    roleLabel: 'تضمین‌کننده',
-    avatar: 'عر',
-    phone: '۰۹۳۵۶۷۸۹۰۱۲',
-    unread: 0,
-    messages: [
-      {
-        id: 'm41',
-        sender: 'me',
-        kind: 'text',
-        content: 'سلام، لطفا تصویر چک پشت و رو را ارسال کنید.',
-        time: 'دیروز',
-        read: true,
-      },
-      {
-        id: 'm42',
-        sender: 'other',
-        kind: 'file',
-        content: 'تصویر چک',
-        fileName: 'cheque-scan.jpg',
-        fileSize: '۸۴۰ کیلوبایت',
-        time: 'دیروز',
-        read: true,
-      },
-    ],
-  },
-];
-
-type RoleFilter = 'all' | ConversationRole;
-
-const FILTER_DEFS: { value: RoleFilter; label: string }[] = [
-  { value: 'all', label: 'همه' },
-  { value: 'admin', label: 'ادمین' },
-  { value: 'store', label: 'فروشگاه' },
-  { value: 'organization', label: 'سازمان' },
-  { value: 'guarantor', label: 'تضمین‌کننده' },
-];
-
-function lastMessagePreview(conv: Conversation): string {
-  const last = conv.messages[conv.messages.length - 1];
-  if (!last) return '';
-  if (last.kind === 'image') return '📷 تصویر ارسال شد';
-  if (last.kind === 'file') return `📎 ${last.fileName ?? 'فایل'}`;
-  return last.content;
 }
 
-/** Total unread across all conversations — exported so sidebar can use it */
-export const TOTAL_UNREAD = CONVERSATIONS.reduce((s, c) => s + c.unread, 0);
+function lastMessagePreview(message: Message | null | undefined): string {
+  if (!message) return '';
+  if (message.attachmentUrl) {
+    if (isMessageImageAttachment(message.attachmentUrl)) return 'تصویر ارسال شد';
+    return 'فایل پیوست';
+  }
+  return message.body || message.subject || '';
+}
+
+function getConversationSubject(messages: Message[], conversation: Conversation | null): string {
+  const withSubject = messages.find(m => m.subject?.trim());
+  if (withSubject?.subject) return withSubject.subject;
+  return conversation?.lastMessage?.subject?.trim() || 'بدون موضوع';
+}
+
+/** Incoming message still waiting to be marked seen */
+function isUnreadIncoming(message: Message, currentUserId: string): boolean {
+  return message.receiverId === currentUserId && Number(message.status) === MessageStatus.Sent;
+}
+
+function OutgoingStatusIcon({ status }: { status: number }) {
+  // Seen by admin → double ticks
+  if (status === MessageStatus.Seen) {
+    return <CheckCheck className='size-3.5 text-white/70' aria-label='دیده شده' />;
+  }
+
+  // Sent or replied (by me) → single tick
+  if (status === MessageStatus.Sent || status === MessageStatus.Replied) {
+    return <Check className='size-3.5 text-white/60' aria-label='ارسال شده' />;
+  }
+
+  return null;
+}
+
+function IncomingStatusIcon({ status }: { status: number }) {
+  // Admin message seen/replied → double ticks (user knows admin engagement state)
+  if (status === MessageStatus.Seen || status === MessageStatus.Replied) {
+    return <CheckCheck className='size-3.5 text-primary/70' aria-label='دیده شده' />;
+  }
+
+  return null;
+}
 
 export function MessagesPageContent() {
-  const [filter, setFilter] = useState<RoleFilter>('all');
+  const currentUserId = getUserId();
+  const {
+    data: conversations = [],
+    isLoading: isLoadingConversations,
+    refetch: refetchConversations,
+  } = useConversations();
+  const { data: unreadTotal = 0 } = useUnreadMessageCount();
+
   const [search, setSearch] = useState('');
-  const [activeId, setActiveId] = useState(CONVERSATIONS[0]?.id);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const filterScrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const markedReadRef = useRef<Set<string>>(new Set());
 
-  const scrollFilters = useCallback((dir: 'left' | 'right') => {
-    const el = filterScrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir === 'left' ? -80 : 80, behavior: 'smooth' });
-  }, []);
+  const {
+    data: threadMessages = [],
+    isLoading: isLoadingThread,
+    refetch: refetchThread,
+  } = useConversationMessages(activeId);
 
-  const unreadByRole = useMemo<Record<RoleFilter, number>>(() => {
-    const map: Record<RoleFilter, number> = {
-      all: 0,
-      admin: 0,
-      store: 0,
-      organization: 0,
-      guarantor: 0,
-    };
-    for (const c of CONVERSATIONS) {
-      map.all += c.unread;
-      map[c.role] += c.unread;
-    }
-    return map;
-  }, []);
+  const sendMutation = useSendMessage();
+  const replyMutation = useReplyMessage();
+  const { mutate: markAsRead } = useMarkMessageAsRead();
 
   const filtered = useMemo(() => {
-    return CONVERSATIONS.filter(c => {
-      if (filter !== 'all' && c.role !== filter) return false;
-      if (search.trim() && !c.name.includes(search.trim())) return false;
-      return true;
-    });
-  }, [filter, search]);
+    const term = search.trim();
+    if (!term) return conversations;
+    return conversations.filter(c => c.otherUserName?.includes(term));
+  }, [conversations, search]);
 
-  const active = CONVERSATIONS.find(c => c.id === activeId) ?? null;
+  const active: Conversation | null = conversations.find(c => c.id === activeId) ?? null;
+
+  useEffect(() => {
+    if (!activeId && conversations.length > 0) {
+      setActiveId(conversations[0]!.id);
+    }
+  }, [conversations, activeId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [threadMessages]);
+
+  useEffect(() => {
+    if (!currentUserId || threadMessages.length === 0) return;
+
+    for (const message of threadMessages) {
+      if (!isUnreadIncoming(message, currentUserId)) continue;
+      if (markedReadRef.current.has(message.id)) continue;
+
+      markedReadRef.current.add(message.id);
+      markAsRead(message.id);
+    }
+  }, [threadMessages, currentUserId, markAsRead]);
+
+  const resetComposer = useCallback(() => {
+    setDraft('');
+    setAttachedFile(null);
+    setReplyTo(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+  }, []);
 
   const selectConversation = (id: string) => {
     setActiveId(id);
     setMobileShowChat(true);
+    resetComposer();
   };
 
+  const startReply = useCallback((message: Message) => {
+    setReplyTo(message);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, []);
+
+  const uploadOptionalAttachment = async (file: File | null) => {
+    if (!file) return null;
+
+    const formData = new FormData();
+    formData.append('Name', file.name);
+    formData.append('attachmentType', String(MESSAGE_ATTACHMENT_TYPE));
+    formData.append('file', file);
+    const uploaded = await uploadAttachment(formData);
+    return uploaded.id;
+  };
+
+  const handleSubmitMessage = useCallback(async () => {
+    if (!active || (!draft.trim() && !attachedFile)) return;
+
+    const body = draft.trim() || (attachedFile ? attachedFile.name : '');
+
+    try {
+      setIsSending(true);
+      const attachmentId = await uploadOptionalAttachment(attachedFile);
+
+      // Explicit reply to a message → /Message/reply
+      if (replyTo) {
+        const result = await replyMutation.mutateAsync({
+          parentMessageId: replyTo.id,
+          body,
+          attachmentId,
+        });
+
+        if (result?.isSuccess === false) {
+          toast.error(result.message || 'ارسال پاسخ ناموفق بود');
+          return;
+        }
+      } else {
+        // All other user messages → /Message/send
+        if (!active.otherUserId) {
+          toast.error('گیرنده پیام مشخص نیست');
+          return;
+        }
+
+        const result = await sendMutation.mutateAsync({
+          receiverId: active.otherUserId,
+          subject: getConversationSubject(threadMessages, active),
+          body,
+          attachmentId,
+        });
+
+        if (result?.isSuccess === false) {
+          toast.error(result.message || 'ارسال پیام ناموفق بود');
+          return;
+        }
+      }
+
+      resetComposer();
+      await Promise.all([refetchThread(), refetchConversations()]);
+    } catch {
+      toast.error('خطا در ارسال پیام');
+    } finally {
+      setIsSending(false);
+    }
+  }, [
+    active,
+    draft,
+    attachedFile,
+    replyTo,
+    threadMessages,
+    replyMutation,
+    sendMutation,
+    resetComposer,
+    refetchThread,
+    refetchConversations,
+  ]);
+
   return (
-    /* outer wrapper: fixed height so both panels scroll independently */
     <div
       className='flex rounded-2xl border border-border/60 overflow-hidden bg-background shadow-sm'
       style={{ height: 'calc(100vh - 10rem)' }}
     >
-      {/* ──────────────── Sidebar: conversation list ──────────────── */}
+      {/* Sidebar */}
       <div
         className={cn(
           'flex flex-col border-l border-border/60 bg-muted/20 min-h-0',
@@ -373,13 +280,23 @@ export function MessagesPageContent() {
           mobileShowChat && 'hidden xl:flex',
         )}
       >
-        {/* fixed header — never scrolls */}
         <div className='px-4 pt-4 pb-3 space-y-3 shrink-0'>
-          <div className='flex items-center justify-between'>
-            <h2 className='text-base font-bold'>پیام‌های دریافتی</h2>
-            {TOTAL_UNREAD > 0 && (
-              <span className='text-xs text-muted-foreground'>{TOTAL_UNREAD} خوانده‌نشده</span>
-            )}
+          <div className='flex items-center justify-between gap-2'>
+            <div className='min-w-0'>
+              <h2 className='text-base font-bold'>پیام‌ها</h2>
+              {unreadTotal > 0 && (
+                <span className='text-xs text-muted-foreground'>{unreadTotal} خوانده‌نشده</span>
+              )}
+            </div>
+            <Button
+              type='button'
+              size='sm'
+              className='shrink-0 gap-1.5'
+              onClick={() => setComposeOpen(true)}
+            >
+              <Plus className='size-4' />
+              پیام جدید
+            </Button>
           </div>
 
           <div className='relative'>
@@ -387,82 +304,27 @@ export function MessagesPageContent() {
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder='جستجو در پیام‌ها...'
+              placeholder='جستجو در گفتگوها...'
               className='pr-9 h-9 text-sm bg-background'
             />
           </div>
-
-          {/* role filter pills — horizontal scroll with arrow buttons */}
-          <div className='flex items-center gap-1'>
-            <button
-              type='button'
-              onClick={() => scrollFilters('right')}
-              className='shrink-0 size-6 rounded-full border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors grid place-items-center'
-              aria-label='اسکرول راست'
-            >
-              <ChevronRight className='size-3' />
-            </button>
-
-            <div
-              ref={filterScrollRef}
-              className='flex gap-1.5 overflow-x-auto scrollbar-none flex-1'
-              style={{ scrollbarWidth: 'none' }}
-            >
-              {FILTER_DEFS.map(f => {
-                const count = unreadByRole[f.value];
-                const isActive = filter === f.value;
-                return (
-                  <button
-                    key={f.value}
-                    type='button'
-                    onClick={() => setFilter(f.value)}
-                    className={cn(
-                      'shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap',
-                      isActive
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background text-muted-foreground border-border hover:bg-muted',
-                    )}
-                  >
-                    {f.label}
-                    {count > 0 && (
-                      <span
-                        className={cn(
-                          'inline-flex items-center justify-center text-[10px] font-bold rounded-full min-w-4 h-4 px-1',
-                          isActive
-                            ? 'bg-white/30 text-white'
-                            : 'bg-primary text-primary-foreground',
-                        )}
-                      >
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              type='button'
-              onClick={() => scrollFilters('left')}
-              className='shrink-0 size-6 rounded-full border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors grid place-items-center'
-              aria-label='اسکرول چپ'
-            >
-              <ChevronLeft className='size-3' />
-            </button>
-          </div>
         </div>
 
-        {/* scrollable conversation list — takes remaining height */}
         <div className='flex-1 min-h-0 overflow-y-auto'>
           <div className='px-2 pb-2'>
-            {filtered.length === 0 && (
+            {isLoadingConversations && (
+              <div className='flex justify-center py-10'>
+                <Loader2 className='size-6 animate-spin text-muted-foreground' />
+              </div>
+            )}
+
+            {!isLoadingConversations && filtered.length === 0 && (
               <p className='text-center text-sm text-muted-foreground py-10'>گفتگویی یافت نشد</p>
             )}
 
             {filtered.map(conv => {
-              const meta = ROLE_META[conv.role];
               const isActive = activeId === conv.id;
-              const lastMsg = conv.messages[conv.messages.length - 1];
+              const preview = lastMessagePreview(conv.lastMessage);
 
               return (
                 <button
@@ -476,18 +338,9 @@ export function MessagesPageContent() {
                 >
                   <div className='flex items-center gap-3'>
                     <div className='relative shrink-0'>
-                      <div
-                        className={cn(
-                          'size-11 rounded-full grid place-items-center text-sm font-bold border',
-                          meta.bg,
-                          meta.color,
-                        )}
-                      >
-                        {conv.avatar}
+                      <div className='size-11 rounded-full grid place-items-center text-sm font-bold border bg-violet-50 border-violet-200 text-violet-600'>
+                        {getInitials(conv.otherUserName || '?')}
                       </div>
-                      {conv.online && (
-                        <span className='absolute bottom-0 left-0 size-3 rounded-full bg-emerald-500 border-2 border-background' />
-                      )}
                     </div>
 
                     <div className='flex-1 min-w-0'>
@@ -495,49 +348,40 @@ export function MessagesPageContent() {
                         <span
                           className={cn(
                             'font-semibold text-sm truncate',
-                            conv.unread > 0 && 'text-foreground',
+                            conv.unreadCount > 0 && 'text-foreground',
                           )}
                         >
-                          {conv.name}
+                          {conv.otherUserName || 'کاربر'}
                         </span>
                         <span className='text-[11px] text-muted-foreground whitespace-nowrap'>
-                          {lastMsg?.time}
+                          {formatMessageTime(conv.lastMessageAt || conv.lastMessage?.sentAt)}
                         </span>
                       </div>
 
                       <div className='flex items-center gap-1.5 mt-0.5'>
                         <Badge
                           variant='outline'
-                          className={cn(
-                            'text-[10px] px-1.5 py-0 h-4.5 border',
-                            meta.bg,
-                            meta.color,
-                          )}
+                          className='text-[10px] px-1.5 py-0 h-4.5 border bg-violet-50 border-violet-200 text-violet-600'
                         >
-                          <meta.icon className='size-2.5 ml-0.5' />
-                          {conv.roleLabel}
+                          <UserCog className='size-2.5 ml-0.5' />
+                          ادمین
                         </Badge>
-                        {conv.phone && (
-                          <span className='text-[10px] text-muted-foreground truncate'>
-                            {conv.phone}
-                          </span>
-                        )}
                       </div>
 
                       <div className='flex items-center justify-between gap-2 mt-1'>
                         <p
                           className={cn(
                             'text-xs truncate',
-                            conv.unread > 0
+                            conv.unreadCount > 0
                               ? 'text-foreground font-medium'
                               : 'text-muted-foreground',
                           )}
                         >
-                          {lastMessagePreview(conv)}
+                          {preview}
                         </p>
-                        {conv.unread > 0 && (
+                        {conv.unreadCount > 0 && (
                           <span className='size-5 rounded-full bg-primary text-primary-foreground text-[10px] grid place-items-center font-bold shrink-0'>
-                            {conv.unread}
+                            {conv.unreadCount}
                           </span>
                         )}
                       </div>
@@ -550,7 +394,7 @@ export function MessagesPageContent() {
         </div>
       </div>
 
-      {/* ──────────────── Chat area ──────────────── */}
+      {/* Chat area */}
       <div
         className={cn(
           'flex-1 flex flex-col min-w-0 min-h-0 bg-background',
@@ -559,7 +403,6 @@ export function MessagesPageContent() {
       >
         {active ? (
           <>
-            {/* fixed chat header */}
             <div className='flex items-center justify-between gap-3 px-5 py-3 border-b border-border/60 shrink-0'>
               <button
                 type='button'
@@ -571,151 +414,189 @@ export function MessagesPageContent() {
               </button>
 
               <div className='flex items-center gap-3 flex-1 min-w-0'>
-                <div
-                  className={cn(
-                    'size-10 rounded-full grid place-items-center text-sm font-bold border shrink-0',
-                    ROLE_META[active.role].bg,
-                    ROLE_META[active.role].color,
-                  )}
-                >
-                  {active.avatar}
+                <div className='size-10 rounded-full grid place-items-center text-sm font-bold border shrink-0 bg-violet-50 border-violet-200 text-violet-600'>
+                  {getInitials(active.otherUserName || '?')}
                 </div>
                 <div className='min-w-0'>
-                  <p className='font-semibold text-sm'>{active.name}</p>
-                  {active.phone && <p className='text-xs text-muted-foreground'>{active.phone}</p>}
+                  <p className='font-semibold text-sm'>{active.otherUserName || 'کاربر'}</p>
+                  {active.lastMessage?.subject && (
+                    <p className='text-xs text-muted-foreground truncate'>
+                      {active.lastMessage.subject}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <Badge
                 variant='outline'
-                className={cn(
-                  'border shrink-0',
-                  ROLE_META[active.role].bg,
-                  ROLE_META[active.role].color,
-                )}
+                className='border shrink-0 bg-violet-50 border-violet-200 text-violet-600'
               >
-                {active.roleLabel}
+                ادمین
               </Badge>
             </div>
 
-            {/* scrollable messages — takes remaining space between header & composer */}
             <div className='flex-1 min-h-0 overflow-y-auto bg-muted/10'>
-              <div className='px-5 py-4 space-y-3 max-w-3xl mx-auto'>
-                {active.messages.map(msg => {
-                  const isMe = msg.sender === 'me';
-                  return (
-                    <div
-                      key={msg.id}
-                      className={cn('flex', isMe ? 'justify-start' : 'justify-end')}
-                    >
+              {isLoadingThread ? (
+                <div className='flex justify-center py-16'>
+                  <Loader2 className='size-6 animate-spin text-muted-foreground' />
+                </div>
+              ) : (
+                <div className='px-5 py-4 space-y-3 max-w-3xl mx-auto'>
+                  {threadMessages.length === 0 && (
+                    <p className='text-center text-sm text-muted-foreground py-10'>
+                      هنوز پیامی در این گفتگو نیست
+                    </p>
+                  )}
+
+                  {threadMessages.map(msg => {
+                    const isMe = currentUserId ? msg.senderId === currentUserId : false;
+                    const hasAttachment = Boolean(msg.attachmentUrl || msg.attachmentId);
+                    const isReplyingTo = replyTo?.id === msg.id;
+
+                    return (
                       <div
-                        className={cn(
-                          'max-w-[65%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm',
-                          isMe
-                            ? 'bg-primary text-primary-foreground rounded-br-sm'
-                            : 'bg-background border border-border rounded-bl-sm',
-                        )}
+                        key={msg.id}
+                        className={cn('group flex', isMe ? 'justify-start' : 'justify-end')}
                       >
-                        {msg.kind === 'text' && <p>{msg.content}</p>}
-
-                        {msg.kind === 'image' && (
-                          <div className='space-y-1.5'>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={msg.content}
-                              alt='تصویر'
-                              className='rounded-xl w-full max-w-56 max-h-44 object-cover border border-border/40'
-                            />
-                            <p className='text-[11px] opacity-60'>تصویر ارسالی</p>
-                          </div>
-                        )}
-
-                        {msg.kind === 'file' && (
-                          <div
-                            className={cn(
-                              'flex items-center gap-3 rounded-xl border px-3 py-2 min-w-48',
-                              isMe ? 'border-white/20 bg-white/10' : 'border-border bg-muted/40',
-                            )}
-                          >
-                            <div
-                              className={cn(
-                                'size-9 rounded-lg grid place-items-center shrink-0',
-                                isMe ? 'bg-white/15' : 'bg-primary/10',
-                              )}
-                            >
-                              <FileText
-                                className={cn('size-4', isMe ? 'text-white' : 'text-primary')}
-                              />
-                            </div>
-                            <div className='flex-1 min-w-0'>
-                              <p className='text-sm font-medium truncate'>{msg.content}</p>
-                              <p
-                                className={cn(
-                                  'text-[11px]',
-                                  isMe ? 'text-white/60' : 'text-muted-foreground',
-                                )}
-                              >
-                                {msg.fileName} • {msg.fileSize}
-                              </p>
-                            </div>
-                            <Download
-                              className={cn(
-                                'size-4 shrink-0',
-                                isMe ? 'text-white/60' : 'text-muted-foreground',
-                              )}
-                            />
-                          </div>
-                        )}
-
                         <div
                           className={cn(
-                            'flex items-center gap-1 mt-1.5',
-                            isMe ? 'justify-start' : 'justify-end',
+                            'relative max-w-[85%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 sm:px-4 text-sm leading-relaxed shadow-sm',
+                            isMe
+                              ? 'bg-primary text-primary-foreground rounded-br-sm'
+                              : 'bg-background border border-border rounded-bl-sm',
+                            isReplyingTo && 'ring-2 ring-primary/40',
                           )}
                         >
-                          <span
+                          {msg.subject && !msg.parentMessageId && (
+                            <p
+                              className={cn(
+                                'text-xs font-semibold mb-1',
+                                isMe ? 'text-white/80' : 'text-muted-foreground',
+                              )}
+                            >
+                              {msg.subject}
+                            </p>
+                          )}
+
+                          {msg.body && <p className='whitespace-pre-wrap'>{msg.body}</p>}
+
+                          {hasAttachment && (
+                            <MessageAttachment attachmentUrl={msg.attachmentUrl} isMe={isMe} />
+                          )}
+
+                          <div
                             className={cn(
-                              'text-[10px]',
-                              isMe ? 'text-white/60' : 'text-muted-foreground',
+                              'flex items-center gap-1.5 mt-1.5',
+                              isMe ? 'justify-start' : 'justify-end',
                             )}
                           >
-                            {msg.time}
-                          </span>
-                          {isMe &&
-                            (msg.read ? (
-                              <CheckCheck className='size-3 text-white/60' />
+                            {!isMe && (
+                              <button
+                                type='button'
+                                onClick={() => startReply(msg)}
+                                className={cn(
+                                  'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] transition-colors',
+                                  'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                  isReplyingTo && 'bg-primary/10 text-primary',
+                                )}
+                                aria-label='پاسخ'
+                              >
+                                <Reply className='size-3' />
+                                پاسخ
+                              </button>
+                            )}
+                            <span
+                              className={cn(
+                                'text-[10px]',
+                                isMe ? 'text-white/60' : 'text-muted-foreground',
+                              )}
+                            >
+                              {formatMessageTime(msg.sentAt)}
+                            </span>
+                            {isMe ? (
+                              <OutgoingStatusIcon status={Number(msg.status)} />
                             ) : (
-                              <Check className='size-3 text-white/60' />
-                            ))}
+                              <IncomingStatusIcon status={Number(msg.status)} />
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
             </div>
 
-            {/* fixed composer */}
             <div className='border-t border-border/60 bg-background px-4 py-3 shrink-0'>
-              <div className='flex items-center gap-2 max-w-3xl mx-auto'>
-                <div className='flex items-center gap-1 shrink-0'>
-                  {[Paperclip, ImageIcon, Smile].map((Icon, i) => (
-                    <button
-                      key={i}
-                      type='button'
-                      className='size-8 rounded-full grid place-items-center text-muted-foreground hover:bg-muted transition-colors'
-                    >
-                      <Icon className='size-4' />
-                    </button>
-                  ))}
+              {replyTo && (
+                <div className='max-w-3xl mx-auto mb-2 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2'>
+                  <Reply className='size-3.5 text-primary shrink-0 mt-0.5' />
+                  <div className='min-w-0 flex-1'>
+                    <p className='text-[11px] font-medium text-primary'>
+                      پاسخ به {replyTo.senderName || 'پیام'}
+                    </p>
+                    <p className='text-xs text-muted-foreground truncate'>
+                      {replyTo.body ||
+                        (replyTo.attachmentUrl
+                          ? isMessageImageAttachment(replyTo.attachmentUrl)
+                            ? 'تصویر'
+                            : 'فایل پیوست'
+                          : '')}
+                    </p>
+                  </div>
+                  <button
+                    type='button'
+                    onClick={() => setReplyTo(null)}
+                    className='text-muted-foreground hover:text-foreground shrink-0'
+                    aria-label='لغو پاسخ'
+                  >
+                    <X className='size-3.5' />
+                  </button>
                 </div>
+              )}
+
+              {attachedFile && (
+                <div className='max-w-3xl mx-auto mb-2 flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs'>
+                  <Paperclip className='size-3.5 text-muted-foreground shrink-0' />
+                  <span className='truncate flex-1'>{attachedFile.name}</span>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setAttachedFile(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className='text-muted-foreground hover:text-foreground'
+                    aria-label='حذف پیوست'
+                  >
+                    <X className='size-3.5' />
+                  </button>
+                </div>
+              )}
+
+              <div className='flex items-center gap-2 max-w-3xl mx-auto'>
+                <input
+                  ref={fileInputRef}
+                  type='file'
+                  className='hidden'
+                  onChange={e => setAttachedFile(e.target.files?.[0] ?? null)}
+                />
+
+                <button
+                  type='button'
+                  onClick={() => fileInputRef.current?.click()}
+                  className='size-8 rounded-full grid place-items-center text-muted-foreground hover:bg-muted transition-colors shrink-0'
+                  aria-label='پیوست فایل'
+                >
+                  <Paperclip className='size-4' />
+                </button>
 
                 <div className='flex-1'>
                   <textarea
                     ref={textareaRef}
                     value={draft}
                     onChange={e => setDraft(e.target.value)}
-                    placeholder='پیام خود را بنویسید...'
+                    placeholder={replyTo ? 'پاسخ خود را بنویسید...' : 'پیام خود را بنویسید...'}
                     dir='rtl'
                     rows={1}
                     className='w-full min-h-11 resize-none overflow-hidden rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-shadow'
@@ -725,6 +606,12 @@ export function MessagesPageContent() {
                       el.style.height = 'auto';
                       el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
                     }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        void handleSubmitMessage();
+                      }
+                    }}
                   />
                 </div>
 
@@ -732,25 +619,48 @@ export function MessagesPageContent() {
                   type='button'
                   size='icon'
                   className='size-10 rounded-xl shrink-0 self-center -translate-y-px'
-                  disabled={!draft.trim()}
+                  disabled={isSending || (!draft.trim() && !attachedFile)}
+                  onClick={() => void handleSubmitMessage()}
                 >
-                  <Send className='size-4' />
+                  {isSending ? (
+                    <Loader2 className='size-4 animate-spin' />
+                  ) : replyTo ? (
+                    <Reply className='size-4' />
+                  ) : (
+                    <Send className='size-4' />
+                  )}
                 </Button>
               </div>
             </div>
           </>
         ) : (
           <div className='flex-1 grid place-items-center'>
-            <div className='text-center space-y-2 px-4'>
+            <div className='text-center space-y-3 px-4'>
               <MessageCircle className='size-12 text-muted-foreground/40 mx-auto' />
               <p className='font-medium text-muted-foreground'>گفتگویی انتخاب نشده</p>
               <p className='text-sm text-muted-foreground/70'>
-                از لیست سمت راست یک مکالمه را انتخاب کنید
+                از لیست سمت راست یک مکالمه را انتخاب کنید یا پیام جدید بفرستید
               </p>
+              <Button type='button' onClick={() => setComposeOpen(true)} className='gap-1.5'>
+                <Plus className='size-4' />
+                پیام جدید
+              </Button>
             </div>
           </div>
         )}
       </div>
+
+      <NewMessageDialog
+        open={composeOpen}
+        onOpenChange={setComposeOpen}
+        onSent={async receiverId => {
+          const { data: nextConversations } = await refetchConversations();
+          const match = nextConversations?.find(c => c.otherUserId === receiverId);
+          if (match) {
+            selectConversation(match.id);
+          }
+        }}
+      />
     </div>
   );
 }
