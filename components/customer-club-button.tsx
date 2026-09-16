@@ -10,7 +10,6 @@ import {
   CUSTOMER_CLUB_APP_URL,
   getClubSsoThemeFromBrowser,
   submitClubSsoAssertion,
-  type ClubSsoTheme,
 } from '@/lib/club-sso';
 
 type CustomerClubButtonProps = {
@@ -28,7 +27,7 @@ type CustomerClubButtonProps = {
 type AssertionResponse = {
   isSuccess?: boolean;
   message?: string;
-  data?: { assertion?: string; theme?: ClubSsoTheme };
+  data?: { assertion?: string };
 };
 
 /**
@@ -76,12 +75,11 @@ export function CustomerClubButton({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ userId, theme }),
+        body: JSON.stringify({ userId }),
       });
 
       const payload = (await resp.json().catch(() => null)) as AssertionResponse | null;
       const assertion = payload?.data?.assertion;
-      const resolvedTheme = payload?.data?.theme ?? theme;
       const message = payload?.message;
 
       if (resp.status === 401) {
@@ -97,7 +95,8 @@ export function CustomerClubButton({
       }
 
       onNavigating?.();
-      submitClubSsoAssertion(assertion, resolvedTheme);
+      // Guide: POST assertion + theme (light|dark|auto) as form fields — not inside JWT
+      submitClubSsoAssertion(assertion, theme);
     } catch {
       toast.error('خطا در ارتباط با سرویس باشگاه مشتریان.');
       setLoading(false);

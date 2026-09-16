@@ -18,6 +18,10 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Parent folder has an empty package-lock.json; pin Turbopack to this app.
+  turbopack: {
+    root: process.cwd(),
+  },
   images: {
     remotePatterns: [
       {

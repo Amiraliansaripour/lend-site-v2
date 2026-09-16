@@ -20,15 +20,11 @@ export default function ClubSsoDemoPage() {
 
     try {
       const theme = getClubSsoThemeFromBrowser();
-      const resp = await fetch('/api/club-sso/test-assertion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme }),
-      });
+      const resp = await fetch('/api/club-sso/test-assertion', { method: 'POST' });
       const payload = (await resp.json()) as {
         isSuccess?: boolean;
         message?: string;
-        data?: { assertion?: string; theme?: 'light' | 'dark' | 'auto' };
+        data?: { assertion?: string };
       };
 
       if (!resp.ok || !payload.isSuccess || !payload.data?.assertion) {
@@ -37,7 +33,7 @@ export default function ClubSsoDemoPage() {
         return;
       }
 
-      submitClubSsoAssertion(payload.data.assertion, payload.data.theme ?? theme);
+      submitClubSsoAssertion(payload.data.assertion, theme);
     } catch {
       toast.error('خطا در ارتباط با سرویس باشگاه.');
       setLoading(false);

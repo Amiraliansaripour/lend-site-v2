@@ -2,14 +2,12 @@ import { NextResponse } from 'next/server';
 
 import { accessToken } from '@/lib/auth/server/cookies';
 import { BASE_URLS } from '@/lib/api/constants';
-import { parseClubSsoTheme } from '@/lib/club-sso';
 import { createClubSsoAssertion, normalizeClubSsoIdentity } from '@/lib/club-sso-server';
 import type { APIResult } from '@/types/api';
 import type { User } from '@/types/auth';
 
 type AssertionBody = {
   userId?: string;
-  theme?: string;
 };
 
 /**
@@ -82,10 +80,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const theme = parseClubSsoTheme(body.theme) ?? 'auto';
-    const assertion = await createClubSsoAssertion(identity, theme);
+    const assertion = await createClubSsoAssertion(identity);
 
-    return NextResponse.json({ isSuccess: true, data: { assertion, theme } });
+    return NextResponse.json({ isSuccess: true, data: { assertion } });
   } catch (error) {
     const message =
       error instanceof Error && error.message.includes('CLUB_SSO_PRIVATE_KEY')
