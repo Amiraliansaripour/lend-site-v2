@@ -3,6 +3,7 @@ import {
   getTenantSlugFromHostname,
   isDefaultCompanyName,
   normalizeTenantKey,
+  tenantSlugCandidates,
 } from '@/lib/site-template';
 
 export type ResolvedSiteTemplate = {
@@ -32,7 +33,8 @@ function findDefaultTemplate(list: SiteTemplateImages[]): SiteTemplateImages {
  *
  * Rules (intentional, keep stable):
  * 1) Main domain (lend360.ir, www, localhost, IP) → ALWAYS the row with companyName null/empty.
- * 2) Subdomain (fld.lend360.ir) → ONLY if some row has companyName === "fld" (case-insensitive).
+ * 2) Subdomain (fld.lend360.ir / fld-lend.persiansys.ir) → row whose companyName
+ *    matches the slug (exact) or the slug without a deploy suffix like "-lend".
  * 3) Subdomain without a matching companyName → fall back to the default (null) row.
  * 4) No hard-coded company list — any future companyName / subdomain works automatically.
  */
@@ -66,9 +68,12 @@ export function resolveSiteTemplate(
   }
 
   // ── Tenant subdomain ─────────────────────────────────────────────────
+  // fld.lend360.ir → "fld"; fld-lend.persiansys.ir → try "fld-lend" then "fld"
+  const candidates = tenantSlugCandidates(tenantSlug);
   const matched = list.find(item => {
     if (isDefaultCompanyName(item.companyName)) return false;
-    return normalizeTenantKey(item.companyName) === tenantSlug;
+    const key = normalizeTenantKey(item.companyName);
+    return candidates.includes(key);
   });
 
   if (!matched) {

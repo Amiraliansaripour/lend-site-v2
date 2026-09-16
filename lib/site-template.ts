@@ -26,7 +26,15 @@ const RESERVED_SUBDOMAINS = new Set([
   'auth',
   'sso',
   'portal',
+  /** Main product host on infra like lend.persiansys.ir (not a company tenant). */
+  'lend',
 ]);
+
+/**
+ * Deploy host suffixes after companyName, e.g. fld-lend.persiansys.ir → company "fld".
+ * Exact subdomain still wins first (fld.lend360.ir → "fld").
+ */
+const TENANT_DEPLOY_SUFFIXES = ['-lend'] as const;
 
 export const getUploadUrl = (filePath?: string | null): string => {
   if (!filePath) return '';
@@ -46,6 +54,26 @@ export const applyBrandName = (text: string, brandName: string) => {
 /** Normalize company / subdomain labels for case-insensitive equality. */
 export const normalizeTenantKey = (value?: string | null): string => {
   return (value ?? '').trim().toLowerCase();
+};
+
+/**
+ * Candidate keys for matching API `companyName` against a hostname slug.
+ * Examples:
+ * - "fld" → ["fld"]
+ * - "fld-lend" → ["fld-lend", "fld"]
+ */
+export const tenantSlugCandidates = (slug: string): string[] => {
+  const normalized = normalizeTenantKey(slug);
+  if (!normalized) return [];
+
+  const candidates = [normalized];
+  for (const suffix of TENANT_DEPLOY_SUFFIXES) {
+    if (normalized.endsWith(suffix) && normalized.length > suffix.length) {
+      candidates.push(normalized.slice(0, -suffix.length));
+    }
+  }
+
+  return [...new Set(candidates)];
 };
 
 /**
@@ -69,6 +97,7 @@ const isIpv4Hostname = (host: string) => /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
  *
  * Returns slug for:
  * - fld.lend360.ir → "fld"
+ * - fld-lend.persiansys.ir → "fld-lend" (matched to companyName "fld" via suffix strip)
  * - fld.localhost → "fld" (local multi-tenant)
  */
 export const getTenantSlugFromHostname = (hostname: string): string | null => {
