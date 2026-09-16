@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Paperclip,
   Plus,
+  Reply,
   Search,
   Send,
   UserCog,
@@ -32,7 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getUserId } from '@/lib/auth/client/user-info';
 import { cn } from '@/lib/utils';
-import { useMarkMessageAsRead, useReplyMessage } from '@/mutations/message';
+import { useMarkMessageAsRead, useReplyMessage, useSendMessage } from '@/mutations/message';
 import {
   useConversationMessages,
   useConversations,
@@ -78,25 +79,38 @@ function lastMessagePreview(message: Message | null | undefined): string {
   return message.body || message.subject || '';
 }
 
-/** Incoming message still waiting to be marked read */
+function getConversationSubject(messages: Message[], conversation: Conversation | null): string {
+  const withSubject = messages.find(m => m.subject?.trim());
+  if (withSubject?.subject) return withSubject.subject;
+  return conversation?.lastMessage?.subject?.trim() || 'بدون موضوع';
+}
+
+/** Incoming message still waiting to be marked seen */
 function isUnreadIncoming(message: Message, currentUserId: string): boolean {
   return message.receiverId === currentUserId && Number(message.status) === MessageStatus.Sent;
 }
 
 function OutgoingStatusIcon({ status }: { status: number }) {
-  if (status === MessageStatus.Read || status === MessageStatus.Answered) {
-    return (
-      <CheckCheck
-        className={cn(
-          'size-3.5',
-          status === MessageStatus.Answered ? 'text-sky-200' : 'text-white/70',
-        )}
-        aria-label={status === MessageStatus.Answered ? 'پاسخ داده شده' : 'خوانده شده'}
-      />
-    );
+  // Seen by admin → double ticks
+  if (status === MessageStatus.Seen) {
+    return <CheckCheck className='size-3.5 text-white/70' aria-label='دیده شده' />;
   }
 
-  return <Check className='size-3.5 text-white/60' aria-label='ارسال شده' />;
+  // Sent or replied (by me) → single tick
+  if (status === MessageStatus.Sent || status === MessageStatus.Replied) {
+    return <Check className='size-3.5 text-white/60' aria-label='ارسال شده' />;
+  }
+
+  return null;
+}
+
+function IncomingStatusIcon({ status }: { status: number }) {
+  // Admin message seen/replied → double ticks (user knows admin engagement state)
+  if (status === MessageStatus.Seen || status === MessageStatus.Replied) {
+    return <CheckCheck className='size-3.5 text-primary/70' aria-label='دیده شده' />;
+  }
+
+  return null;
 }
 
 export function MessagesPageContent() {
@@ -112,6 +126,7 @@ export function MessagesPageContent() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -127,6 +142,7 @@ export function MessagesPageContent() {
     refetch: refetchThread,
   } = useConversationMessages(activeId);
 
+  const sendMutation = useSendMessage();
   const replyMutation = useReplyMessage();
   const { mutate: markAsRead } = useMarkMessageAsRead();
 
@@ -160,56 +176,78 @@ export function MessagesPageContent() {
     }
   }, [threadMessages, currentUserId, markAsRead]);
 
+  const resetComposer = useCallback(() => {
+    setDraft('');
+    setAttachedFile(null);
+    setReplyTo(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+  }, []);
+
   const selectConversation = (id: string) => {
     setActiveId(id);
     setMobileShowChat(true);
-    setDraft('');
-    setAttachedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    resetComposer();
   };
 
-  const handleSendReply = useCallback(async () => {
-    if (!activeId || (!draft.trim() && !attachedFile)) return;
+  const startReply = useCallback((message: Message) => {
+    setReplyTo(message);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, []);
 
-    const parentMessageId =
-      threadMessages[threadMessages.length - 1]?.id ?? active?.lastMessage?.id;
+  const uploadOptionalAttachment = async (file: File | null) => {
+    if (!file) return null;
 
-    if (!parentMessageId) {
-      toast.error('امکان پاسخ در این گفتگو وجود ندارد. پیام جدید ارسال کنید.');
-      return;
-    }
+    const formData = new FormData();
+    formData.append('Name', file.name);
+    formData.append('attachmentType', String(MESSAGE_ATTACHMENT_TYPE));
+    formData.append('file', file);
+    const uploaded = await uploadAttachment(formData);
+    return uploaded.id;
+  };
+
+  const handleSubmitMessage = useCallback(async () => {
+    if (!active || (!draft.trim() && !attachedFile)) return;
+
+    const body = draft.trim() || (attachedFile ? attachedFile.name : '');
 
     try {
       setIsSending(true);
-      let attachmentId: string | null = null;
+      const attachmentId = await uploadOptionalAttachment(attachedFile);
 
-      if (attachedFile) {
-        const formData = new FormData();
-        formData.append('Name', attachedFile.name);
-        formData.append('attachmentType', String(MESSAGE_ATTACHMENT_TYPE));
-        formData.append('file', attachedFile);
-        const uploaded = await uploadAttachment(formData);
-        attachmentId = uploaded.id;
+      // Explicit reply to a message → /Message/reply
+      if (replyTo) {
+        const result = await replyMutation.mutateAsync({
+          parentMessageId: replyTo.id,
+          body,
+          attachmentId,
+        });
+
+        if (result?.isSuccess === false) {
+          toast.error(result.message || 'ارسال پاسخ ناموفق بود');
+          return;
+        }
+      } else {
+        // All other user messages → /Message/send
+        if (!active.otherUserId) {
+          toast.error('گیرنده پیام مشخص نیست');
+          return;
+        }
+
+        const result = await sendMutation.mutateAsync({
+          receiverId: active.otherUserId,
+          subject: getConversationSubject(threadMessages, active),
+          body,
+          attachmentId,
+        });
+
+        if (result?.isSuccess === false) {
+          toast.error(result.message || 'ارسال پیام ناموفق بود');
+          return;
+        }
       }
 
-      const result = await replyMutation.mutateAsync({
-        parentMessageId,
-        body: draft.trim() || (attachedFile ? attachedFile.name : ''),
-        attachmentId,
-      });
-
-      if (result?.isSuccess === false) {
-        toast.error(result.message || 'ارسال پاسخ ناموفق بود');
-        return;
-      }
-
-      setDraft('');
-      setAttachedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
-
+      resetComposer();
       await Promise.all([refetchThread(), refetchConversations()]);
     } catch {
       toast.error('خطا در ارسال پیام');
@@ -217,12 +255,14 @@ export function MessagesPageContent() {
       setIsSending(false);
     }
   }, [
-    activeId,
+    active,
     draft,
     attachedFile,
+    replyTo,
     threadMessages,
-    active?.lastMessage?.id,
     replyMutation,
+    sendMutation,
+    resetComposer,
     refetchThread,
     refetchConversations,
   ]);
@@ -411,18 +451,20 @@ export function MessagesPageContent() {
                   {threadMessages.map(msg => {
                     const isMe = currentUserId ? msg.senderId === currentUserId : false;
                     const hasAttachment = Boolean(msg.attachmentUrl || msg.attachmentId);
+                    const isReplyingTo = replyTo?.id === msg.id;
 
                     return (
                       <div
                         key={msg.id}
-                        className={cn('flex', isMe ? 'justify-start' : 'justify-end')}
+                        className={cn('group flex', isMe ? 'justify-start' : 'justify-end')}
                       >
                         <div
                           className={cn(
-                            'max-w-[85%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 sm:px-4 text-sm leading-relaxed shadow-sm',
+                            'relative max-w-[85%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 sm:px-4 text-sm leading-relaxed shadow-sm',
                             isMe
                               ? 'bg-primary text-primary-foreground rounded-br-sm'
                               : 'bg-background border border-border rounded-bl-sm',
+                            isReplyingTo && 'ring-2 ring-primary/40',
                           )}
                         >
                           {msg.subject && !msg.parentMessageId && (
@@ -444,10 +486,25 @@ export function MessagesPageContent() {
 
                           <div
                             className={cn(
-                              'flex items-center gap-1 mt-1.5',
+                              'flex items-center gap-1.5 mt-1.5',
                               isMe ? 'justify-start' : 'justify-end',
                             )}
                           >
+                            {!isMe && (
+                              <button
+                                type='button'
+                                onClick={() => startReply(msg)}
+                                className={cn(
+                                  'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] transition-colors',
+                                  'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                  isReplyingTo && 'bg-primary/10 text-primary',
+                                )}
+                                aria-label='پاسخ'
+                              >
+                                <Reply className='size-3' />
+                                پاسخ
+                              </button>
+                            )}
                             <span
                               className={cn(
                                 'text-[10px]',
@@ -456,7 +513,11 @@ export function MessagesPageContent() {
                             >
                               {formatMessageTime(msg.sentAt)}
                             </span>
-                            {isMe && <OutgoingStatusIcon status={Number(msg.status)} />}
+                            {isMe ? (
+                              <OutgoingStatusIcon status={Number(msg.status)} />
+                            ) : (
+                              <IncomingStatusIcon status={Number(msg.status)} />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -468,6 +529,33 @@ export function MessagesPageContent() {
             </div>
 
             <div className='border-t border-border/60 bg-background px-4 py-3 shrink-0'>
+              {replyTo && (
+                <div className='max-w-3xl mx-auto mb-2 flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2'>
+                  <Reply className='size-3.5 text-primary shrink-0 mt-0.5' />
+                  <div className='min-w-0 flex-1'>
+                    <p className='text-[11px] font-medium text-primary'>
+                      پاسخ به {replyTo.senderName || 'پیام'}
+                    </p>
+                    <p className='text-xs text-muted-foreground truncate'>
+                      {replyTo.body ||
+                        (replyTo.attachmentUrl
+                          ? isMessageImageAttachment(replyTo.attachmentUrl)
+                            ? 'تصویر'
+                            : 'فایل پیوست'
+                          : '')}
+                    </p>
+                  </div>
+                  <button
+                    type='button'
+                    onClick={() => setReplyTo(null)}
+                    className='text-muted-foreground hover:text-foreground shrink-0'
+                    aria-label='لغو پاسخ'
+                  >
+                    <X className='size-3.5' />
+                  </button>
+                </div>
+              )}
+
               {attachedFile && (
                 <div className='max-w-3xl mx-auto mb-2 flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs'>
                   <Paperclip className='size-3.5 text-muted-foreground shrink-0' />
@@ -508,7 +596,7 @@ export function MessagesPageContent() {
                     ref={textareaRef}
                     value={draft}
                     onChange={e => setDraft(e.target.value)}
-                    placeholder='پیام خود را بنویسید...'
+                    placeholder={replyTo ? 'پاسخ خود را بنویسید...' : 'پیام خود را بنویسید...'}
                     dir='rtl'
                     rows={1}
                     className='w-full min-h-11 resize-none overflow-hidden rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-shadow'
@@ -521,7 +609,7 @@ export function MessagesPageContent() {
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        void handleSendReply();
+                        void handleSubmitMessage();
                       }
                     }}
                   />
@@ -532,10 +620,12 @@ export function MessagesPageContent() {
                   size='icon'
                   className='size-10 rounded-xl shrink-0 self-center -translate-y-px'
                   disabled={isSending || (!draft.trim() && !attachedFile)}
-                  onClick={() => void handleSendReply()}
+                  onClick={() => void handleSubmitMessage()}
                 >
                   {isSending ? (
                     <Loader2 className='size-4 animate-spin' />
+                  ) : replyTo ? (
+                    <Reply className='size-4' />
                   ) : (
                     <Send className='size-4' />
                   )}

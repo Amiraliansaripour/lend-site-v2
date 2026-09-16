@@ -4,8 +4,8 @@ import type { APIResult } from '@/types/api';
 /** Message delivery status from API */
 export enum MessageStatus {
   Sent = 1,
-  Read = 3,
-  Answered = 4,
+  Seen = 3,
+  Replied = 4,
 }
 
 /** Attachment type used when uploading message files */
@@ -23,23 +23,27 @@ export type Message = {
   id: string;
   senderId: string;
   senderName: string;
+  senderRole?: number;
   receiverId: string;
   receiverName: string;
+  receiverRole?: number;
   subject: string;
   body: string;
   status: MessageStatus | number;
   sentAt: string;
-  readAt: string | null;
+  readAt?: string | null;
   isDeleted: boolean;
-  parentMessageId: string | null;
-  attachmentId: string | null;
-  attachmentUrl: string | null;
+  parentMessageId?: string | null;
+  attachmentId?: string | null;
+  attachmentUrl?: string | null;
+  dateNow?: string;
 };
 
 export type Conversation = {
   id: string;
   otherUserId: string;
   otherUserName: string;
+  otherRole?: number;
   lastMessage: Message | null;
   lastMessageAt: string;
   unreadCount: number;
