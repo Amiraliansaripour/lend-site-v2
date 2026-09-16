@@ -5,7 +5,7 @@ import { Gift } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { BoomLogo } from '@/components/brand/boom-logo';
-import { submitClubSsoAssertion } from '@/lib/club-sso';
+import { getClubSsoThemeFromBrowser, submitClubSsoAssertion } from '@/lib/club-sso';
 
 /**
  * Temporary client-demo page for club SSO (guide test account).
@@ -19,11 +19,16 @@ export default function ClubSsoDemoPage() {
     setLoading(true);
 
     try {
-      const resp = await fetch('/api/club-sso/test-assertion', { method: 'POST' });
+      const theme = getClubSsoThemeFromBrowser();
+      const resp = await fetch('/api/club-sso/test-assertion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme }),
+      });
       const payload = (await resp.json()) as {
         isSuccess?: boolean;
         message?: string;
-        data?: { assertion?: string };
+        data?: { assertion?: string; theme?: 'light' | 'dark' | 'auto' };
       };
 
       if (!resp.ok || !payload.isSuccess || !payload.data?.assertion) {
@@ -32,7 +37,7 @@ export default function ClubSsoDemoPage() {
         return;
       }
 
-      submitClubSsoAssertion(payload.data.assertion);
+      submitClubSsoAssertion(payload.data.assertion, payload.data.theme ?? theme);
     } catch {
       toast.error('خطا در ارتباط با سرویس باشگاه.');
       setLoading(false);

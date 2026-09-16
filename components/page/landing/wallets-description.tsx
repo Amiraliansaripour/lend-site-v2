@@ -10,6 +10,7 @@ import { BoomLogo } from '@/components/brand/boom-logo';
 import { normalizeToPersianDigits } from '@/utils/normalize';
 import { formatNumber } from '@/utils/format';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { SectionAmbientGlow } from '@/components/page/landing/section-ambient-glow';
 
 type PageParams = Awaited<PageProps<'/[locale]'>['params']>;
 
@@ -42,11 +43,14 @@ const WALLET_COPY: Record<
 
 function CardCircles() {
   return (
-    <div aria-hidden className='pointer-events-none absolute inset-0 overflow-hidden'>
-      <div className='absolute -left-10 -top-12 size-44 rounded-full border border-white/20' />
-      <div className='absolute left-4 top-6 size-28 rounded-full border border-white/15' />
-      <div className='absolute -right-14 -bottom-20 size-56 rounded-full border border-white/15' />
-      <div className='absolute right-10 -bottom-4 size-36 rounded-full border border-white/20' />
+    <div
+      aria-hidden
+      className='pointer-events-none absolute inset-0 overflow-hidden dark:opacity-40'
+    >
+      <div className='absolute -left-10 -top-12 size-44 rounded-full border border-white/20 dark:border-white/15' />
+      <div className='absolute left-4 top-6 size-28 rounded-full border border-white/15 dark:border-white/10' />
+      <div className='absolute -right-14 -bottom-20 size-56 rounded-full border border-white/15 dark:border-white/10' />
+      <div className='absolute right-10 -bottom-4 size-36 rounded-full border border-white/20 dark:border-white/15' />
       <div className='absolute left-[38%] top-[28%] size-24 rounded-full border border-white/10' />
     </div>
   );
@@ -62,8 +66,10 @@ export function WalletsDescription() {
   return (
     <section
       dir='ltr'
-      className='container grid items-center gap-x-10 gap-y-12 overflow-hidden px-4 py-8 lg:grid-cols-2'
+      className='container grid items-center gap-x-10 gap-y-12 px-4 py-8 dark:relative lg:grid-cols-2'
     >
+      <SectionAmbientGlow />
+
       <Tabs
         dir={dir}
         value={tab}
@@ -104,7 +110,7 @@ export function WalletsDescription() {
         </TabsContent>
       </Tabs>
 
-      <section className='relative order-2 flex items-center justify-center py-8'>
+      <section className='order-2 flex items-center justify-center py-8'>
         <div className='relative aspect-[1.58/1] w-full max-w-110'>
           {/* Back plate */}
           <div

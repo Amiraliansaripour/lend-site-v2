@@ -11,6 +11,7 @@ import { type PlanDetail } from '@/api/plan';
 import { getFinancierPlansQueryOptions } from '@/queries/plan';
 import { Slider } from '@/components/ui/slider';
 import { CreditModal } from '@/components/page/landing/credit-modal';
+import { SectionAmbientGlow } from '@/components/page/landing/section-ambient-glow';
 import { ExternalLinkPlanPanel } from '@/components/external-link-plan-panel';
 import { toast } from 'sonner';
 
@@ -108,7 +109,9 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
   ];
 
   return (
-    <section className='px-4 py-10 sm:py-12 lg:py-16'>
+    <section className='px-4 py-10 dark:relative sm:py-12 lg:py-16'>
+      <SectionAmbientGlow />
+
       <header className='mx-auto mb-8 max-w-2xl text-center sm:mb-10'>
         <h2 className='mb-3 text-2xl font-bold text-[#0f172a] sm:text-3xl'>نمایشگر اقساط</h2>
         <p className='text-sm leading-7 text-[#64748b] sm:text-base'>
@@ -122,7 +125,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
         {/* Input card */}
         <div
           dir='rtl'
-          className='rounded-3xl border border-[#e8eef7] bg-white p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] sm:p-7'
+          className='rounded-3xl border border-[#e8eef7] bg-white p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] dark:border-white/8 sm:p-7'
         >
           {selectedPlan && !hasExternalLink && (
             <div className='mb-8'>
@@ -187,12 +190,12 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
             planName={selectedPlan?.name}
             onContinue={handleExternalLinkRedirect}
             variant='landing'
-            className='rounded-3xl border border-[#e8eef7] bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)]'
+            className='rounded-3xl border border-[#e8eef7] bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] dark:border-white/8'
           />
         ) : (
           <div
             dir='rtl'
-            className='flex flex-col rounded-3xl border border-[#e8eef7] bg-white p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] sm:p-7'
+            className='flex flex-col rounded-3xl border border-[#e8eef7] bg-white p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] dark:border-white/8 sm:p-7'
           >
             <div className='flex-1'>
               {summaryRows.map((row, index) => (
@@ -200,7 +203,8 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
                   key={row.label}
                   className={cn(
                     'flex items-center justify-between gap-4 py-4',
-                    index < summaryRows.length - 1 && 'border-b border-[#eef2f7]',
+                    index < summaryRows.length - 1 &&
+                      'border-b border-[#eef2f7] dark:border-white/6',
                   )}
                 >
                   <span className='text-sm text-[#64748b] sm:text-base'>{row.label}</span>

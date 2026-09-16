@@ -34,7 +34,7 @@ export function AppSidebar() {
           <Link
             href='/'
             onClick={closeMobile}
-            className='mb-3 flex w-full items-center justify-center border-b border-gray-200 py-4'
+            className='mb-3 flex w-full items-center justify-center border-b border-border py-4'
           >
             <BoomLogo markClassName='size-9' wordmarkClassName='text-xl' />
           </Link>
@@ -83,7 +83,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => dispatchEvent(AUTH_LOGOUT_EVENT)}
-              className='text-red-500 hover:text-red-600 data-[active=true]:bg-red-50 data-[active=true]:text-red-600'
+              className='text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 data-[active=true]:bg-red-50 data-[active=true]:text-red-600 dark:data-[active=true]:bg-red-500/10 dark:data-[active=true]:text-red-400'
             >
               <LogOut />
               <span>خروج</span>

@@ -60,8 +60,11 @@ export function DashboardBottomNav() {
         className={cn(
           'mx-auto flex h-[58px] max-w-md items-stretch gap-0.5 p-1',
           'rounded-full border border-black/[0.05] bg-white/85',
+          'dark:border-white/10 dark:bg-card/90',
           'shadow-[0_10px_28px_-14px_rgba(0,0,0,0.22)]',
+          'dark:shadow-[0_10px_28px_-14px_rgba(0,0,0,0.55)]',
           'backdrop-blur-xl supports-[backdrop-filter]:bg-white/75',
+          'dark:supports-[backdrop-filter]:bg-card/80',
         )}
       >
         {bottomItems.map(item => {

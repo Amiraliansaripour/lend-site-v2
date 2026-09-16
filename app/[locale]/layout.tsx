@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { dirFor } from '@/i18n/routing';
 
 import { NuqsProvider } from '@/providers/nuqs';
+import { ThemeProvider } from '@/providers/theme';
 import { AuthListener } from '@/lib/auth/auth-listener';
 import { QueryClientProvider } from '@/lib/query-client/provider';
 import { SiteTemplateProvider } from '@/providers/site-template';
@@ -37,35 +38,40 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: '(prefers-color-scheme: dark)', color: '#222b3a' },
   ],
   width: 'device-width',
   initialScale: 1,
   minimumScale: 1,
 };
 
+const themeInitScript = `(function(){try{var d=document.documentElement;d.classList.remove('light','dark');var e=localStorage.getItem('theme');var t=(e==='light'||e==='dark')?e:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');d.classList.add(t);d.style.colorScheme=t;}catch(e){}})();`;
+
 export default async function RootLayout({ params, children }: LayoutProps<'/[locale]'>) {
   const { locale } = await params;
 
   return (
-    <html lang={locale} dir={dirFor(locale)}>
+    <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
       <body className='antialiased'>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaDeferredPrompt=e;});})();`,
           }}
         />
-        <Toaster toastOptions={{ className: 'IranYekan !important' }} />
+        <ThemeProvider>
+          <Toaster toastOptions={{ className: 'IranYekan !important' }} />
 
-        <NextIntlClientProvider>
-          <NuqsProvider>
-            <AuthListener />
-            <PwaInstallPrompt />
-            <QueryClientProvider>
-              <SiteTemplateProvider>{children}</SiteTemplateProvider>
-            </QueryClientProvider>
-          </NuqsProvider>
-        </NextIntlClientProvider>
+          <NextIntlClientProvider>
+            <NuqsProvider>
+              <AuthListener />
+              <PwaInstallPrompt />
+              <QueryClientProvider>
+                <SiteTemplateProvider>{children}</SiteTemplateProvider>
+              </QueryClientProvider>
+            </NuqsProvider>
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

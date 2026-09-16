@@ -8,6 +8,7 @@ import StepHelpImage3 from '@/assets/images/illustrations/step3help.png';
 import StepHelpImage4 from '@/assets/images/illustrations/step4help.png';
 import Image from 'next/image';
 import { useSiteTemplate } from '@/providers/site-template';
+import { SectionAmbientGlow } from '@/components/page/landing/section-ambient-glow';
 
 const STEPS = [
   {
@@ -36,7 +37,9 @@ export function LoanRequestSteps() {
   const { withBrand } = useSiteTemplate();
 
   return (
-    <section className='container'>
+    <section className='container dark:relative'>
+      <SectionAmbientGlow />
+
       <div className='mb-12 flex flex-col items-center gap-y-4 text-center'>
         <p className='text-xs font-medium tracking-[0.28em] text-brand/70'>STEPS</p>
         <h3 className='text-2xl font-bold text-[#0f172a] md:text-3xl'>
@@ -52,7 +55,7 @@ export function LoanRequestSteps() {
         {STEPS.map(({ title, image, description }, index) => (
           <Card
             key={index}
-            className='overflow-hidden border-brand/10 bg-white boom-card-shadow gap-y-0 py-0 transition-shadow hover:shadow-[0_16px_48px_-16px_rgba(0,85,255,0.18)]'
+            className='overflow-hidden border-brand/10 bg-white boom-card-shadow gap-y-0 py-0 transition-shadow hover:shadow-[0_16px_48px_-16px_rgba(0,85,255,0.18)] dark:border-white/8'
           >
             <div className='aspect-[10/2] w-full bg-[#eef2f7]'>
               <Image

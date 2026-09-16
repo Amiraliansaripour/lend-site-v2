@@ -9,6 +9,7 @@ import { getUserInfo } from '@/lib/auth/client/user-info';
 import { BoomLogo } from '@/components/brand/boom-logo';
 import { MokhaberatButton } from '@/components/mokhaberat-button';
 import { CustomerClubButton } from '@/components/customer-club-button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 type Href = `/${string}`;
 
@@ -82,7 +83,9 @@ export function Header() {
           className={cn(
             'w-full h-[52px] flex justify-between items-center px-4 transition-all duration-300',
             'lg:max-w-5xl lg:rounded-full lg:bg-white/95 lg:backdrop-blur-md lg:shadow-[0_8px_20px_rgba(0,0,0,0.05)] lg:border lg:border-gray-100',
+            'dark:lg:bg-card/90 dark:lg:border-border dark:lg:shadow-[0_8px_24px_rgba(0,0,0,0.35)]',
             'max-lg:bg-white/90 max-lg:backdrop-blur-md max-lg:border-b max-lg:border-brand/10',
+            'dark:max-lg:bg-background/90 dark:max-lg:border-border',
             hasScrolled && 'max-lg:shadow-md',
             !visible && '-translate-y-full lg:-translate-y-[calc(100%+2rem)]',
           )}
@@ -90,7 +93,7 @@ export function Header() {
           <div className='w-full h-full flex justify-between items-center relative'>
             {/* Mobile Menu Button */}
             <button
-              className='lg:hidden p-2 text-gray-600 hover:text-black transition-all duration-200 !z-50'
+              className='lg:hidden p-2 text-muted-foreground hover:text-foreground transition-all duration-200 !z-50'
               onClick={toggleMenu}
             >
               <div className='relative w-6 h-6 flex items-center justify-center'>
@@ -99,13 +102,13 @@ export function Header() {
                   className={cn(
                     'absolute transition-all duration-300',
                     isMenuOpen ? 'opacity-0 rotate-180 scale-75' : 'opacity-100 rotate-0 scale-100',
-                    transparent ? 'text-white' : 'text-black',
+                    transparent ? 'text-white' : 'text-foreground',
                   )}
                 />
                 <X
                   size={18}
                   className={cn(
-                    'absolute transition-all duration-300 text-black',
+                    'absolute transition-all duration-300 text-foreground',
                     isMenuOpen
                       ? 'opacity-100 rotate-0 scale-100'
                       : 'opacity-0 -rotate-180 scale-75',
@@ -125,6 +128,7 @@ export function Header() {
             </nav>
 
             <div className='hidden lg:flex items-center gap-2'>
+              <ThemeToggle compact />
               <MokhaberatButton />
               <CustomerClubButton />
               {!isAuthenticated ? (
@@ -148,6 +152,7 @@ export function Header() {
 
             {/* Mobile Auth Button */}
             <div className='lg:hidden flex items-center gap-1'>
+              <ThemeToggle compact className='size-7' />
               <MokhaberatButton
                 compact
                 className={cn(
@@ -164,7 +169,7 @@ export function Header() {
               />
               {!isAuthenticated ? (
                 <Link
-                  className={cn('p-2', transparent ? 'text-white' : 'text-black')}
+                  className={cn('p-2', transparent ? 'text-white' : 'text-foreground')}
                   href='/login'
                   aria-label='ورود'
                 >
@@ -172,7 +177,7 @@ export function Header() {
                 </Link>
               ) : (
                 <Link
-                  className={cn('p-2', transparent ? 'text-white' : 'text-black')}
+                  className={cn('p-2', transparent ? 'text-white' : 'text-foreground')}
                   href='/dashboard'
                   aria-label='پروفایل'
                 >
@@ -188,7 +193,7 @@ export function Header() {
       {isMenuOpen && (
         <div className='fixed inset-0 bg-black/50 z-40 lg:hidden' onClick={closeMenu}>
           <div
-            className='fixed top-[52px] left-0 right-0 bg-white shadow-lg z-50'
+            className='fixed top-[52px] left-0 right-0 bg-background shadow-lg z-50 border-b border-border'
             onClick={e => e.stopPropagation()}
           >
             <nav className='flex flex-col'>
@@ -198,10 +203,10 @@ export function Header() {
                   href={item.href}
                   onClick={closeMenu}
                   className={cn(
-                    'px-6 py-3.5 border-b border-gray-200 transition-all text-sm',
+                    'px-6 py-3.5 border-b border-border transition-all text-sm',
                     pathname === item.href
-                      ? 'text-brand font-bold bg-gray-50'
-                      : 'text-gray-700 hover:bg-gray-50',
+                      ? 'text-brand font-bold bg-muted'
+                      : 'text-foreground/80 hover:bg-muted',
                   )}
                 >
                   {item.title}
@@ -229,7 +234,9 @@ function NavLink({ title, href }: NavLinkProps) {
       href={href}
       className={cn(
         'relative h-full flex items-center text-xs md:text-[13px] transition-colors px-1',
-        isActive ? 'font-bold text-gray-900' : 'text-gray-600 hover:text-gray-900 font-medium',
+        isActive
+          ? 'font-bold text-foreground'
+          : 'text-muted-foreground hover:text-foreground font-medium',
       )}
     >
       <span>{title}</span>

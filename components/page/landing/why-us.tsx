@@ -3,6 +3,7 @@
 import { ShieldCheck, Zap, Store, MapPin } from 'lucide-react';
 
 import { useSiteTemplate } from '@/providers/site-template';
+import { SectionAmbientGlow } from '@/components/page/landing/section-ambient-glow';
 
 const FEATURES = [
   {
@@ -31,7 +32,9 @@ export function WhyUs() {
   const { withBrand } = useSiteTemplate();
 
   return (
-    <section className='container'>
+    <section className='container dark:relative'>
+      <SectionAmbientGlow />
+
       <div className='mb-12 flex flex-col items-center gap-y-4 text-center md:mb-16'>
         <p className='text-xs font-medium tracking-[0.28em] text-brand/70'>WHY US</p>
         <h3 className='text-2xl font-bold text-[#0f172a] md:text-3xl'>
@@ -48,7 +51,7 @@ export function WhyUs() {
         {FEATURES.map(({ title, description, Icon }) => (
           <article
             key={title}
-            className='flex flex-col items-center rounded-2xl border border-brand/10 bg-white p-6 text-center transition-all hover:border-brand/25 hover:shadow-[0_12px_40px_-16px_rgba(0,85,255,0.2)] md:p-8'
+            className='flex flex-col items-center rounded-2xl border border-brand/10 bg-white p-6 text-center transition-all hover:border-brand/25 hover:shadow-[0_12px_40px_-16px_rgba(0,85,255,0.2)] dark:border-white/8 md:p-8'
           >
             <div className='mb-5 flex size-16 items-center justify-center rounded-full bg-brand text-white shadow-[0_8px_24px_-8px_rgba(0,85,255,0.5)]'>
               <Icon className='size-7' strokeWidth={1.75} />

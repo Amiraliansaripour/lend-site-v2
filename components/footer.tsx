@@ -12,14 +12,14 @@ export function Footer() {
 
   return (
     <footer>
-      <section className='bg-boom-blue-light pb-12 pt-6'>
+      <section className='bg-boom-blue-light pb-12 pt-6 dark:bg-card dark:text-foreground'>
         <div className='container flex flex-col md:flex-row justify-between gap-x-6 gap-y-10'>
           <section className='basis-1/3 min-w-67.5 grid gap-4'>
             <Link href='/' aria-label='BOOM UP'>
               <BoomLogo markClassName='size-9' wordmarkClassName='text-xl' />
             </Link>
 
-            <p className='leading-7 text-balance'>
+            <p className='text-balance leading-7 text-muted-foreground'>
               {withBrand(
                 'بوم آپ به دنبال آن است تا با بهره‌گیری از روندهای نوظهور در حوزه فناوری مالی و با اتکاء به تیمی مجرب، تجربه‌ای متفاوت از ارائه خدمات مالی برخط را برای کاربران خود رقم بزند. رسالت ما توانمندسازی افراد و کسب‌وکارها از طریق ارائه راه‌حل‌های وام‌دهی شفاف، سریع و امن، با تمرکز بر تسهیل دسترسی همگانی به خدمات مالی است.',
               )}
@@ -30,8 +30,8 @@ export function Footer() {
             <div className='grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-x-6 gap-y-8'>
               <section>
                 <h5 className='font-bold'>{brandName}</h5>
-                <nav className='text-sm'>
-                  <ul className='space-y-2 mt-3'>
+                <nav className='text-sm text-muted-foreground'>
+                  <ul className='mt-3 space-y-2 [&_a]:transition-colors [&_a:hover]:text-brand'>
                     <li>
                       <Link href='#about-us'>درباره ما</Link>
                     </li>
@@ -43,8 +43,8 @@ export function Footer() {
               </section>
               <section>
                 <h5 className='font-bold'>راهنمای مشتریان</h5>
-                <nav className='text-sm'>
-                  <ul className='space-y-2 mt-3'>
+                <nav className='text-sm text-muted-foreground'>
+                  <ul className='mt-3 space-y-2 [&_a]:transition-colors [&_a:hover]:text-brand'>
                     <li>
                       <a href={tel || '#'}>راهنما و پشتیبانی</a>
                     </li>
@@ -56,8 +56,8 @@ export function Footer() {
               </section>
               <section>
                 <h5 className='font-bold'>ارتباط با ما</h5>
-                <nav className='text-sm'>
-                  <ul className='space-y-2 mt-3'>
+                <nav className='text-sm text-muted-foreground'>
+                  <ul className='mt-3 space-y-2 [&_a]:transition-colors [&_a:hover]:text-brand'>
                     {phone ? (
                       <li>
                         <a href={tel}>تلفن: {phone}</a>
@@ -84,7 +84,7 @@ export function Footer() {
         </div>
       </section>
 
-      <section className='bg-brand text-sm text-background py-3'>
+      <section className='bg-brand py-3 text-sm text-primary-foreground dark:bg-primary'>
         <div className='container flex flex-wrap items-center justify-between gap-x-4 gap-y-2'>
           <div className='flex items-center gap-x-2'>
             <span className='text-lg -mb-1'>&copy;</span>

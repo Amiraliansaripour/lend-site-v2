@@ -3,7 +3,13 @@ import 'server-only';
 import { createPrivateKey, type KeyObject } from 'node:crypto';
 import { SignJWT } from 'jose';
 
-import { isIranMobile09, isNationalCode, toIranMobile09 } from '@/lib/club-sso';
+import {
+  isIranMobile09,
+  isNationalCode,
+  parseClubSsoTheme,
+  toIranMobile09,
+  type ClubSsoTheme,
+} from '@/lib/club-sso';
 
 const ISSUER = 'lendtech';
 const AUDIENCE = 'tcclub';
@@ -45,7 +51,11 @@ export const normalizeClubSsoIdentity = (
  * Creates a compact JWS assertion (guide §3–4).
  * Private key never leaves the server.
  */
-export async function createClubSsoAssertion(identity: ClubSsoIdentity): Promise<string> {
+export async function createClubSsoAssertion(
+  identity: ClubSsoIdentity,
+  theme: ClubSsoTheme = 'auto',
+): Promise<string> {
+  const resolvedTheme = parseClubSsoTheme(theme) ?? 'auto';
   const header: { alg: 'RS256'; typ: 'JWT'; kid?: string } = {
     alg: 'RS256',
     typ: 'JWT',
@@ -57,6 +67,7 @@ export async function createClubSsoAssertion(identity: ClubSsoIdentity): Promise
   return new SignJWT({
     national_code: identity.nationalCode,
     mobile: identity.mobile,
+    theme: resolvedTheme,
   })
     .setProtectedHeader(header)
     .setIssuer(ISSUER)

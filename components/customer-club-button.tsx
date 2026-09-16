@@ -6,7 +6,12 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { getUserId, getUserInfo } from '@/lib/auth/client/user-info';
 import { accessToken } from '@/lib/auth/client/cookies';
-import { CUSTOMER_CLUB_APP_URL, submitClubSsoAssertion } from '@/lib/club-sso';
+import {
+  CUSTOMER_CLUB_APP_URL,
+  getClubSsoThemeFromBrowser,
+  submitClubSsoAssertion,
+  type ClubSsoTheme,
+} from '@/lib/club-sso';
 
 type CustomerClubButtonProps = {
   className?: string;
@@ -23,7 +28,7 @@ type CustomerClubButtonProps = {
 type AssertionResponse = {
   isSuccess?: boolean;
   message?: string;
-  data?: { assertion?: string };
+  data?: { assertion?: string; theme?: ClubSsoTheme };
 };
 
 /**
@@ -63,6 +68,7 @@ export function CustomerClubButton({
       }
 
       const token = accessToken.get();
+      const theme = getClubSsoThemeFromBrowser();
       const resp = await fetch('/api/club-sso/assertion', {
         method: 'POST',
         headers: {
@@ -70,11 +76,12 @@ export function CustomerClubButton({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, theme }),
       });
 
       const payload = (await resp.json().catch(() => null)) as AssertionResponse | null;
       const assertion = payload?.data?.assertion;
+      const resolvedTheme = payload?.data?.theme ?? theme;
       const message = payload?.message;
 
       if (resp.status === 401) {
@@ -90,7 +97,7 @@ export function CustomerClubButton({
       }
 
       onNavigating?.();
-      submitClubSsoAssertion(assertion);
+      submitClubSsoAssertion(assertion, resolvedTheme);
     } catch {
       toast.error('خطا در ارتباط با سرویس باشگاه مشتریان.');
       setLoading(false);
