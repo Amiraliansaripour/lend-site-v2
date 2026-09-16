@@ -9,7 +9,6 @@ import {
   CalendarClock,
   CircleQuestionMark,
   LogOut,
-  CreditCard,
 } from 'lucide-react';
 
 import {
@@ -25,24 +24,25 @@ import {
 import Link from 'next/link';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
 import { useSiteTemplate } from '@/providers/site-template';
-import { TOTAL_UNREAD } from '@/components/page/messages/messages-page-content';
+import { useUnreadMessageCount } from '@/queries/message';
 
 const items = [
-  { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet, badge: 0 },
-  // { title: 'سبد خرید', url: '/cart', icon: ShoppingBasket, badge: 0 },
-  { title: 'درخواست های من', url: '/requests', icon: FileText, badge: 0 },
-  { title: 'اقساط من', url: '/installments', icon: CalendarClock, badge: 0 },
-  { title: 'اطلاعات من', url: '/profile', icon: User, badge: 0 },
+  { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet, badgeKey: null },
+  // { title: 'سبد خرید', url: '/cart', icon: ShoppingBasket, badgeKey: null },
+  { title: 'درخواست های من', url: '/requests', icon: FileText, badgeKey: null },
+  { title: 'اقساط من', url: '/installments', icon: CalendarClock, badgeKey: null },
+  { title: 'اطلاعات من', url: '/profile', icon: User, badgeKey: null },
   // { title: 'کارت‌ها
-  // ی بانکی', url: '/cards', icon: CreditCard, badge: 0 },
-  { title: 'راهنما و پشتیبانی', url: '/help', icon: CircleQuestionMark, badge: 0 },
-  { title: 'فروشگاه‌ها', url: '/shops', icon: Store, badge: 0 },
-  { title: 'صندوق پیام', url: '/messages', icon: MessagesSquare, badge: TOTAL_UNREAD },
+  // ی بانکی', url: '/cards', icon: CreditCard, badgeKey: null },
+  { title: 'راهنما و پشتیبانی', url: '/help', icon: CircleQuestionMark, badgeKey: null },
+  { title: 'فروشگاه‌ها', url: '/shops', icon: Store, badgeKey: null },
+  { title: 'صندوق پیام', url: '/messages', icon: MessagesSquare, badgeKey: 'messages' as const },
 ];
 
 export function AppSidebar() {
   const { brandName, getImageUrl } = useSiteTemplate();
   const logoUrl = getImageUrl('logo');
+  const { data: unreadCount = 0 } = useUnreadMessageCount();
 
   return (
     <Sidebar>
@@ -56,23 +56,27 @@ export function AppSidebar() {
           </Link>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map(item => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url} className='flex items-center justify-between w-full'>
-                      <span className='flex items-center gap-2'>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </span>
-                      {item.badge > 0 && (
-                        <span className='inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold'>
-                          {item.badge}
+              {items.map(item => {
+                const badge = item.badgeKey === 'messages' ? unreadCount : 0;
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link href={item.url} className='flex items-center justify-between w-full'>
+                        <span className='flex items-center gap-2'>
+                          <item.icon />
+                          <span>{item.title}</span>
                         </span>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                        {badge > 0 && (
+                          <span className='inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold'>
+                            {badge}
+                          </span>
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
