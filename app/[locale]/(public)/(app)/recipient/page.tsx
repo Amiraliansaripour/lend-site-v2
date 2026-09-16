@@ -8,10 +8,9 @@ import { RecipientLogin } from '@/components/page/payment/recipient-login';
 import { AcceptPayment } from '@/components/page/payment/accept-payment';
 import { getValidWallets, type ValidWallet } from '@/api/wallet';
 import { CustomerClubBackButton } from '@/components/customer-club-back-button';
+import { setRecipientReturnUrl } from '@/lib/recipient-return-url';
 
 const SESSION_SECONDS = 300;
-/** Survives the payment-gateway round-trip so /CallBack can return to the merchant. */
-const RECIPIENT_RETURN_URL_KEY = 'recipientReturnUrl';
 
 type Step = 'login' | 'payment';
 
@@ -43,11 +42,9 @@ export default function RecipientPage() {
   const [timeLeft, setTimeLeft] = useState(SESSION_SECONDS);
   const [hasWarnedTimeout, setHasWarnedTimeout] = useState(false);
 
-  // Persist merchant returnUrl for /CallBack after gateway redirect
+  // Persist before gateway so /CallBack can Cancel / redirect after payment
   useEffect(() => {
-    if (returnUrl) {
-      localStorage.setItem(RECIPIENT_RETURN_URL_KEY, returnUrl);
-    }
+    if (returnUrl) setRecipientReturnUrl(returnUrl);
   }, [returnUrl]);
 
   // Session countdown

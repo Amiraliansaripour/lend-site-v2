@@ -7,6 +7,10 @@ import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { CustomerClubBackButton } from '@/components/customer-club-back-button';
+import {
+  clearRecipientReturnUrl,
+  getRecipientReturnUrl,
+} from '@/lib/recipient-return-url';
 
 /** Gateway failure sentinel (also accept legacy misspelling). */
 const FAILED_INVOICE_NOS = new Set(['Unknown1', 'Unkhown1']);
@@ -15,7 +19,6 @@ const PAY_TYPE_VALIDATION = '2';
 /** First installment payment from /recipient (see pay-token payType: 4). */
 const PAY_TYPE_FIRST_INSTALLMENT = '4';
 
-const RECIPIENT_RETURN_URL_KEY = 'recipientReturnUrl';
 const FIRST_INSTALLMENT_REDIRECT_SECONDS = 5;
 
 function buildReturnHref(
@@ -47,16 +50,15 @@ export default function CallBackPage() {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('pendingPayType');
   });
-  const [recipientReturnUrl, setRecipientReturnUrl] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(RECIPIENT_RETURN_URL_KEY);
-  });
+  const [recipientReturnUrl, setRecipientReturnUrl] = useState<string | null>(() =>
+    getRecipientReturnUrl(),
+  );
   const [countdown, setCountdown] = useState(FIRST_INSTALLMENT_REDIRECT_SECONDS);
 
   useEffect(() => {
     const storedRequestId = localStorage.getItem('requestId');
     const storedPayType = localStorage.getItem('pendingPayType');
-    const storedReturnUrl = localStorage.getItem(RECIPIENT_RETURN_URL_KEY);
+    const storedReturnUrl = getRecipientReturnUrl();
 
     if (storedRequestId) {
       setRequestId(storedRequestId);
@@ -80,18 +82,19 @@ export default function CallBackPage() {
     PayType === PAY_TYPE_FIRST_INSTALLMENT || pendingPayType === PAY_TYPE_FIRST_INSTALLMENT;
 
   const redirectToReturnUrl = useCallback(() => {
-    const returnUrl = recipientReturnUrl ?? localStorage.getItem(RECIPIENT_RETURN_URL_KEY);
+    const returnUrl = recipientReturnUrl ?? getRecipientReturnUrl();
     if (!returnUrl) return;
 
-    localStorage.removeItem(RECIPIENT_RETURN_URL_KEY);
+    clearRecipientReturnUrl();
     localStorage.removeItem('pendingPayType');
     window.location.href = buildReturnHref(returnUrl, { InvoiceNo, refId, refCode });
   }, [recipientReturnUrl, InvoiceNo, refId, refCode]);
 
+  // Auto-redirect to merchant returnUrl only after a successful first-installment payment
   useEffect(() => {
-    if (!isFirstInstallmentPayment) return;
+    if (!isFirstInstallmentPayment || !isSuccess) return;
 
-    const returnUrl = recipientReturnUrl ?? localStorage.getItem(RECIPIENT_RETURN_URL_KEY);
+    const returnUrl = recipientReturnUrl ?? getRecipientReturnUrl();
     if (!returnUrl) return;
 
     if (countdown <= 0) {
@@ -101,7 +104,13 @@ export default function CallBackPage() {
 
     const id = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(id);
-  }, [isFirstInstallmentPayment, recipientReturnUrl, countdown, redirectToReturnUrl]);
+  }, [
+    isFirstInstallmentPayment,
+    isSuccess,
+    recipientReturnUrl,
+    countdown,
+    redirectToReturnUrl,
+  ]);
 
   const continueHref = useMemo(() => {
     if (isValidationPayment && requestId) {
@@ -137,8 +146,9 @@ export default function CallBackPage() {
                 پرداخت قسط با موفقیت انجام شد
               </h2>
               <p className='text-sm text-muted-foreground'>
-                در حال بازگشت به فروشگاه
-                {countdown > 0 ? ` (${countdown})` : '...'}
+                {cancelHref
+                  ? `در حال بازگشت به فروشگاه${countdown > 0 ? ` (${countdown})` : '...'}`
+                  : 'تراکنش شما با موفقیت ثبت شد.'}
               </p>
               {InvoiceNo && !FAILED_INVOICE_NOS.has(InvoiceNo) && (
                 <p className='text-sm text-muted-foreground'>
@@ -158,16 +168,12 @@ export default function CallBackPage() {
                 متأسفانه پرداخت شما انجام نشد. مبلغ کسرشده تا 72 ساعت دیگر به حساب شما بازگشت داده
                 می‌شود.
               </p>
-              <p className='text-sm text-muted-foreground'>
-                در حال بازگشت به فروشگاه
-                {countdown > 0 ? ` (${countdown})` : '...'}
-              </p>
             </div>
           </>
         )}
 
         <div className='flex flex-col items-center gap-4'>
-          {cancelHref && (
+          {isSuccess && cancelHref && (
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <Loader2 className='size-4 animate-spin' />
               انتقال خودکار
@@ -178,7 +184,7 @@ export default function CallBackPage() {
               <a
                 href={cancelHref}
                 onClick={() => {
-                  localStorage.removeItem(RECIPIENT_RETURN_URL_KEY);
+                  clearRecipientReturnUrl();
                   localStorage.removeItem('pendingPayType');
                 }}
               >

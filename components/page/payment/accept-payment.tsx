@@ -35,8 +35,7 @@ import {
   type PaymentLoanDetail,
 } from '@/api/wallet';
 import { accessToken } from '@/lib/auth/client/cookies';
-
-const RECIPIENT_RETURN_URL_KEY = 'recipientReturnUrl';
+import { setRecipientReturnUrl } from '@/lib/recipient-return-url';
 
 type Props = {
   amount: number;
@@ -337,6 +336,12 @@ export function AcceptPayment({
       return;
     }
 
+    // Must be stored before leaving for the gateway (CallBack Cancel + success redirect).
+    if (returnUrl) {
+      setRecipientReturnUrl(returnUrl);
+    }
+    localStorage.setItem('pendingPayType', String(INSTALLMENT_PAY_TYPE));
+
     setStatus('loading');
     try {
       const tokenResult = await getPayToken(
@@ -409,8 +414,9 @@ export function AcceptPayment({
         return;
       }
 
+      // Re-assert before navigation in case storage was cleared mid-flow.
       if (returnUrl) {
-        localStorage.setItem(RECIPIENT_RETURN_URL_KEY, returnUrl);
+        setRecipientReturnUrl(returnUrl);
       }
       localStorage.setItem('pendingPayType', String(INSTALLMENT_PAY_TYPE));
       // Allow /CallBack under dashboard-like auth checks if cookie is required elsewhere.
