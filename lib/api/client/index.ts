@@ -65,7 +65,8 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
         pathname.includes('/wallets') ||
         pathname.includes('/installments') ||
         pathname.includes('/profile') ||
-        pathname.includes('/cards');
+        pathname.includes('/cards') ||
+        pathname.includes('/messages');
 
       if (isDashboardLikeRoute) {
         window.location.href = '/';

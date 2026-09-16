@@ -17,11 +17,13 @@ import { Link, usePathname } from '@/i18n/navigation';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
 import { BoomLogo } from './brand/boom-logo';
 import { DASHBOARD_NAV_ITEMS, isDashboardNavActive } from '@/components/dashboard-nav';
+import { useUnreadMessageCount } from '@/queries/message';
 // import { CUSTOMER_CLUB_URL } from '@/components/customer-club-back-button';
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { setOpenMobile, isMobile } = useSidebar();
+  const { data: unreadCount = 0 } = useUnreadMessageCount();
 
   const closeMobile = () => {
     if (isMobile) setOpenMobile(false);
@@ -42,7 +44,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {DASHBOARD_NAV_ITEMS.map(item => {
                 const isActive = isDashboardNavActive(pathname, item.url);
-                const badge = item.badge ?? 0;
+                const badge = item.badgeKey === 'messages' ? unreadCount : 0;
 
                 return (
                   <SidebarMenuItem key={item.title}>
