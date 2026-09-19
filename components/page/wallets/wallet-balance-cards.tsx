@@ -144,17 +144,20 @@ export function WalletBalanceCards({ walletInfo, onWalletUpdate }: WalletBalance
               ) : null}
             </div>
 
-            <div className='mt-20 flex h-[calc(100%-80px)] flex-col justify-end gap-y-4'>
+            <div className='mt-20 flex h-[calc(100%-80px)] flex-col justify-end gap-y-4 text-white'>
               <div className='flex flex-col gap-y-1'>
-                <span className='font-bold'>کیف پول اعتباری</span>
-                <span className='text-sm text-secondary'>
+                <span className='font-bold text-white'>کیف پول اعتباری</span>
+                <span className='text-sm text-white/85'>
                   موجودی{' '}
                   {normalizeToPersianDigits(formatNumber(walletInfo?.credit ?? 0, { int: true }))}{' '}
                   ریال
                 </span>
               </div>
               <Link href='/requests/request-credit'>
-                <Button variant='outline' className='mr-auto w-fit text-primary!'>
+                <Button
+                  variant='outline'
+                  className='mr-auto w-fit border-white/80 bg-white/10 text-white hover:bg-white hover:text-[#133c7a]'
+                >
                   درخواست اعتبار
                 </Button>
               </Link>
@@ -177,10 +180,10 @@ export function WalletBalanceCards({ walletInfo, onWalletUpdate }: WalletBalance
               ) : null}
             </div>
 
-            <div className='mt-20 flex h-[calc(100%-80px)] flex-col justify-end gap-y-4'>
+            <div className='mt-20 flex h-[calc(100%-80px)] flex-col justify-end gap-y-4 text-white'>
               <div className='flex flex-col gap-y-1'>
-                <span className='font-bold'>کیف پول نقدی</span>
-                <span className='text-sm text-secondary'>
+                <span className='font-bold text-white'>کیف پول نقدی</span>
+                <span className='text-sm text-white/85'>
                   موجودی{' '}
                   {normalizeToPersianDigits(
                     formatNumber(walletInfo?.cachRemain ?? 0, { int: true }),
@@ -191,7 +194,7 @@ export function WalletBalanceCards({ walletInfo, onWalletUpdate }: WalletBalance
 
               <Button
                 variant='outline'
-                className='mr-auto w-fit cursor-pointer text-primary!'
+                className='mr-auto w-fit cursor-pointer border-white/80 bg-white/10 text-white hover:bg-white hover:text-[#133c7a]'
                 onClick={() => setModalOpen(true)}
               >
                 شارژ کیف پول

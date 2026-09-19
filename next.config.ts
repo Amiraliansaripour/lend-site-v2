@@ -1,7 +1,11 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import withPWAInit from '@ducanh2912/next-pwa';
 import { withSentryConfig } from '@sentry/nextjs/config';
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const withPWA = withPWAInit({
   dest: 'public',
@@ -19,6 +23,10 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Parent folder has another package.json/lockfile; pin Turbopack to this app.
+  turbopack: {
+    root: projectRoot,
+  },
   images: {
     remotePatterns: [
       {

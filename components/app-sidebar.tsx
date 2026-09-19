@@ -50,7 +50,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <Link
             href='/'
-            className='flex justify-center items-center mb-3 border-b border-gray-200 w-full py-4'
+            className='flex justify-center items-center mb-3 border-b border-gray-200 w-full py-4 dark:border-border'
           >
             {logoUrl ? <img src={logoUrl} alt={brandName} className='w-44 mx-auto' /> : null}
           </Link>
@@ -86,7 +86,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => dispatchEvent(AUTH_LOGOUT_EVENT)}
-              className='text-red-500 hover:text-red-600 data-[active=true]:bg-red-50 data-[active=true]:text-red-600'
+              className='text-red-500 hover:text-red-600 data-[active=true]:bg-red-50 data-[active=true]:text-red-600 dark:hover:text-red-400 dark:data-[active=true]:bg-red-500/15'
             >
               <LogOut />
               <span>خروج</span>

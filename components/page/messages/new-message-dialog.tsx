@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Paperclip, Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { uploadAttachment } from '@/api/facility';
-import { MESSAGE_ATTACHMENT_TYPE } from '@/api/message';
+import { MESSAGE_ATTACHMENT_TYPE, isPayamSystemRole } from '@/api/message';
 import { useSendMessage } from '@/mutations/message';
 import { useAdmins } from '@/queries/message';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,12 @@ type NewMessageDialogProps = {
 export function NewMessageDialog({ open, onOpenChange, onSent }: NewMessageDialogProps) {
   const { data: admins = [], isLoading: isLoadingAdmins } = useAdmins(open);
   const sendMutation = useSendMessage();
+
+  /** System role cannot receive user-composed chats */
+  const selectableAdmins = useMemo(
+    () => admins.filter(admin => !isPayamSystemRole(admin.role)),
+    [admins],
+  );
 
   const [receiverId, setReceiverId] = useState('');
   const [subject, setSubject] = useState('');
@@ -125,7 +131,7 @@ export function NewMessageDialog({ open, onOpenChange, onSent }: NewMessageDialo
                 />
               </SelectTrigger>
               <SelectContent>
-                {admins.map(admin => (
+                {selectableAdmins.map(admin => (
                   <SelectItem key={admin.id} value={admin.id}>
                     {[admin.firstName, admin.lastName].filter(Boolean).join(' ') || admin.username}
                   </SelectItem>

@@ -6,6 +6,7 @@ import {
   CheckCheck,
   Loader2,
   MessageCircle,
+  Megaphone,
   Paperclip,
   Plus,
   Search,
@@ -19,6 +20,9 @@ import { uploadAttachment } from '@/api/facility';
 import {
   MESSAGE_ATTACHMENT_TYPE,
   MessageStatus,
+  isSystemConversation,
+  isSystemMessage,
+  isSystemThread,
   type Conversation,
   type Message,
 } from '@/api/message';
@@ -99,6 +103,82 @@ function OutgoingStatusIcon({ status }: { status: number }) {
   return <Check className='size-3.5 text-white/60' aria-label='ارسال شده' />;
 }
 
+function ConversationRoleBadge({
+  isSystem,
+  compact = false,
+}: {
+  isSystem: boolean;
+  compact?: boolean;
+}) {
+  if (isSystem) {
+    return (
+      <Badge
+        variant='outline'
+        className={cn(
+          'border shrink-0 bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-300',
+          compact ? 'text-[10px] px-1.5 py-0 h-4.5' : '',
+        )}
+      >
+        <Megaphone className={cn('ml-0.5', compact ? 'size-2.5' : 'size-3')} />
+        پیام سیستمی
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge
+      variant='outline'
+      className={cn(
+        'border shrink-0 bg-violet-50 border-violet-200 text-violet-600 dark:bg-violet-500/15 dark:border-violet-500/30 dark:text-violet-300',
+        compact ? 'text-[10px] px-1.5 py-0 h-4.5' : '',
+      )}
+    >
+      <UserCog className={cn('ml-0.5', compact ? 'size-2.5' : 'size-3')} />
+      ادمین
+    </Badge>
+  );
+}
+
+function ConversationAvatar({
+  name,
+  isSystem,
+  size = 'md',
+}: {
+  name: string;
+  isSystem: boolean;
+  size?: 'sm' | 'md';
+}) {
+  const sizeClass = size === 'sm' ? 'size-10 text-sm' : 'size-11 text-sm';
+
+  if (isSystem) {
+    return (
+      <div
+        className={cn(
+          sizeClass,
+          'rounded-full grid place-items-center font-bold border shrink-0',
+          'bg-amber-50 border-amber-200 text-amber-700',
+          'dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-300',
+        )}
+      >
+        <Megaphone className={size === 'sm' ? 'size-4' : 'size-5'} />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        sizeClass,
+        'rounded-full grid place-items-center font-bold border shrink-0',
+        'bg-violet-50 border-violet-200 text-violet-600',
+        'dark:bg-violet-500/15 dark:border-violet-500/30 dark:text-violet-300',
+      )}
+    >
+      {getInitials(name || '?')}
+    </div>
+  );
+}
+
 export function MessagesPageContent() {
   const currentUserId = getUserId();
   const {
@@ -137,6 +217,7 @@ export function MessagesPageContent() {
   }, [conversations, search]);
 
   const active: Conversation | null = conversations.find(c => c.id === activeId) ?? null;
+  const isActiveSystem = isSystemThread(active, threadMessages);
 
   useEffect(() => {
     if (!activeId && conversations.length > 0) {
@@ -169,7 +250,7 @@ export function MessagesPageContent() {
   };
 
   const handleSendReply = useCallback(async () => {
-    if (!activeId || (!draft.trim() && !attachedFile)) return;
+    if (!activeId || isActiveSystem || (!draft.trim() && !attachedFile)) return;
 
     const parentMessageId =
       threadMessages[threadMessages.length - 1]?.id ?? active?.lastMessage?.id;
@@ -225,6 +306,7 @@ export function MessagesPageContent() {
     replyMutation,
     refetchThread,
     refetchConversations,
+    isActiveSystem,
   ]);
 
   return (
@@ -285,6 +367,7 @@ export function MessagesPageContent() {
             {filtered.map(conv => {
               const isActive = activeId === conv.id;
               const preview = lastMessagePreview(conv.lastMessage);
+              const isSystem = isSystemConversation(conv);
 
               return (
                 <button
@@ -298,9 +381,7 @@ export function MessagesPageContent() {
                 >
                   <div className='flex items-center gap-3'>
                     <div className='relative shrink-0'>
-                      <div className='size-11 rounded-full grid place-items-center text-sm font-bold border bg-violet-50 border-violet-200 text-violet-600'>
-                        {getInitials(conv.otherUserName || '?')}
-                      </div>
+                      <ConversationAvatar name={conv.otherUserName || '?'} isSystem={isSystem} />
                     </div>
 
                     <div className='flex-1 min-w-0'>
@@ -311,7 +392,9 @@ export function MessagesPageContent() {
                             conv.unreadCount > 0 && 'text-foreground',
                           )}
                         >
-                          {conv.otherUserName || 'کاربر'}
+                          {isSystem
+                            ? conv.otherUserName || 'پیام سیستمی'
+                            : conv.otherUserName || 'کاربر'}
                         </span>
                         <span className='text-[11px] text-muted-foreground whitespace-nowrap'>
                           {formatMessageTime(conv.lastMessageAt || conv.lastMessage?.sentAt)}
@@ -319,13 +402,7 @@ export function MessagesPageContent() {
                       </div>
 
                       <div className='flex items-center gap-1.5 mt-0.5'>
-                        <Badge
-                          variant='outline'
-                          className='text-[10px] px-1.5 py-0 h-4.5 border bg-violet-50 border-violet-200 text-violet-600'
-                        >
-                          <UserCog className='size-2.5 ml-0.5' />
-                          ادمین
-                        </Badge>
+                        <ConversationRoleBadge isSystem={isSystem} compact />
                       </div>
 
                       <div className='flex items-center justify-between gap-2 mt-1'>
@@ -374,11 +451,17 @@ export function MessagesPageContent() {
               </button>
 
               <div className='flex items-center gap-3 flex-1 min-w-0'>
-                <div className='size-10 rounded-full grid place-items-center text-sm font-bold border shrink-0 bg-violet-50 border-violet-200 text-violet-600'>
-                  {getInitials(active.otherUserName || '?')}
-                </div>
+                <ConversationAvatar
+                  name={active.otherUserName || '?'}
+                  isSystem={isActiveSystem}
+                  size='sm'
+                />
                 <div className='min-w-0'>
-                  <p className='font-semibold text-sm'>{active.otherUserName || 'کاربر'}</p>
+                  <p className='font-semibold text-sm'>
+                    {isActiveSystem
+                      ? active.otherUserName || 'پیام سیستمی'
+                      : active.otherUserName || 'کاربر'}
+                  </p>
                   {active.lastMessage?.subject && (
                     <p className='text-xs text-muted-foreground truncate'>
                       {active.lastMessage.subject}
@@ -387,12 +470,7 @@ export function MessagesPageContent() {
                 </div>
               </div>
 
-              <Badge
-                variant='outline'
-                className='border shrink-0 bg-violet-50 border-violet-200 text-violet-600'
-              >
-                ادمین
-              </Badge>
+              <ConversationRoleBadge isSystem={isActiveSystem} />
             </div>
 
             <div className='flex-1 min-h-0 overflow-y-auto bg-muted/10'>
@@ -409,8 +487,40 @@ export function MessagesPageContent() {
                   )}
 
                   {threadMessages.map(msg => {
+                    const systemMsg = isActiveSystem || isSystemMessage(msg);
                     const isMe = currentUserId ? msg.senderId === currentUserId : false;
                     const hasAttachment = Boolean(msg.attachmentUrl || msg.attachmentId);
+
+                    if (systemMsg) {
+                      return (
+                        <div key={msg.id} className='flex justify-center'>
+                          <div className='w-full max-w-[92%] sm:max-w-[85%] rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm leading-relaxed shadow-sm dark:border-amber-500/25 dark:bg-amber-500/10'>
+                            <div className='mb-2 flex items-center gap-1.5'>
+                              <ConversationRoleBadge isSystem compact />
+                              {msg.subject && (
+                                <span className='text-xs font-semibold text-amber-800 dark:text-amber-200 truncate'>
+                                  {msg.subject}
+                                </span>
+                              )}
+                            </div>
+
+                            {msg.body && (
+                              <p className='whitespace-pre-wrap text-foreground/90'>{msg.body}</p>
+                            )}
+
+                            {hasAttachment && (
+                              <MessageAttachment attachmentUrl={msg.attachmentUrl} isMe={false} />
+                            )}
+
+                            <div className='mt-2 flex justify-end'>
+                              <span className='text-[10px] text-muted-foreground'>
+                                {formatMessageTime(msg.sentAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
 
                     return (
                       <div
@@ -467,81 +577,89 @@ export function MessagesPageContent() {
               )}
             </div>
 
-            <div className='border-t border-border/60 bg-background px-4 py-3 shrink-0'>
-              {attachedFile && (
-                <div className='max-w-3xl mx-auto mb-2 flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs'>
-                  <Paperclip className='size-3.5 text-muted-foreground shrink-0' />
-                  <span className='truncate flex-1'>{attachedFile.name}</span>
+            {isActiveSystem ? (
+              <div className='border-t border-border/60 bg-muted/20 px-4 py-3 shrink-0'>
+                <p className='max-w-3xl mx-auto text-center text-xs text-muted-foreground leading-6'>
+                  این پیام سیستمی است و قابلیت پاسخ یا گفتگو ندارد.
+                </p>
+              </div>
+            ) : (
+              <div className='border-t border-border/60 bg-background px-4 py-3 shrink-0'>
+                {attachedFile && (
+                  <div className='max-w-3xl mx-auto mb-2 flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs'>
+                    <Paperclip className='size-3.5 text-muted-foreground shrink-0' />
+                    <span className='truncate flex-1'>{attachedFile.name}</span>
+                    <button
+                      type='button'
+                      onClick={() => {
+                        setAttachedFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className='text-muted-foreground hover:text-foreground'
+                      aria-label='حذف پیوست'
+                    >
+                      <X className='size-3.5' />
+                    </button>
+                  </div>
+                )}
+
+                <div className='flex items-center gap-2 max-w-3xl mx-auto'>
+                  <input
+                    ref={fileInputRef}
+                    type='file'
+                    className='hidden'
+                    onChange={e => setAttachedFile(e.target.files?.[0] ?? null)}
+                  />
+
                   <button
                     type='button'
-                    onClick={() => {
-                      setAttachedFile(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
-                    className='text-muted-foreground hover:text-foreground'
-                    aria-label='حذف پیوست'
+                    onClick={() => fileInputRef.current?.click()}
+                    className='size-8 rounded-full grid place-items-center text-muted-foreground hover:bg-muted transition-colors shrink-0'
+                    aria-label='پیوست فایل'
                   >
-                    <X className='size-3.5' />
+                    <Paperclip className='size-4' />
                   </button>
+
+                  <div className='flex-1'>
+                    <textarea
+                      ref={textareaRef}
+                      value={draft}
+                      onChange={e => setDraft(e.target.value)}
+                      placeholder='پیام خود را بنویسید...'
+                      dir='rtl'
+                      rows={1}
+                      className='w-full min-h-11 resize-none overflow-hidden rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-shadow'
+                      style={{ maxHeight: 120, overflowY: 'hidden' }}
+                      onInput={e => {
+                        const el = e.currentTarget;
+                        el.style.height = 'auto';
+                        el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          void handleSendReply();
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <Button
+                    type='button'
+                    size='icon'
+                    className='size-10 rounded-xl shrink-0 self-center -translate-y-px'
+                    disabled={isSending || (!draft.trim() && !attachedFile)}
+                    onClick={() => void handleSendReply()}
+                  >
+                    {isSending ? (
+                      <Loader2 className='size-4 animate-spin' />
+                    ) : (
+                      <Send className='size-4' />
+                    )}
+                  </Button>
                 </div>
-              )}
-
-              <div className='flex items-center gap-2 max-w-3xl mx-auto'>
-                <input
-                  ref={fileInputRef}
-                  type='file'
-                  className='hidden'
-                  onChange={e => setAttachedFile(e.target.files?.[0] ?? null)}
-                />
-
-                <button
-                  type='button'
-                  onClick={() => fileInputRef.current?.click()}
-                  className='size-8 rounded-full grid place-items-center text-muted-foreground hover:bg-muted transition-colors shrink-0'
-                  aria-label='پیوست فایل'
-                >
-                  <Paperclip className='size-4' />
-                </button>
-
-                <div className='flex-1'>
-                  <textarea
-                    ref={textareaRef}
-                    value={draft}
-                    onChange={e => setDraft(e.target.value)}
-                    placeholder='پیام خود را بنویسید...'
-                    dir='rtl'
-                    rows={1}
-                    className='w-full min-h-11 resize-none overflow-hidden rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-shadow'
-                    style={{ maxHeight: 120, overflowY: 'hidden' }}
-                    onInput={e => {
-                      const el = e.currentTarget;
-                      el.style.height = 'auto';
-                      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        void handleSendReply();
-                      }
-                    }}
-                  />
-                </div>
-
-                <Button
-                  type='button'
-                  size='icon'
-                  className='size-10 rounded-xl shrink-0 self-center -translate-y-px'
-                  disabled={isSending || (!draft.trim() && !attachedFile)}
-                  onClick={() => void handleSendReply()}
-                >
-                  {isSending ? (
-                    <Loader2 className='size-4 animate-spin' />
-                  ) : (
-                    <Send className='size-4' />
-                  )}
-                </Button>
               </div>
-            </div>
+            )}
           </>
         ) : (
           <div className='flex-1 grid place-items-center'>
