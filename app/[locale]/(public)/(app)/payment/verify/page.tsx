@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+// import Link from 'next/link';
 
-import { Button } from '@/components/ui/button';
+// import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { confirmOrder } from '@/api/wallet';
 
@@ -80,9 +80,9 @@ export default function PaymentVerifyPage() {
                   </p>
                 ) : null}
               </div>
-              <Button asChild variant='outline'>
+              {/* <Button asChild variant='outline'>
                 <Link href='/merchant-test'>بازگشت به پنل فروشنده</Link>
-              </Button>
+              </Button> */}
             </>
           )}
 
@@ -95,9 +95,9 @@ export default function PaymentVerifyPage() {
                   {verifyStatus === 'failed' ? 'اطلاعات پرداخت نادرست است' : 'خطا در تایید پرداخت'}
                 </p>
               </div>
-              <Button asChild variant='outline'>
+              {/* <Button asChild variant='outline'>
                 <Link href='/merchant-test'>بازگشت به پنل فروشنده</Link>
-              </Button>
+              </Button> */}
             </>
           )}
         </CardContent>

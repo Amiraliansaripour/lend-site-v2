@@ -6,13 +6,14 @@ import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
+import { INSTALLMENT_PAY_TYPE } from '@/api/wallet';
 
 /** Gateway failure sentinel (also accept legacy misspelling). */
 const FAILED_INVOICE_NOS = new Set(['Unknown1', 'Unkhown1']);
 /** Validation / credit-check payment (see pay-validation payType: 2). */
 const PAY_TYPE_VALIDATION = '2';
-/** First installment payment from /recipient (see pay-token payType: 1). */
-const PAY_TYPE_INSTALLMENT = '1';
+/** First installment payment from /recipient (see pay-token payType: 4). */
+const PAY_TYPE_INSTALLMENT = String(INSTALLMENT_PAY_TYPE);
 
 const RECIPIENT_RETURN_URL_KEY = 'recipientReturnUrl';
 const INSTALLMENT_REDIRECT_SECONDS = 4;
