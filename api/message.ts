@@ -4,8 +4,8 @@ import type { APIResult } from '@/types/api';
 /** Message delivery status from API */
 export enum MessageStatus {
   Sent = 1,
-  Read = 3,
-  Answered = 4,
+  Seen = 3,
+  Replied = 4,
 }
 
 /**
@@ -33,24 +33,26 @@ export type Message = {
   senderName: string;
   receiverId: string;
   receiverName: string;
+  receiverRole?: number;
   subject: string;
   body: string;
   status: MessageStatus | number;
   sentAt: string;
-  readAt: string | null;
+  readAt?: string | null;
   isDeleted: boolean;
-  parentMessageId: string | null;
-  attachmentId: string | null;
-  attachmentUrl: string | null;
-  /** Sender role when provided by API (e.g. PayamSystem = 7) */
   senderRole?: number | null;
   role?: number | null;
+  parentMessageId?: string | null;
+  attachmentId?: string | null;
+  attachmentUrl?: string | null;
+  dateNow?: string;
 };
 
 export type Conversation = {
   id: string;
   otherUserId: string;
   otherUserName: string;
+  otherRole?: number;
   lastMessage: Message | null;
   lastMessageAt: string;
   unreadCount: number;
@@ -82,7 +84,11 @@ export const isPayamSystemRole = (role?: number | null): boolean =>
 /** System notification threads: tag + read-only (no chat/reply). */
 export const isSystemConversation = (conversation: Conversation | null | undefined): boolean => {
   if (!conversation) return false;
-  if (isPayamSystemRole(conversation.otherUserRole) || isPayamSystemRole(conversation.role)) {
+  if (
+    isPayamSystemRole(conversation.otherUserRole) ||
+    isPayamSystemRole(conversation.otherRole) ||
+    isPayamSystemRole(conversation.role)
+  ) {
     return true;
   }
   const last = conversation.lastMessage;
