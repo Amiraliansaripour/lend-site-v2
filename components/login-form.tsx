@@ -299,7 +299,7 @@ export function LoginForm() {
                         placeholder='کد کپچا'
                         inputMode='text'
                         autoComplete='one-time-code'
-                        maxLength={6}
+                        maxLength={5}
                       />
                     )}
                   />
