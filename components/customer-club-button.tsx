@@ -1,16 +1,13 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 import { getUserId, getUserInfo } from '@/lib/auth/client/user-info';
 import { accessToken } from '@/lib/auth/client/cookies';
-import {
-  CUSTOMER_CLUB_APP_URL,
-  getClubSsoThemeFromBrowser,
-  submitClubSsoAssertion,
-} from '@/lib/club-sso';
+import { CUSTOMER_CLUB_APP_URL, resolveClubSsoTheme, submitClubSsoAssertion } from '@/lib/club-sso';
 
 type CustomerClubButtonProps = {
   className?: string;
@@ -31,7 +28,8 @@ type AssertionResponse = {
 };
 
 /**
- * logged-in → server mints JWS → browser POSTs assertion to tcclub.
+ * Same SSO flow as `/club-sso-test`, but with the logged-in user's real identity.
+ * Theme is sent as a form field (light|dark|auto) — not inside the JWT.
  */
 export function CustomerClubButton({
   className,
@@ -42,6 +40,7 @@ export function CustomerClubButton({
   compactLabel = 'باشگاه',
 }: CustomerClubButtonProps) {
   const [loading, setLoading] = useState(false);
+  const { theme, resolvedTheme } = useTheme();
 
   const goPublicClub = () => {
     onNavigating?.();
@@ -53,8 +52,11 @@ export function CustomerClubButton({
     setLoading(true);
 
     try {
-      // Not logged in → open club without SSO
-      if (!getUserInfo() || !accessToken.get()) {
+      const token = accessToken.get();
+      const isLoggedIn = Boolean(getUserInfo() || token);
+
+      // Guest → public club (no SSO)
+      if (!isLoggedIn || !token) {
         goPublicClub();
         return;
       }
@@ -66,13 +68,13 @@ export function CustomerClubButton({
         return;
       }
 
-      const token = accessToken.get();
-      const theme = getClubSsoThemeFromBrowser();
+      // Same handoff as club-sso-test: mint assertion → POST assertion + theme
+      const clubTheme = resolveClubSsoTheme(theme, resolvedTheme);
       const resp = await fetch('/api/club-sso/assertion', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         credentials: 'same-origin',
         body: JSON.stringify({ userId }),
@@ -95,8 +97,7 @@ export function CustomerClubButton({
       }
 
       onNavigating?.();
-      // Guide: POST assertion + theme (light|dark|auto) as form fields — not inside JWT
-      submitClubSsoAssertion(assertion, theme);
+      submitClubSsoAssertion(assertion, clubTheme);
     } catch {
       toast.error('خطا در ارتباط با سرویس باشگاه مشتریان.');
       setLoading(false);

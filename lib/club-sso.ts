@@ -31,10 +31,25 @@ export const getClubSsoThemeFromBrowser = (): ClubSsoTheme => {
   if (typeof window === 'undefined') return 'auto';
 
   try {
-    return toClubSsoTheme(localStorage.getItem('theme'));
+    const stored = localStorage.getItem('theme');
+    if (stored === 'light' || stored === 'dark') return stored;
+    // system / empty → auto (club follows device), unless html class is definitive
+    if (stored === 'system' || !stored) return 'auto';
+    return toClubSsoTheme(stored);
   } catch {
     return 'auto';
   }
+};
+
+/** Prefer explicit user choice; fall back to resolved theme, then auto. */
+export const resolveClubSsoTheme = (
+  theme?: string | null,
+  resolvedTheme?: string | null,
+): ClubSsoTheme => {
+  if (theme === 'light' || theme === 'dark') return theme;
+  if (theme === 'system') return 'auto';
+  if (resolvedTheme === 'light' || resolvedTheme === 'dark') return resolvedTheme;
+  return getClubSsoThemeFromBrowser();
 };
 
 export function submitClubSsoAssertion(assertion: string, theme?: ClubSsoTheme) {

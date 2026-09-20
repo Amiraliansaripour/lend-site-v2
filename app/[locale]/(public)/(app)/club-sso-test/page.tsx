@@ -10,6 +10,8 @@ import { getClubSsoThemeFromBrowser, submitClubSsoAssertion } from '@/lib/club-s
 /**
  * Temporary client-demo page for club SSO (guide test account).
  * Route: /fa/club-sso-test — remove after demo.
+ *
+ * Production entry is `CustomerClubButton` (real user identity + same theme form field).
  */
 export default function ClubSsoDemoPage() {
   const [loading, setLoading] = useState(false);
