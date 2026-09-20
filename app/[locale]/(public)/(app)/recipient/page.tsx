@@ -99,7 +99,7 @@ export default function RecipientPage() {
     return (
       <div className='flex min-h-[70vh] flex-col items-center justify-center gap-4 p-6'>
         <p className='text-muted-foreground text-center'>اطلاعات پرداخت ناقص است.</p>
-        <CustomerClubBackButton />
+        <CustomerClubBackButton returnUrl={returnUrl} />
       </div>
     );
   }
@@ -129,7 +129,7 @@ export default function RecipientPage() {
           rateValue={rateValue}
         />
       )}
-      <CustomerClubBackButton />
+      <CustomerClubBackButton returnUrl={returnUrl} />
     </div>
   );
 }
