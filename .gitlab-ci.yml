@@ -1,4 +1,8 @@
-﻿# GitLab CI for lend-site-v2 (multi-tenant deploy)
+# GitLab CI for lend-site-v2 (multi-tenant deploy)
+#
+# Secrets and per-environment URLs live in GitLab CI/CD variables
+# (lendtech group: LEND_* / ALLOWED_ORIGINS; project: Sentry / TCI).
+# Job YAML only maps them into the Next.js build-args.
 #
 # Keep old behavior:
 #   - main => default lend site deployment
@@ -28,6 +32,7 @@ variables:
       docker build \
         --build-arg NEXT_PUBLIC_API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL" \
         --build-arg NEXT_PUBLIC_API_REPORT_URL="$NEXT_PUBLIC_API_REPORT_URL" \
+        --build-arg NEXT_PUBLIC_AUTH_API_URL="$NEXT_PUBLIC_AUTH_API_URL" \
         --build-arg NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
         --build-arg NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
         --build-arg NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
@@ -48,6 +53,7 @@ variables:
         -e HOSTNAME=0.0.0.0 \
         -e NEXT_PUBLIC_API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL" \
         -e NEXT_PUBLIC_API_REPORT_URL="$NEXT_PUBLIC_API_REPORT_URL" \
+        -e NEXT_PUBLIC_AUTH_API_URL="$NEXT_PUBLIC_AUTH_API_URL" \
         -e NEXT_PUBLIC_QUERY_GC_TIME="$NEXT_PUBLIC_QUERY_GC_TIME" \
         -e NEXT_PUBLIC_QUERY_STALE_TIME="$NEXT_PUBLIC_QUERY_STALE_TIME" \
         -e NEXT_PUBLIC_QUERY_RETRY="$NEXT_PUBLIC_QUERY_RETRY" \
@@ -64,13 +70,12 @@ deploy:default-main:
     IMAGE_NAME: lend-site-v2
     CONTAINER_NAME: lend-site-v2
     DEPLOY_HOST_PORT: "3000"
-    NEXT_PUBLIC_API_BASE_URL: "https://lendapitest.persiansys.ir/api/v1"
-    NEXT_PUBLIC_API_REPORT_URL: "https://lendreporttest.persiansys.ir/api/v1"
+    NEXT_PUBLIC_API_BASE_URL: "$LEND_API_URL"
+    NEXT_PUBLIC_API_REPORT_URL: "$LEND_REPORT_URL"
+    NEXT_PUBLIC_AUTH_API_URL: "$LEND_AUTH_URL"
     NEXT_PUBLIC_QUERY_GC_TIME: "0"
     NEXT_PUBLIC_QUERY_STALE_TIME: "0"
     NEXT_PUBLIC_QUERY_RETRY: "1"
-    NEXT_PUBLIC_SENTRY_DSN: "http://88688f168521bbcec92370126d2f6130@sentry.psaapp.ir/23"
-    NEXT_PUBLIC_SENTRY_ENVIRONMENT: "test"
   environment:
     name: production
     url: https://lend.persiansys.ir
@@ -104,8 +109,9 @@ deploy:default-main:
 #     IMAGE_NAME: lend-site-lianlend
 #     CONTAINER_NAME: lend-site-lianlend
 #     DEPLOY_HOST_PORT: "3001"
-#     NEXT_PUBLIC_API_BASE_URL: "https://api.mylianpay.com/api/v1"
-#     NEXT_PUBLIC_API_REPORT_URL: "https://report.mylianpay.com/api/v1"
+#     NEXT_PUBLIC_API_BASE_URL: "$LEND_API_URL"
+#     NEXT_PUBLIC_API_REPORT_URL: "$LEND_REPORT_URL"
+#     NEXT_PUBLIC_AUTH_API_URL: "$LEND_AUTH_URL"
 #     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
 #     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
 #     NEXT_PUBLIC_QUERY_RETRY: "1"
@@ -119,13 +125,12 @@ deploy:lend360:
     IMAGE_NAME: lend-site-lend360
     CONTAINER_NAME: lend-site-lend360
     DEPLOY_HOST_PORT: "3002"
-    NEXT_PUBLIC_API_BASE_URL: "https://api.lend360.ir/api/v1"
-    NEXT_PUBLIC_API_REPORT_URL: "https://report.lend360.ir/api/v1"
+    NEXT_PUBLIC_API_BASE_URL: "$LEND_API_URL"
+    NEXT_PUBLIC_API_REPORT_URL: "$LEND_REPORT_URL"
+    NEXT_PUBLIC_AUTH_API_URL: "$LEND_AUTH_URL"
     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
     NEXT_PUBLIC_QUERY_RETRY: "1"
-    NEXT_PUBLIC_SENTRY_DSN: "http://59e335770ace3440402e2b43e483719f@sentry.psaapp.ir/21"
-    NEXT_PUBLIC_SENTRY_ENVIRONMENT: "lend360"
   environment:
     name: production/lend360-site
   rules: *deploy_tenant_rules_lend360
@@ -136,8 +141,9 @@ deploy:lend360:
 #     IMAGE_NAME: lend-site-toplend
 #     CONTAINER_NAME: lend-site-toplend
 #     DEPLOY_HOST_PORT: "3003"
-#     NEXT_PUBLIC_API_BASE_URL: "https://lendapitest.persiansys.ir/api/v1"
-#     NEXT_PUBLIC_API_REPORT_URL: "https://lendreporttest.persiansys.ir/api/v1"
+#     NEXT_PUBLIC_API_BASE_URL: "$LEND_API_URL"
+#     NEXT_PUBLIC_API_REPORT_URL: "$LEND_REPORT_URL"
+#     NEXT_PUBLIC_AUTH_API_URL: "$LEND_AUTH_URL"
 #     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
 #     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
 #     NEXT_PUBLIC_QUERY_RETRY: "1"
@@ -151,13 +157,12 @@ deploy:lend365:
     IMAGE_NAME: lend-site-lend365
     CONTAINER_NAME: lend-site-lend365
     DEPLOY_HOST_PORT: "3004"
-    NEXT_PUBLIC_API_BASE_URL: "https://api.lend365.ir/api/v1"
-    NEXT_PUBLIC_API_REPORT_URL: "https://report.lend365.ir/api/v1"
+    NEXT_PUBLIC_API_BASE_URL: "$LEND_API_URL"
+    NEXT_PUBLIC_API_REPORT_URL: "$LEND_REPORT_URL"
+    NEXT_PUBLIC_AUTH_API_URL: "$LEND_AUTH_URL"
     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
     NEXT_PUBLIC_QUERY_RETRY: "1"
-    NEXT_PUBLIC_SENTRY_DSN: "http://447451170de0697fb9d34a4e827187b7@sentry.psaapp.ir/22"
-    NEXT_PUBLIC_SENTRY_ENVIRONMENT: "lend365"
   environment:
     name: production/lend365-site
   when: manual
@@ -180,16 +185,12 @@ deploy:karalend:
   variables:
     COMPOSE_PROJECT_NAME: lend-site-v2
     PORT: "14000"
-    NEXT_PUBLIC_API_BASE_URL: "http://185.105.101.110:8080/api/v1"
-    NEXT_PUBLIC_API_REPORT_URL: "http://185.105.101.110:8081/api/v1"
-    NEXT_PUBLIC_AUTH_API_URL: "http://185.105.101.110:8083/api/v1"
+    NEXT_PUBLIC_API_BASE_URL: "$LEND_API_URL"
+    NEXT_PUBLIC_API_REPORT_URL: "$LEND_REPORT_URL"
+    NEXT_PUBLIC_AUTH_API_URL: "$LEND_AUTH_URL"
     NEXT_PUBLIC_QUERY_GC_TIME: "300000"
     NEXT_PUBLIC_QUERY_STALE_TIME: "60000"
     NEXT_PUBLIC_QUERY_RETRY: "1"
-    TCI_LENDTECH_SECRET: "EgPmxDvkadEfFfMVy3n4bqnTnmpMEa_Xq8qee0Hup0k2hdm9IHz34j4QDcQN63in"
-    TCI_LENDTECH_LOGIN_URL: "https://my2-test.tci.ir/api/v1/auth/lendtech/login"
-    NEXT_PUBLIC_SENTRY_DSN: "http://18bb45c085d67931c25dc69bbfa2ecf4@sentry.psaapp.ir/20"
-    NEXT_PUBLIC_SENTRY_ENVIRONMENT: "karalend"
   environment:
     name: production/karalend-site
   rules:
