@@ -780,9 +780,7 @@ export function AcceptPayment({
                       />
                       <div className='flex-1 min-w-0'>
                         <div className='flex justify-between gap-2 text-sm'>
-                          <span className='font-medium'>
-                            {wallet.walletTypeDescription || 'کیف پول'}
-                          </span>
+                          <span className='font-medium'>{wallet.walletName || 'کیف پول'}</span>
                           <span className='text-muted-foreground shrink-0'>
                             موجودی: {formatAmount(wallet.remain)}
                           </span>

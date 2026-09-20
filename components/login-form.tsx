@@ -285,6 +285,7 @@ export function LoginForm() {
                     inputMode='tel'
                     placeholder='09123456789'
                     autoComplete='tel'
+                    maxLength={11}
                   />
                 )}
               />
@@ -298,6 +299,7 @@ export function LoginForm() {
                         placeholder='کد کپچا'
                         inputMode='text'
                         autoComplete='one-time-code'
+                        maxLength={6}
                       />
                     )}
                   />

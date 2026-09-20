@@ -315,6 +315,7 @@ export type ValidWallet = {
   walletType: number;
   walletTypeDescription: string;
   remain: number;
+  walletName: string;
 };
 
 export type ValidWalletsPayload = {
