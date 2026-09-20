@@ -1,13 +1,10 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
-import { getUserId, getUserInfo } from '@/lib/auth/client/user-info';
-import { accessToken } from '@/lib/auth/client/cookies';
-import { CUSTOMER_CLUB_APP_URL, resolveClubSsoTheme, submitClubSsoAssertion } from '@/lib/club-sso';
+import { getClubSsoThemeFromBrowser, submitClubSsoAssertion } from '@/lib/club-sso';
 
 type CustomerClubButtonProps = {
   className?: string;
@@ -28,8 +25,7 @@ type AssertionResponse = {
 };
 
 /**
- * Same SSO flow as `/club-sso-test`, but with the logged-in user's real identity.
- * Theme is sent as a form field (light|dark|auto) — not inside the JWT.
+ * Same SSO flow as `/club-sso-test`: mint test assertion → POST assertion + theme.
  */
 export function CustomerClubButton({
   className,
@@ -40,66 +36,26 @@ export function CustomerClubButton({
   compactLabel = 'باشگاه',
 }: CustomerClubButtonProps) {
   const [loading, setLoading] = useState(false);
-  const { theme, resolvedTheme } = useTheme();
-
-  const goPublicClub = () => {
-    onNavigating?.();
-    window.location.assign(CUSTOMER_CLUB_APP_URL);
-  };
 
   const handleClick = async () => {
     if (loading) return;
     setLoading(true);
 
     try {
-      const token = accessToken.get();
-      const isLoggedIn = Boolean(getUserInfo() || token);
+      const theme = getClubSsoThemeFromBrowser();
+      const resp = await fetch('/api/club-sso/test-assertion', { method: 'POST' });
+      const payload = (await resp.json()) as AssertionResponse;
 
-      // Guest → public club (no SSO)
-      if (!isLoggedIn || !token) {
-        goPublicClub();
-        return;
-      }
-
-      const userId = getUserId();
-      if (!userId) {
-        toast.error('اطلاعات کاربر یافت نشد. دوباره وارد شوید.');
-        setLoading(false);
-        return;
-      }
-
-      // Same handoff as club-sso-test: mint assertion → POST assertion + theme
-      const clubTheme = resolveClubSsoTheme(theme, resolvedTheme);
-      const resp = await fetch('/api/club-sso/assertion', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ userId }),
-      });
-
-      const payload = (await resp.json().catch(() => null)) as AssertionResponse | null;
-      const assertion = payload?.data?.assertion;
-      const message = payload?.message;
-
-      if (resp.status === 401) {
-        toast.error(message || 'برای ورود یکپارچه ابتدا وارد شوید.');
-        setLoading(false);
-        return;
-      }
-
-      if (!resp.ok || !payload?.isSuccess || !assertion) {
-        toast.error(message || 'ورود یکپارچه به باشگاه ناموفق بود.');
+      if (!resp.ok || !payload.isSuccess || !payload.data?.assertion) {
+        toast.error(payload.message || 'ورود به باشگاه ناموفق بود.');
         setLoading(false);
         return;
       }
 
       onNavigating?.();
-      submitClubSsoAssertion(assertion, clubTheme);
+      submitClubSsoAssertion(payload.data.assertion, theme);
     } catch {
-      toast.error('خطا در ارتباط با سرویس باشگاه مشتریان.');
+      toast.error('خطا در ارتباط با سرویس باشگاه.');
       setLoading(false);
     }
   };
