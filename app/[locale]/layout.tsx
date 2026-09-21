@@ -45,7 +45,7 @@ export const viewport: Viewport = {
   minimumScale: 1,
 };
 
-const themeInitScript = `(function(){try{var d=document.documentElement;d.classList.remove('light','dark');var e=localStorage.getItem('theme');var t=(e==='light'||e==='dark')?e:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');d.classList.add(t);d.style.colorScheme=t;}catch(e){}})();`;
+const themeInitScript = `(function(){try{var d=document.documentElement;d.classList.remove('light','dark');var q=new URLSearchParams(location.search).get('theme');var t=(q==='light'||q==='dark')?q:null;if(t){try{localStorage.setItem('theme',t);}catch(e){}}else{var e=localStorage.getItem('theme');t=(e==='light'||e==='dark')?e:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}d.classList.add(t);d.style.colorScheme=t;}catch(e){}})();`;
 
 export default async function RootLayout({ params, children }: LayoutProps<'/[locale]'>) {
   const { locale } = await params;

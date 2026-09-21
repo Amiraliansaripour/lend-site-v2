@@ -14,7 +14,8 @@ const LANDING_REDIRECT_DELAY_MS = 2500;
 
 /**
  * Public entry for users arriving from an external site.
- * Expected URL: /platform/validate?nationalCode=...&phoneNumber=...
+ * Expected URL: /platform/validate?nationalCode=...&phoneNumber=...&theme=light|dark
+ * (`theme` is applied globally via InboundThemeSync; other params are unchanged.)
  *
  * On HTTP 200 + valid token payload → session is stored (same as OTP login) → /wallets
  * Otherwise → show API message (e.g. 400 mismatch) then landing (/).

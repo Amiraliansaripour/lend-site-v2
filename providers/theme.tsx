@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
 
+import { InboundThemeSync } from '@/components/inbound-theme-sync';
 import { appStore, type Theme } from '@/stores';
 
 type ThemeProviderProps = React.ComponentProps<typeof NextThemesProvider>;
@@ -10,6 +11,7 @@ type ThemeProviderProps = React.ComponentProps<typeof NextThemesProvider>;
 /**
  * System-wide theme provider (light / dark / system).
  * Keeps `next-themes` as source of truth and mirrors into zustand for any store readers.
+ * Also applies inbound `?theme=light|dark` from partner entry links.
  */
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
@@ -22,6 +24,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       {...props}
     >
       <ThemeStoreSync />
+      <InboundThemeSync />
       {children}
     </NextThemesProvider>
   );

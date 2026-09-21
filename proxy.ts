@@ -17,9 +17,9 @@ export async function proxy(request: NextRequest) {
   if (isLocale(maybeLocale)) {
     const pathname = `/${pathSegments.join('/')}`;
 
-    // External-site entry: /wallets?nationalCode&phoneNumber without a session cookie
+    // External-site entry: /wallets?nationalCode&phoneNumber&theme without a session cookie
     // must not hit the dashboard auth layout (that redirects to /login).
-    // Route them to the public Platform GetValidation page first.
+    // Route them to the public Platform GetValidation page first (all query params preserved).
     const isWalletsEntry = pathname === '/wallets';
     const nationalCode =
       request.nextUrl.searchParams.get('nationalCode') ||
