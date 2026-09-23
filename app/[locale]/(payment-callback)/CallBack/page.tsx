@@ -119,6 +119,11 @@ export default function CallBackPage() {
         ? 'ارسال به صفحه درخواست‌های من'
         : 'بازگشت به درخواست‌های من';
 
+  const cancelHref = useMemo(() => {
+    if (!recipientReturnUrl) return null;
+    return buildReturnHref(recipientReturnUrl, { InvoiceNo, refId, refCode });
+  }, [recipientReturnUrl, InvoiceNo, refId, refCode]);
+
   if (isFirstInstallmentPayment) {
     return (
       <div className='flex w-full max-w-md flex-col items-center justify-center gap-6 py-10 text-center'>
@@ -162,15 +167,23 @@ export default function CallBackPage() {
         )}
 
         <div className='flex flex-col items-center gap-4'>
-          {recipientReturnUrl && (
+          {cancelHref && (
             <div className='flex items-center gap-2 text-sm text-muted-foreground'>
               <Loader2 className='size-4 animate-spin' />
               انتقال خودکار
             </div>
           )}
-          {recipientReturnUrl ? (
-            <Button type='button' size='lg' variant='outline' onClick={redirectToReturnUrl}>
-              انصراف
+          {cancelHref ? (
+            <Button asChild size='lg' variant='outline'>
+              <a
+                href={cancelHref}
+                onClick={() => {
+                  localStorage.removeItem(RECIPIENT_RETURN_URL_KEY);
+                  localStorage.removeItem('pendingPayType');
+                }}
+              >
+                انصراف
+              </a>
             </Button>
           ) : (
             <CustomerClubBackButton />
