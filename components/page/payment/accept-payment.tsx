@@ -347,7 +347,6 @@ export function AcceptPayment({
   }
 
   if (view === 'installment-loading') {
-    
     return (
       <Card className='w-full max-w-md'>
         <CardContent className='flex flex-col items-center gap-4 py-12'>
