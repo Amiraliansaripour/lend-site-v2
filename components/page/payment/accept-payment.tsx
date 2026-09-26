@@ -2,19 +2,40 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle2, XCircle, Wallet, Clock, RefreshCw } from 'lucide-react';
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Wallet,
+  Clock,
+  RefreshCw,
+  CalendarDays,
+  ArrowRight,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getMerchantInfo, freezRequest, type MerchantInfo, type ValidWallet } from '@/api/wallet';
+import {
+  getMerchantInfo,
+  freezRequest,
+  createHasInstallment,
+  getHasInstallmentPlans,
+  getUserLoan,
+  type MerchantInfo,
+  type ValidWallet,
+  type HasInstallmentPlan,
+  type PaymentLoanHeader,
+  type PaymentLoanDetail,
+} from '@/api/wallet';
 
 type Props = {
   amount: number;
   merchantId: string;
   orderId: string;
+  nationalcode: string;
   userToken: string;
   wallets: ValidWallet[];
   walletsLoading: boolean;
@@ -22,11 +43,15 @@ type Props = {
   description?: string;
   returnUrl?: string;
   timeLeft: number;
+  installmentNumber?: number | null;
+  rateValue?: number | null;
+  mobile?: string;
 };
 
 const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
+type View = 'payment' | 'select-plan' | 'installment-loading' | 'installment-review';
 
 type WalletSelection = {
   selected: boolean;
@@ -35,10 +60,16 @@ type WalletSelection = {
 
 const formatAmount = (n: number) => new Intl.NumberFormat('fa-IR').format(n) + ' ریال';
 
+const formatDate = (dateString?: string | null) => {
+  if (!dateString || dateString.startsWith('0001-01-01')) return '—';
+  return new Intl.DateTimeFormat('fa-IR').format(new Date(dateString));
+};
+
 export function AcceptPayment({
   amount,
   merchantId,
   orderId,
+  nationalcode,
   userToken,
   wallets,
   walletsLoading,
@@ -46,11 +77,22 @@ export function AcceptPayment({
   description,
   returnUrl,
   timeLeft,
+  installmentNumber,
+  rateValue,
+  mobile,
 }: Props) {
   const [merchant, setMerchant] = useState<MerchantInfo | null>(null);
   const [merchantLoading, setMerchantLoading] = useState(true);
   const [selections, setSelections] = useState<Record<string, WalletSelection>>({});
   const [status, setStatus] = useState<Status>('idle');
+  const [view, setView] = useState<View>('payment');
+  const [plans, setPlans] = useState<HasInstallmentPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [loan, setLoan] = useState<PaymentLoanHeader | null>(null);
+  const [installments, setInstallments] = useState<PaymentLoanDetail[]>([]);
+
+  const needsPlanSelection = installmentNumber == null || Number.isNaN(installmentNumber);
 
   const timerColor =
     timeLeft > 60
@@ -125,6 +167,15 @@ export function AcceptPayment({
     }));
   };
 
+  const redirectAfterSuccess = (resolvedOrderId?: number | string) => {
+    const redirect = returnUrl
+      ? `${returnUrl}?status=success&orderId=${resolvedOrderId ?? orderId}`
+      : '/';
+    setTimeout(() => {
+      window.location.href = redirect;
+    }, 2500);
+  };
+
   const handlePayment = async () => {
     if (!canPay) {
       toast.error(
@@ -163,12 +214,7 @@ export function AcceptPayment({
       if (ok) {
         setStatus('success');
         toast.success(result?.resultMessage ?? 'پرداخت با موفقیت انجام شد');
-        const redirect = returnUrl
-          ? `${returnUrl}?status=success&orderId=${result?.orderId ?? orderId}`
-          : '/';
-        setTimeout(() => {
-          window.location.href = redirect;
-        }, 2500);
+        redirectAfterSuccess(result?.orderId ?? orderId);
       } else {
         setStatus('error');
         toast.error(result?.resultMessage ?? result?.message ?? 'خطا در انجام پرداخت');
@@ -177,6 +223,101 @@ export function AcceptPayment({
       setStatus('error');
       toast.error('خطا در انجام پرداخت');
     }
+  };
+
+  const loadInstallmentsForOrder = async () => {
+    const loans = await getUserLoan(userToken);
+    const orderNum = Number(orderId);
+    const matched =
+      loans.find(l => l.orderId === orderNum) ??
+      loans.find(l => l.loanDetails?.some(d => d.orderId === orderNum));
+
+    if (!matched) {
+      throw new Error('NO_LOAN');
+    }
+
+    const details = (matched.loanDetails ?? [])
+      .filter(d => d.orderId == null || d.orderId === orderNum)
+      .sort((a, b) => a.loanIndex - b.loanIndex);
+
+    setLoan(matched);
+    setInstallments(details);
+  };
+
+  const convertToInstallment = async (planId: string | null) => {
+    if (!nationalcode) {
+      toast.error('کد ملی در اطلاعات پرداخت موجود نیست');
+      return;
+    }
+
+    setView('installment-loading');
+    try {
+      const result = await createHasInstallment(
+        {
+          amount,
+          planId,
+          nationalcode,
+          orderId: Number(orderId),
+          isOnline: true,
+        },
+        userToken,
+      );
+
+      if (!result?.isSuccess) {
+        toast.error(result?.message ?? 'خطا در تبدیل به اقساط');
+        setView(planId ? 'select-plan' : 'payment');
+        return;
+      }
+
+      await loadInstallmentsForOrder();
+      toast.success(result.message ?? 'خرید به اقساط تبدیل شد');
+      setView('installment-review');
+    } catch (err) {
+      if (err instanceof Error && err.message === 'NO_LOAN') {
+        toast.error('اقساط این سفارش یافت نشد');
+      } else {
+        toast.error('خطا در تبدیل به اقساط');
+      }
+      setView(planId ? 'select-plan' : 'payment');
+    }
+  };
+
+  const handlePayInInstallments = async () => {
+    if (needsPlanSelection) {
+      setView('select-plan');
+      setPlansLoading(true);
+      try {
+        const list = await getHasInstallmentPlans(userToken);
+        setPlans(list);
+        if (list.length === 0) {
+          toast.error('طرح اقساطی فعالی یافت نشد');
+          setView('payment');
+        }
+      } catch {
+        toast.error('خطا در دریافت لیست طرح‌ها');
+        setView('payment');
+      } finally {
+        setPlansLoading(false);
+      }
+      return;
+    }
+
+    await convertToInstallment(null);
+  };
+
+  const handleSelectPlanAndConvert = async () => {
+    if (!selectedPlanId) {
+      toast.error('لطفاً یک طرح اقساطی انتخاب کنید');
+      return;
+    }
+    await convertToInstallment(selectedPlanId);
+  };
+
+  const handleConfirmInstallment = () => {
+    setStatus('success');
+    toast.success('خرید اقساطی با موفقیت ثبت شد');
+    // Merchant Confirm runs on returnUrl (/payment/verify) with merchant token
+    redirectAfterSuccess(orderId);
   };
 
   if (status === 'success') {
@@ -199,6 +340,194 @@ export function AcceptPayment({
           <p className='text-lg font-semibold'>پرداخت ناموفق</p>
           <Button variant='outline' onClick={() => setStatus('idle')}>
             تلاش مجدد
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (view === 'installment-loading') {
+    return (
+      <Card className='w-full max-w-md'>
+        <CardContent className='flex flex-col items-center gap-4 py-12'>
+          <Loader2 className='size-10 animate-spin text-muted-foreground' />
+          <p className='text-sm text-muted-foreground'>در حال تبدیل به اقساط...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (view === 'select-plan') {
+    return (
+      <Card className='w-full max-w-md'>
+        <CardHeader>
+          <div className='flex items-start justify-between gap-3'>
+            <div className='min-w-0'>
+              <CardTitle>انتخاب طرح اقساط</CardTitle>
+              <CardDescription>طرح مورد نظر خود را انتخاب کنید</CardDescription>
+            </div>
+            <div
+              className={`shrink-0 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-mono ${timerColor}`}
+              title='زمان باقی‌مانده'
+            >
+              <Clock className='size-4' />
+              <span dir='ltr'>{formatTime(timeLeft)}</span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className='flex flex-col gap-4'>
+          {plansLoading ? (
+            <div className='flex flex-col gap-2'>
+              <Skeleton className='h-20 w-full' />
+              <Skeleton className='h-20 w-full' />
+            </div>
+          ) : (
+            <div className='flex flex-col gap-2 max-h-80 overflow-y-auto'>
+              {plans.map(plan => {
+                const selected = selectedPlanId === plan.id;
+                return (
+                  <button
+                    key={plan.id}
+                    type='button'
+                    onClick={() => setSelectedPlanId(plan.id)}
+                    className={`rounded-lg border p-3 text-right transition-colors ${
+                      selected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className='flex justify-between gap-2 text-sm font-medium'>
+                      <span>{plan.name}</span>
+                      <span className='text-muted-foreground shrink-0'>{plan.period} قسط</span>
+                    </div>
+                    <div className='mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground'>
+                      <span>نرخ: {plan.percentage}٪</span>
+                      <span dir='ltr'>
+                        {formatAmount(plan.minAmount)} – {formatAmount(plan.maxAmount)}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className='flex flex-col gap-2'>
+            <Button
+              className='w-full'
+              size='lg'
+              disabled={!selectedPlanId || plansLoading}
+              onClick={() => void handleSelectPlanAndConvert()}
+            >
+              تبدیل به اقساط
+            </Button>
+            <Button
+              variant='ghost'
+              className='w-full'
+              onClick={() => {
+                setSelectedPlanId(null);
+                setView('payment');
+              }}
+            >
+              <ArrowRight className='size-4 me-1' />
+              بازگشت
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (view === 'installment-review') {
+    return (
+      <Card className='w-full max-w-md'>
+        <CardHeader>
+          <div className='flex items-start justify-between gap-3'>
+            <div className='min-w-0'>
+              <CardTitle>اقساط خرید</CardTitle>
+              <CardDescription>جزئیات اقساط این سفارش را بررسی کنید</CardDescription>
+            </div>
+            <div
+              className={`shrink-0 flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-mono ${timerColor}`}
+              title='زمان باقی‌مانده'
+            >
+              <Clock className='size-4' />
+              <span dir='ltr'>{formatTime(timeLeft)}</span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className='flex flex-col gap-4'>
+          <div className='rounded-lg border p-4 flex flex-col gap-3 text-sm'>
+            <div className='flex justify-between'>
+              <span className='text-muted-foreground'>فروشگاه</span>
+              <span className='font-medium'>{merchant?.name ?? '—'}</span>
+            </div>
+            <div className='flex justify-between'>
+              <span className='text-muted-foreground'>شناسه سفارش</span>
+              <span className='font-medium font-mono' dir='ltr'>
+                {orderId}
+              </span>
+            </div>
+            {loan?.requestPlanFinancierName && (
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground'>تامین‌کننده</span>
+                <span className='font-medium'>{loan.requestPlanFinancierName}</span>
+              </div>
+            )}
+            {(loan?.requestPlanPeriod || installmentNumber) && (
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground'>تعداد اقساط</span>
+                <span className='font-medium'>{loan?.requestPlanPeriod ?? installmentNumber}</span>
+              </div>
+            )}
+            {rateValue != null && !Number.isNaN(rateValue) && (
+              <div className='flex justify-between'>
+                <span className='text-muted-foreground'>کارمزد</span>
+                <span className='font-medium'>{rateValue}٪</span>
+              </div>
+            )}
+            <div className='flex justify-between border-t pt-3 mt-1'>
+              <span className='text-muted-foreground font-semibold'>مبلغ کل</span>
+              <span className='font-bold text-base'>
+                {formatAmount(loan?.totalInstallmentAmount || loan?.amount || amount)}
+              </span>
+            </div>
+          </div>
+
+          <div className='flex flex-col gap-2'>
+            <div className='flex items-center gap-2 text-sm font-medium'>
+              <CalendarDays className='size-4' />
+              جدول اقساط
+            </div>
+            {installments.length === 0 ? (
+              <p className='text-sm text-muted-foreground text-center py-4'>
+                قسطی برای این سفارش یافت نشد
+              </p>
+            ) : (
+              <div className='flex flex-col gap-2 max-h-72 overflow-y-auto'>
+                {installments.map(item => (
+                  <div
+                    key={item.id}
+                    className='rounded-lg border p-3 flex items-center justify-between gap-3 text-sm'
+                  >
+                    <div className='min-w-0'>
+                      <p className='font-medium'>قسط {item.loanIndex}</p>
+                      <p className='text-xs text-muted-foreground mt-0.5'>
+                        سررسید: {formatDate(item.dueDate)}
+                      </p>
+                    </div>
+                    <span className='font-semibold shrink-0'>{formatAmount(item.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Button
+            className='w-full'
+            size='lg'
+            disabled={installments.length === 0}
+            onClick={handleConfirmInstallment}
+          >
+            تایید نهایی خرید اقساطی
           </Button>
         </CardContent>
       </Card>
@@ -246,6 +575,26 @@ export function AcceptPayment({
               {orderId}
             </span>
           </div>
+          {mobile && (
+            <div className='flex justify-between'>
+              <span className='text-muted-foreground'>موبایل</span>
+              <span className='font-medium font-mono' dir='ltr'>
+                {mobile}
+              </span>
+            </div>
+          )}
+          {installmentNumber != null && !Number.isNaN(installmentNumber) && (
+            <div className='flex justify-between'>
+              <span className='text-muted-foreground'>تعداد اقساط</span>
+              <span className='font-medium'>{installmentNumber}</span>
+            </div>
+          )}
+          {rateValue != null && !Number.isNaN(rateValue) && (
+            <div className='flex justify-between'>
+              <span className='text-muted-foreground'>کارمزد</span>
+              <span className='font-medium'>{rateValue}٪</span>
+            </div>
+          )}
           <div className='flex justify-between border-t pt-3 mt-1'>
             <span className='text-muted-foreground font-semibold'>مبلغ قابل پرداخت</span>
             <span className='font-bold text-base'>{formatAmount(amount)}</span>
@@ -358,21 +707,33 @@ export function AcceptPayment({
           )}
         </div>
 
-        <Button
-          className='w-full'
-          size='lg'
-          disabled={status === 'loading' || merchantLoading || walletsLoading || !canPay}
-          onClick={handlePayment}
-        >
-          {status === 'loading' ? (
-            <>
-              <Loader2 className='size-4 animate-spin me-2' />
-              در حال پردازش...
-            </>
-          ) : (
-            'پرداخت'
-          )}
-        </Button>
+        <div className='flex flex-col gap-2'>
+          <Button
+            className='w-full'
+            size='lg'
+            disabled={status === 'loading' || merchantLoading || walletsLoading || !canPay}
+            onClick={handlePayment}
+          >
+            {status === 'loading' ? (
+              <>
+                <Loader2 className='size-4 animate-spin me-2' />
+                در حال پردازش...
+              </>
+            ) : (
+              'پرداخت'
+            )}
+          </Button>
+
+          <Button
+            className='w-full'
+            size='lg'
+            variant='outline'
+            disabled={status === 'loading' || merchantLoading}
+            onClick={() => void handlePayInInstallments()}
+          >
+            پرداخت اقساطی!
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

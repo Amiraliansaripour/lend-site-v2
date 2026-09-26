@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -12,6 +11,7 @@ import { ZoomIn } from 'lucide-react';
 import { useCreateInvoice, useChangeRequestState } from '@/mutations/request';
 import { FileUploadArea } from '@/components/file-upload-area';
 import { isAllowedImageFile, previewImageToSrc } from '@/lib/image-file';
+import { getShopImageUrl } from '@/lib/shop-utils';
 import type { RequestPreviewData } from '@/api/request';
 
 interface ProformaInvoiceProps {
@@ -37,6 +37,13 @@ interface UploadProgress {
   progress?: number;
 }
 
+function attachmentIdFromFilePath(filePath?: string | null): string | undefined {
+  if (!filePath) return undefined;
+  const filename = filePath.split(/[\\/]/).pop() || filePath;
+  const id = filename.replace(/\.[^.]+$/, '');
+  return id || undefined;
+}
+
 export function ProformaInvoice({
   requestId,
   onNext,
@@ -53,24 +60,27 @@ export function ProformaInvoice({
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [attachmentId, setAttachmentId] = useState<string | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [hasHydratedPreview, setHasHydratedPreview] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!previewData || hasHydratedPreview) return;
+    if (!previewData || uploadedFile) return;
 
-    const imageSrc = previewImageToSrc(previewData.invoiceFileImage);
-    if (imageSrc) {
-      setUploadedFile({
-        preview: imageSrc,
-        isExisting: true,
-      });
-      setUploadProgress({ status: 'success', message: 'فایل موجود' });
-      setAttachmentId(null);
-    }
-    setHasHydratedPreview(true);
-  }, [previewData, hasHydratedPreview]);
+    const imageSrc =
+      previewImageToSrc(previewData.invoiceFileImage) ||
+      getShopImageUrl(previewData.invoiceAttachmentFilePath);
+
+    if (!imageSrc) return;
+
+    const existingId = attachmentIdFromFilePath(previewData.invoiceAttachmentFilePath);
+    setUploadedFile({
+      preview: imageSrc,
+      id: existingId,
+      isExisting: true,
+    });
+    setUploadProgress({ status: 'success', message: 'فایل موجود' });
+    setAttachmentId(existingId ?? null);
+  }, [previewData, uploadedFile]);
 
   const uploadToServer = useCallback(async (file: File) => {
     setUploadProgress({ status: 'uploading', message: 'در حال آپلود...', progress: 0 });
@@ -284,11 +294,11 @@ export function ProformaInvoice({
         <DialogContent className='max-w-4xl max-h-screen p-2'>
           {uploadedFile && (
             <div className='relative w-full h-[80vh]'>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={uploadedFile.preview}
                 alt='پیش فاکتور بزرگ شده'
-                fill
-                className='object-contain'
+                className='w-full h-full object-contain'
               />
             </div>
           )}

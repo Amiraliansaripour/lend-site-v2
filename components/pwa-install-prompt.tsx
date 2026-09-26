@@ -147,7 +147,7 @@ export function PwaInstallPrompt() {
       <div className='flex gap-2 mt-3'>
         <button
           onClick={() => void handleInstall()}
-          className='flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-foreground text-background text-sm font-medium py-2 transition-opacity hover:opacity-80'
+          className='flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium py-2 transition-opacity hover:opacity-80'
         >
           <Download size={14} />
           {t('install')}

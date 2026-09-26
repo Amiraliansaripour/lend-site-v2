@@ -8,6 +8,7 @@ import type { Matcher } from 'react-day-picker';
 
 import { formatJalaliDate } from '@/utils/format';
 import { normalizeDigits } from '@/utils/normalize';
+import { parseCalendarDate, toLocalNoon } from '@/utils/date';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -39,8 +40,13 @@ function initDate(date: Date | string | undefined) {
   if (!date) return undefined;
 
   try {
-    return typeof date === 'string' ? new Date(date) : date;
-  } catch (err) {}
+    if (typeof date === 'string') {
+      return parseCalendarDate(date);
+    }
+    return isValidDate(date) ? toLocalNoon(date) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function parseShamsiDate(masked: string) {
@@ -49,7 +55,7 @@ function parseShamsiDate(masked: string) {
   if (!match) return undefined;
 
   const parsed = parse(normalized, 'yyyy/MM/dd', new Date());
-  return isValidDate(parsed) ? parsed : undefined;
+  return isValidDate(parsed) ? toLocalNoon(parsed) : undefined;
 }
 
 export type DatePickerProps = {
@@ -150,11 +156,12 @@ export function DatePicker({
             disabled={calendarDisabled}
             onMonthChange={setMonth}
             onSelect={date => {
-              const formattedDate = formatDate(date);
-              setDate(date);
+              const selected = date ? toLocalNoon(date) : undefined;
+              const formattedDate = formatDate(selected);
+              setDate(selected);
               setOpen(false);
               setValue(formattedDate);
-              onValueChange?.(date, formattedDate);
+              onValueChange?.(selected, formattedDate);
             }}
             footer={
               !hideTodayButton && (
@@ -163,8 +170,8 @@ export function DatePicker({
                     type='button'
                     className='cursor-pointer mt-2 mr-auto'
                     onClick={() => {
-                      const newDate = new Date();
-                      const formatteDate = formatDate(new Date());
+                      const newDate = toLocalNoon(new Date());
+                      const formatteDate = formatDate(newDate);
 
                       setDate(newDate);
                       setMonth(newDate);

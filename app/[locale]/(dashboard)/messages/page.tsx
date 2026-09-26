@@ -6,7 +6,7 @@ import { MessagesPageContent } from '@/components/page/messages/messages-page-co
 
 export default function MessagesPage() {
   const breadcrumbs: Breadcrumbs = [
-    { label: 'داشبورد', href: '/dashboard' },
+    { label: 'کیف پول های من', href: '/wallets' },
     { label: 'صندوق پیام', href: '/messages' },
   ];
 

@@ -69,7 +69,7 @@ export function InstallmentCard({ loan }: InstallmentCardProps) {
 
     document.body.appendChild(form);
     form.submit();
-    document.body.removeChild(form);
+    form.remove();
   };
 
   const paidCount = loan.loanDetails.filter(d => d.loanDetailStatus === 1).length;

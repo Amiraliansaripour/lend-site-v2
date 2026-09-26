@@ -14,29 +14,58 @@ import {
 
 import type { SiteTemplateImages } from '@/api/site-template';
 import { getSiteTemplateImages } from '@/api/site-template';
-import { applyBrandName, getUploadUrl } from '@/lib/site-template';
+import { applyBrandName, getTenantSlugFromWindow, getUploadUrl } from '@/lib/site-template';
+import { resolveSiteTemplate } from '@/lib/site-template-resolve';
+import { applySiteThemeColor } from '@/lib/site-template-theme';
 import { RETRY_DELAY_MS } from '@/queries/site-template';
 import { SiteTemplateLoader } from '@/components/site-template-loader';
 
-const SESSION_STORAGE_KEY = 'site-template-images';
+const SESSION_STORAGE_KEY = 'site-template-active';
+
+type CachedActiveTemplate = {
+  template: SiteTemplateImages;
+  tenantSlug: string | null;
+  isDefaultTenant: boolean;
+};
 
 /**
  * In-memory cache for the current JS runtime.
  * - Present after a successful fetch → SPA navigations reuse it (no API, no loader)
  * - Cleared on full page load / refresh → API is called again
  */
-let memoryCache: SiteTemplateImages | null = null;
+let memoryCache: CachedActiveTemplate | null = null;
 
 /** Prevents duplicate in-flight fetches across Strict Mode remounts on the same page load. */
-let pageLoadFetchPromise: Promise<SiteTemplateImages> | null = null;
+let pageLoadFetchPromise: Promise<CachedActiveTemplate> | null = null;
 
-function readSessionCache(): SiteTemplateImages | null {
+function readSessionCache(): CachedActiveTemplate | null {
   if (typeof window === 'undefined') return null;
 
   try {
     const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as SiteTemplateImages;
+
+    const parsed = JSON.parse(raw) as CachedActiveTemplate | SiteTemplateImages;
+
+    // Legacy cache: a bare template object without tenant metadata
+    if (parsed && typeof parsed === 'object' && !('template' in parsed) && 'name' in parsed) {
+      return {
+        template: parsed as SiteTemplateImages,
+        tenantSlug: getTenantSlugFromWindow(),
+        isDefaultTenant: !(parsed as SiteTemplateImages).companyName?.trim(),
+      };
+    }
+
+    const cached = parsed as CachedActiveTemplate;
+    if (!cached?.template) return null;
+
+    // Ignore cache from a different subdomain in the same browser profile (defensive).
+    const currentSlug = getTenantSlugFromWindow();
+    if ((cached.tenantSlug ?? null) !== (currentSlug ?? null)) {
+      return null;
+    }
+
+    return cached;
   } catch {
     return null;
   }
@@ -45,13 +74,14 @@ function readSessionCache(): SiteTemplateImages | null {
 function clearSessionCache() {
   try {
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    // Clear previous key name if present
+    sessionStorage.removeItem('site-template-images');
   } catch {
     // ignore
   }
 }
 
-/** On HTTP 200 success: clear previous session data, then store the fresh payload. */
-function replaceSessionCache(data: SiteTemplateImages) {
+function replaceSessionCache(data: CachedActiveTemplate) {
   clearSessionCache();
   memoryCache = data;
 
@@ -62,13 +92,20 @@ function replaceSessionCache(data: SiteTemplateImages) {
   }
 }
 
-async function fetchSiteTemplateForPageLoad(): Promise<SiteTemplateImages> {
+async function fetchSiteTemplateForPageLoad(): Promise<CachedActiveTemplate> {
   if (pageLoadFetchPromise) return pageLoadFetchPromise;
 
   pageLoadFetchPromise = (async () => {
-    const data = await getSiteTemplateImages();
-    replaceSessionCache(data);
-    return data;
+    const list = await getSiteTemplateImages();
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const resolved = resolveSiteTemplate(list, hostname);
+    const payload: CachedActiveTemplate = {
+      template: resolved.template,
+      tenantSlug: resolved.tenantSlug,
+      isDefaultTenant: resolved.isDefaultTenant,
+    };
+    replaceSessionCache(payload);
+    return payload;
   })();
 
   try {
@@ -102,29 +139,47 @@ type SiteTemplateContextValue = {
   phone: string;
   email: string;
   address: string;
+  /** Active company subdomain slug, or null on the default site. */
+  tenantSlug: string | null;
+  isDefaultTenant: boolean;
   getImageUrl: (key: SiteTemplateImageKey) => string;
   withBrand: (text: string) => string;
 };
 
 const SiteTemplateContext = createContext<SiteTemplateContextValue | null>(null);
 
-function updateDocumentBranding(template: SiteTemplateImages) {
+function upsertHeadLink(selector: string, attrs: Record<string, string>) {
+  let link = document.querySelector<HTMLLinkElement>(selector);
+
+  if (!link) {
+    link = document.createElement('link');
+    document.head.appendChild(link);
+  }
+
+  for (const [key, value] of Object.entries(attrs)) {
+    link.setAttribute(key, value);
+  }
+}
+
+function updateDocumentBranding(active: CachedActiveTemplate) {
   if (typeof document === 'undefined') return;
+
+  const { template, isDefaultTenant } = active;
+
+  applySiteThemeColor(template, { isDefaultTenant });
 
   const faviconUrl = getUploadUrl(template.favicon);
   if (faviconUrl) {
-    const existing = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
-    existing.forEach(link => link.remove());
-
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.href = faviconUrl;
-    document.head.appendChild(link);
-
-    const apple = document.createElement('link');
-    apple.rel = 'apple-touch-icon';
-    apple.href = faviconUrl;
-    document.head.appendChild(apple);
+    upsertHeadLink('link[data-site-template-favicon]', {
+      rel: 'icon',
+      href: faviconUrl,
+      'data-site-template-favicon': 'true',
+    });
+    upsertHeadLink('link[data-site-template-apple-icon]', {
+      rel: 'apple-touch-icon',
+      href: faviconUrl,
+      'data-site-template-apple-icon': 'true',
+    });
   }
 
   if (template.name) {
@@ -137,28 +192,25 @@ type SiteTemplateProviderProps = {
 };
 
 export function SiteTemplateProvider({ children }: SiteTemplateProviderProps) {
-  // Full page load/refresh → memoryCache is null. SPA remount → memoryCache is set.
   const isPageLoadRef = useRef(memoryCache === null);
-  const [template, setTemplate] = useState<SiteTemplateImages | null>(() => memoryCache);
+  const [active, setActive] = useState<CachedActiveTemplate | null>(() => memoryCache);
 
   useLayoutEffect(() => {
-    if (template) {
-      updateDocumentBranding(template);
+    if (active) {
+      updateDocumentBranding(active);
       return;
     }
 
-    // Refresh: session still has data — show it immediately (no loader) while we re-fetch.
     if (!isPageLoadRef.current) return;
 
     const fromSession = readSessionCache();
     if (fromSession) {
-      setTemplate(fromSession);
+      setActive(fromSession);
       updateDocumentBranding(fromSession);
     }
-  }, [template]);
+  }, [active]);
 
   useEffect(() => {
-    // SPA navigation / remount with memory cache — do not call the API again.
     if (!isPageLoadRef.current) return;
 
     let cancelled = false;
@@ -169,7 +221,7 @@ export function SiteTemplateProvider({ children }: SiteTemplateProviderProps) {
         const data = await fetchSiteTemplateForPageLoad();
         if (cancelled) return;
 
-        setTemplate(data);
+        setActive(data);
         updateDocumentBranding(data);
         isPageLoadRef.current = false;
       } catch {
@@ -186,32 +238,7 @@ export function SiteTemplateProvider({ children }: SiteTemplateProviderProps) {
     };
   }, []);
 
-  useEffect(() => {
-    if (template) return;
-
-    const blockNavigation = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-
-      const anchor = target.closest('a');
-      if (anchor) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    };
-
-    const blockPopState = () => {
-      window.history.pushState(null, '', window.location.href);
-    };
-
-    document.addEventListener('click', blockNavigation, true);
-    window.addEventListener('popstate', blockPopState);
-
-    return () => {
-      document.removeEventListener('click', blockNavigation, true);
-      window.removeEventListener('popstate', blockPopState);
-    };
-  }, [template]);
+  const template = active?.template ?? null;
 
   const getImageUrl = useCallback(
     (key: SiteTemplateImageKey) => {
@@ -227,7 +254,7 @@ export function SiteTemplateProvider({ children }: SiteTemplateProviderProps) {
   );
 
   const value = useMemo<SiteTemplateContextValue | null>(() => {
-    if (!template) return null;
+    if (!active || !template) return null;
 
     return {
       template,
@@ -235,10 +262,12 @@ export function SiteTemplateProvider({ children }: SiteTemplateProviderProps) {
       phone: template.phone,
       email: template.email,
       address: template.address,
+      tenantSlug: active.tenantSlug,
+      isDefaultTenant: active.isDefaultTenant,
       getImageUrl,
       withBrand,
     };
-  }, [template, getImageUrl, withBrand]);
+  }, [active, template, getImageUrl, withBrand]);
 
   if (!value) {
     return <SiteTemplateLoader />;

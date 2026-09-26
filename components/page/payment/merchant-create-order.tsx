@@ -27,13 +27,18 @@ export function MerchantCreateOrder({ merchantToken, onLogout }: Props) {
           {
             nationalcode: value.nationalcode,
             amount: Number(value.amount),
-            IsOnline: true,
+            isOnline: true,
           },
           merchantToken,
         );
 
         if (result?.isSuccess && result.data) {
-          const { merchantId, orderId } = result.data;
+          const merchantId = result.data.id || result.data.merchantId;
+          const { orderId } = result.data;
+          if (!merchantId || !orderId) {
+            toast.error('پاسخ سفارش ناقص است');
+            return;
+          }
           const origin = window.location.origin;
           const link = `${origin}/recipient?amount=${value.amount}&merchantId=${merchantId}&orderId=${orderId}&nationalcode=${value.nationalcode}&description=خریدکالا&returnUrl=${origin}/payment/verify`;
           setPaymentLink(link);

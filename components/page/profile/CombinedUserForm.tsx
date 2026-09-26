@@ -28,16 +28,12 @@ import { Button } from '@/components/ui/button';
 // * types
 import { User } from '@/types/auth';
 
+// * utils
+import { parseCalendarDate, toApiDateString } from '@/utils/date';
+
 // Component props interface
 interface CombinedUserFormProps {
   user: User | null;
-}
-
-function getDisplayBirthDate(date?: string) {
-  if (!date) return undefined;
-  const shifted = new Date(date);
-  shifted.setDate(shifted.getDate() + 1);
-  return shifted;
 }
 
 // National code validator function
@@ -131,7 +127,7 @@ const CombinedUserForm: React.FC<CombinedUserFormProps> = ({ user }) => {
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
       fatherName: user?.personInfo?.fatherName || '',
-      birthDate: getDisplayBirthDate(user?.personInfo?.birthDate),
+      birthDate: parseCalendarDate(user?.personInfo?.birthDate),
       nationalCode: user?.nationalCode || '',
       issuePlace: user?.personInfo?.issuePlace || '',
       birthCertificateNumber: user?.personInfo?.birthCertificateNumber || '',
@@ -157,7 +153,7 @@ const CombinedUserForm: React.FC<CombinedUserFormProps> = ({ user }) => {
         firstName: value.firstName,
         lastName: value.lastName,
         fatherName: value.fatherName,
-        birthDate: value.birthDate ? value.birthDate.toISOString() : null,
+        birthDate: value.birthDate ? toApiDateString(value.birthDate) : null,
         issuePlace: value.issuePlace,
         birthCertificateNumber: value.birthCertificateNumber,
         postalCode: value.postalCode,

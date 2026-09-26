@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { WalletInfoBar } from './wallet-info-bar';
 import { WalletStatCard } from './wallet-stat-card';
 import { WalletTransactionsTable } from './wallet-transactions-table';
+import { WalletBalanceCards, WalletBalanceCardsSkeleton } from './wallet-balance-cards';
 import { cn } from '@/lib/utils';
 import type { WalletType, WalletStats } from './wallet-types';
 import type { WalletInfo, WalletTransaction } from '@/api/wallet';
@@ -12,9 +13,15 @@ type WalletsPageProps = {
   walletInfo: WalletInfo | null;
   transactions: WalletTransaction[];
   isLoading: boolean;
+  onWalletUpdate: () => void;
 };
 
-export function WalletsPage({ walletInfo, transactions, isLoading }: WalletsPageProps) {
+export function WalletsPage({
+  walletInfo,
+  transactions,
+  isLoading,
+  onWalletUpdate,
+}: WalletsPageProps) {
   const [activeTab, setActiveTab] = useState<WalletType>('credit');
   const creditStats: WalletStats = useMemo(
     () => ({
@@ -47,10 +54,13 @@ export function WalletsPage({ walletInfo, transactions, isLoading }: WalletsPage
 
   return (
     <div>
-      <WalletInfoBar />
+      {/* <WalletInfoBar /> */}
+
+      <div className='mb-6'>
+        <WalletBalanceCards walletInfo={walletInfo} onWalletUpdate={onWalletUpdate} />
+      </div>
 
       <div className='bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:p-9'>
-        {/* Wallet Type Selector */}
         <div className='flex gap-4 mb-8'>
           <button
             onClick={() => setActiveTab('credit')}
@@ -72,14 +82,12 @@ export function WalletsPage({ walletInfo, transactions, isLoading }: WalletsPage
           </button>
         </div>
 
-        {/* Stats Cards */}
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-11 md:mt-16'>
           <WalletStatCard type='initial' amount={currentStats.initial} />
           <WalletStatCard type='spent' amount={currentStats.spent} />
           <WalletStatCard type='remaining' amount={currentStats.remaining} />
         </div>
 
-        {/* Transactions Table */}
         <WalletTransactionsTable transactions={filteredTransactions} />
       </div>
     </div>
@@ -89,7 +97,6 @@ export function WalletsPage({ walletInfo, transactions, isLoading }: WalletsPage
 export function WalletsPageSkeleton() {
   return (
     <div className='space-y-6'>
-      {/* Info Bar Skeleton */}
       <div className='hidden md:flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-100 p-4 h-16 animate-pulse'>
         <div className='flex items-center gap-3'>
           <div className='w-6 h-6 bg-gray-200 rounded-full' />
@@ -101,15 +108,14 @@ export function WalletsPageSkeleton() {
         </div>
       </div>
 
-      {/* Main Content Skeleton */}
+      <WalletBalanceCardsSkeleton />
+
       <div className='bg-white rounded-xl shadow-sm border border-gray-100 p-4 lg:p-9'>
-        {/* Tabs Skeleton */}
         <div className='flex gap-4 mb-8'>
           <div className='w-40 h-8 bg-gray-200 rounded animate-pulse' />
           <div className='w-40 h-8 bg-gray-200 rounded animate-pulse' />
         </div>
 
-        {/* Stats Cards Skeleton */}
         <div className='grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-11 md:mt-16'>
           {[1, 2, 3].map(i => (
             <div
@@ -127,7 +133,6 @@ export function WalletsPageSkeleton() {
           ))}
         </div>
 
-        {/* Table Skeleton */}
         <div className='mt-10 md:mt-20'>
           <div className='w-32 h-6 bg-gray-200 rounded mb-5 animate-pulse' />
           <div className='border rounded-md p-4 space-y-3'>

@@ -44,7 +44,7 @@ function InstallmentsContent() {
 
 export default function InstallmentsPageRoute() {
   const breadcrumbs: Breadcrumbs = [
-    { label: 'داشبورد', href: '/dashboard' },
+    { label: 'کیف پول های من', href: '/wallets' },
     { label: 'اقساط من', href: '/installments' },
   ];
 

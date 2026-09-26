@@ -3,6 +3,7 @@ import { accessToken } from '@/lib/auth/client/cookies';
 import { isMappedBaseURL, BASE_URLS, type BaseURL } from '@/lib/api/constants';
 import { toast } from 'sonner';
 import { clearUserInfo } from '@/lib/auth/client/user-info';
+import { captureHttpError } from '@/lib/sentry';
 
 import type { OverrideExtend, StrictOmit } from '@/types/utils';
 import type { RequestInit } from 'next/dist/server/web/spec-extension/request';
@@ -36,9 +37,10 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
     payload.body = JSON.stringify(body);
   }
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  const headers: HeadersInit = {};
+  if (options?.method !== 'GET' && options?.method !== 'HEAD') {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const token = accessToken.get();
   if (!skipAuth && token) {
@@ -64,7 +66,9 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
         pathname.includes('/requests') ||
         pathname.includes('/wallets') ||
         pathname.includes('/installments') ||
-        pathname.includes('/profile');
+        pathname.includes('/profile') ||
+        pathname.includes('/cards') ||
+        pathname.includes('/messages');
 
       if (isDashboardLikeRoute) {
         window.location.href = '/';
@@ -82,10 +86,24 @@ const $fetch = async <P, D>(url: string, options?: $FetchOptions<P>) => {
       data = JSON.parse(text) as D;
     } catch {
       if (!resp.ok) {
+        captureHttpError({
+          status: resp.status,
+          method: opts.method,
+          url: _url,
+        });
         toast.error(`Request failed with status ${resp.status}`);
       }
       return { data, resp };
     }
+  }
+
+  if (!resp.ok) {
+    captureHttpError({
+      status: resp.status,
+      method: opts.method,
+      url: _url,
+      message: (data as APIResult<D>)?.message,
+    });
   }
 
   if (!resp.ok && !suppressErrorToast) {

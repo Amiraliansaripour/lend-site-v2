@@ -185,7 +185,7 @@ export function RequestSummaryBar({
 
         <div className='h-10 w-px shrink-0 bg-border/80' />
 
-        <div className='flex min-w-0 flex-1 items-center justify-between'>
+        <div className='flex flex-1 items-center justify-between'>
           {summary.stats.map((item, index) => {
             const Icon = STAT_ICONS[item.key];
             return (

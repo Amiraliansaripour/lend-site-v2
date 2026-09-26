@@ -46,13 +46,30 @@ export type WalletTransaction = {
   dateTimeClear: string | null;
 };
 
+const sumNullable = (values: (number | null | undefined)[]): number =>
+  values.reduce<number>((total, value) => total + (value ?? 0), 0);
+
+export const aggregateWalletInfo = (wallets: WalletInfo[]): WalletInfo | null => {
+  if (wallets.length === 0) return null;
+
+  const [first] = wallets;
+
+  return {
+    ...first,
+    credit: sumNullable(wallets.map(wallet => wallet.credit)),
+    cash: sumNullable(wallets.map(wallet => wallet.cash)),
+    sumCreditCharg: sumNullable(wallets.map(wallet => wallet.sumCreditCharg)),
+    sumCreditBuy: sumNullable(wallets.map(wallet => wallet.sumCreditBuy)),
+  };
+};
+
 export const getWalletInfo = async (): Promise<WalletInfo | null> => {
   const { data } = await api.get<APIResult<WalletInfo[]>>('/WalletReport/GetWallets', {
     baseURL: 'REPORT',
   });
 
   if (data?.isSuccess && Array.isArray(data.data)) {
-    return data.data[0] ?? null;
+    return aggregateWalletInfo(data.data);
   }
 
   return null;
@@ -149,12 +166,18 @@ export const getMerchantToken = async (
 export type GetOrderIdPayload = {
   nationalcode: string;
   amount: number;
-  IsOnline: true;
+  isOnline: true;
+  mobile?: string;
+  InstallMentNumber?: number;
+  rateValue?: number;
 };
 
 export type GetOrderIdResult = {
-  merchantId: string;
   orderId: number;
+  id: string;
+  isOnline?: boolean;
+  /** @deprecated Prefer `id` from newer API responses */
+  merchantId?: string;
 };
 
 export const getOrderId = async (
@@ -306,4 +329,119 @@ export const confirmOrder = async (
     },
   );
   return data ?? null;
+};
+
+// --- Installment payment (recipient) ---
+
+export type HasInstallmentPlan = {
+  id: string;
+  name: string;
+  period: number;
+  minAmount: number;
+  maxAmount: number;
+  percentage: number;
+  firstSystemFee: number;
+  firstBankFee: number;
+  duringSystemFee: number;
+  duringBankFee: number;
+  hasInstallment: boolean;
+  isActive: boolean;
+  score?: string;
+  documentAmount?: number;
+  ruleText?: string;
+};
+
+export const getHasInstallmentPlans = async (userToken: string): Promise<HasInstallmentPlan[]> => {
+  const { data } = await api.get<APIResult<HasInstallmentPlan[]>>('/Plan/GetHasInstallment', {
+    skipAuth: true,
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+
+  if (data?.isSuccess && Array.isArray(data.data)) {
+    return data.data.filter(p => p.isActive && p.hasInstallment);
+  }
+  return [];
+};
+
+export type CreateHasInstallmentPayload = {
+  amount: number;
+  planId: string | null;
+  nationalcode: string;
+  orderId: number;
+  isOnline: true;
+};
+
+export type CreateHasInstallmentResult = {
+  id: string;
+  requestNumber: number;
+  planId?: string;
+  planName?: string;
+  planPeriod?: string;
+  period?: number;
+  creditAmount?: number;
+  feeAmount?: number;
+  totalRefundAmount?: number;
+};
+
+export const createHasInstallment = async (
+  payload: CreateHasInstallmentPayload,
+  userToken: string,
+): Promise<APIResult<CreateHasInstallmentResult> | null> => {
+  const { data } = await api.post<
+    CreateHasInstallmentPayload,
+    APIResult<CreateHasInstallmentResult>
+  >('/Request/CreateHasInstallment', payload, {
+    skipAuth: true,
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  return data ?? null;
+};
+
+export type PaymentLoanDetail = {
+  id: string;
+  loanIndex: number;
+  amount: number;
+  loanDetailStatus: number;
+  dueDate: string;
+  payedAt?: string | null;
+  penaltyAmount?: number;
+  mainAmount?: number;
+  systemFeeAmount?: number;
+  bankFeeAmount?: number;
+  orderId?: number;
+  loanHeaderId?: string;
+};
+
+export type PaymentLoanHeader = {
+  id: string;
+  loanStatus: number;
+  numberOfCoupons: number;
+  couponAmount: number;
+  feeAmount: number;
+  totalInstallmentAmount: number;
+  firstInstallmentDate: string;
+  lastInstallmentDate: string;
+  amount: number;
+  requestPlanPeriod?: string;
+  requestCreditAmount?: string;
+  requestRequestNumber?: string;
+  nearInstallmentDate?: string;
+  requestId?: string;
+  requestPlanFinancierName?: string;
+  loanDetails: PaymentLoanDetail[];
+  firstSystemFee?: number;
+  firstBankFee?: number;
+  duringSystemFee?: number;
+  duringBankFee?: number;
+  orderId?: number;
+};
+
+export const getUserLoan = async (userToken: string): Promise<PaymentLoanHeader[]> => {
+  const { data } = await api.get<APIResult<PaymentLoanHeader[]>>('/LoanHeader/GetUserLoan', {
+    skipAuth: true,
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+
+  if (data?.isSuccess && Array.isArray(data.data)) return data.data;
+  return [];
 };

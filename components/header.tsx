@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
 import { getUserInfo } from '@/lib/auth/client/user-info';
 import { useSiteTemplate } from '@/providers/site-template';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 type Href = `/${string}`;
 
@@ -92,7 +93,7 @@ export function Header() {
         <div className='w-full h-full flex justify-between items-center relative'>
           {/* Mobile Menu Button */}
           <button
-            className='lg:hidden p-2 text-gray-600 hover:text-black transition-all duration-200'
+            className='lg:hidden p-2 text-gray-600 hover:text-black transition-all duration-200 !z-50'
             onClick={toggleMenu}
           >
             <div className='relative w-6 h-6 flex items-center justify-center'>
@@ -102,13 +103,13 @@ export function Header() {
                   'absolute transition-all duration-300',
                   isMenuOpen ? 'opacity-0 rotate-180 scale-75' : 'opacity-100 rotate-0 scale-100',
                   transparent && 'text-white',
-                  !transparent && 'text-black',
+                  !transparent && 'text-black dark:text-foreground',
                 )}
               />
               <X
                 size={20}
                 className={cn(
-                  'absolute transition-all duration-300 text-black',
+                  'absolute transition-all duration-300 text-black dark:text-foreground',
                   isMenuOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-75',
                 )}
               />
@@ -138,7 +139,13 @@ export function Header() {
           </nav>
 
           {/* Desktop Auth Buttons */}
-          <div className='hidden lg:block'>
+          <div className='hidden lg:flex items-center gap-3'>
+            <ThemeToggle
+              className={cn(
+                transparent &&
+                  'border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white',
+              )}
+            />
             {!isAuthenticated ? (
               <Link
                 href='/login'
@@ -146,7 +153,7 @@ export function Header() {
                   'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
                   transparent
                     ? 'text-white border-white hover:bg-white/10'
-                    : 'text-black border-black hover:bg-black/10',
+                    : 'text-black border-black hover:bg-black/10 dark:text-foreground dark:border-border dark:hover:bg-muted',
                 )}
               >
                 <User size={18} />
@@ -154,11 +161,11 @@ export function Header() {
               </Link>
             ) : (
               <Link
-                href='/dashboard'
+                href='/wallets'
                 className={cn(
                   'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
                   inverted
-                    ? 'text-black border-black hover:bg-white/10'
+                    ? 'text-black border-black hover:bg-white/10 dark:text-foreground dark:border-border'
                     : 'text-white border-white hover:bg-white/10',
                 )}
               >
@@ -168,20 +175,39 @@ export function Header() {
             )}
           </div>
 
-          {/* Mobile Auth Button */}
-          {!isAuthenticated ? (
-            <Link className='lg:hidden' href='/login'>
-              <button className='p-2'>
-                <LogIn className={cn('text-black', transparent && 'text-white')} size={20} />
-              </button>
-            </Link>
-          ) : (
-            <Link className='lg:hidden' href='/dashboard'>
-              <button className='p-2'>
-                <User className={cn('text-black', transparent && 'text-white')} size={23} />
-              </button>
-            </Link>
-          )}
+          {/* Mobile actions */}
+          <div className='flex items-center gap-1 lg:hidden'>
+            <ThemeToggle
+              compact
+              className={cn(
+                transparent &&
+                  'border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white',
+              )}
+            />
+            {!isAuthenticated ? (
+              <Link
+                className={cn(
+                  'p-2',
+                  transparent ? 'text-white' : 'text-black dark:text-foreground',
+                )}
+                href='/login'
+                aria-label='ورود / ثبت نام'
+              >
+                <LogIn size={20} />
+              </Link>
+            ) : (
+              <Link
+                className={cn(
+                  'p-2',
+                  transparent ? 'text-white' : 'text-black dark:text-foreground',
+                )}
+                href='/wallets'
+                aria-label='پروفایل'
+              >
+                <User size={23} />
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -189,7 +215,7 @@ export function Header() {
       {isMenuOpen && (
         <div className='fixed inset-0 bg-black/50 z-40 lg:hidden' onClick={closeMenu}>
           <div
-            className='fixed top-[58px] md:top-[78px] left-0 right-0 bg-white shadow-lg z-50'
+            className='fixed top-[58px] md:top-[78px] left-0 right-0 bg-white shadow-lg z-50 dark:bg-card dark:border-b dark:border-border'
             onClick={e => e.stopPropagation()}
           >
             <nav className='flex flex-col'>

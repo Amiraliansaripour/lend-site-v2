@@ -21,6 +21,14 @@ export default function RecipientPage() {
   const nationalcode = params.get('nationalcode') ?? '';
   const description = params.get('description') ?? undefined;
   const returnUrl = params.get('returnUrl') ?? undefined;
+  const mobile = params.get('mobile') ?? undefined;
+  const installmentNumberParam = params.get('installmentNumber');
+  const installmentNumber =
+    installmentNumberParam != null && installmentNumberParam !== ''
+      ? Number(installmentNumberParam)
+      : null;
+  const rateValueParam = params.get('rateValue');
+  const rateValue = rateValueParam != null && rateValueParam !== '' ? Number(rateValueParam) : null;
 
   const [step, setStep] = useState<Step>('login');
   const [userToken, setUserToken] = useState('');
@@ -100,6 +108,7 @@ export default function RecipientPage() {
           amount={amount}
           merchantId={merchantId}
           orderId={orderId}
+          nationalcode={nationalcode}
           userToken={userToken}
           wallets={wallets}
           walletsLoading={walletsLoading}
@@ -107,6 +116,9 @@ export default function RecipientPage() {
           description={description}
           returnUrl={returnUrl}
           timeLeft={timeLeft}
+          mobile={mobile}
+          installmentNumber={installmentNumber}
+          rateValue={rateValue}
         />
       )}
     </div>

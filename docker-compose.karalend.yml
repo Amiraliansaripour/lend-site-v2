@@ -1,0 +1,4 @@
+# Karalend: keep compose v1 name. Host bind is 0.0.0.0:14000 from PORT in CI.
+services:
+  app:
+    container_name: lend-site-v2_app_1

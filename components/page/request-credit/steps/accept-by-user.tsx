@@ -78,7 +78,9 @@ export function AcceptByUser({
 
   const formatAmount = (amount?: number | string | null): string => {
     const numeric = typeof amount === 'string' ? Number(amount) : amount;
-    if (numeric === undefined || numeric === null || isNaN(Number(numeric))) return 'نامشخص';
+    if (numeric === undefined || numeric === null || !Number.isFinite(Number(numeric))) {
+      return 'نامشخص';
+    }
     const rounded = Math.round(Number(numeric));
     return `${rounded.toLocaleString('fa-IR')} ریال`;
   };
@@ -146,10 +148,12 @@ export function AcceptByUser({
     }
   };
 
-  const recieveAmount = requestData?.creditAmount
-    ? requestData.creditAmount -
-      requestData.creditAmount /
-        Math.floor((requestData.planFirstSystemFee || 0) + (requestData.planFirstBankFee || 0))
+  // first*Fee values are percentage rates (same as loan-calculator), not divisors
+  const firstFeeRate =
+    (requestData?.planFirstSystemFee || 0) + (requestData?.planFirstBankFee || 0);
+  const creditAmount = requestData?.creditAmount || 0;
+  const recieveAmount = creditAmount
+    ? Math.round(creditAmount - (creditAmount * firstFeeRate) / 100)
     : 0;
 
   const identityImages = [
@@ -193,6 +197,14 @@ export function AcceptByUser({
   const invoiceImageSrc = resolveImageSrc(
     requestData?.invoiceFileImage,
     requestData?.invoiceAttachmentFilePath,
+  );
+
+  const hasCreditInfoContent = Boolean(
+    requestData?.chequeSayadId ||
+    chequeImageSrc ||
+    chequeBackImageSrc ||
+    promissoryImageSrc ||
+    salaryDeductionImageSrc,
   );
 
   if (loading) {
@@ -268,43 +280,57 @@ export function AcceptByUser({
               </CardTitle>
             </CardHeader>
             <CardContent className='space-y-3 pt-6'>
-              {requestData?.chequeSayadId && (
-                <div className='flex justify-between'>
-                  <span className='font-medium'>شناسه صیاد چک:</span>
-                  <span>{requestData.chequeSayadId}</span>
-                </div>
-              )}
-              {chequeImageSrc && (
-                <div className='flex items-center justify-between'>
-                  <span className='font-medium'>تصویر چک صیادی:</span>
-                  <PreviewThumb src={chequeImageSrc} alt='تصویر چک صیادی' onOpen={openImageModal} />
-                </div>
-              )}
-              {chequeBackImageSrc && (
-                <div className='flex items-center justify-between'>
-                  <span className='font-medium'>تصویر پشت چک صیادی:</span>
-                  <PreviewThumb
-                    src={chequeBackImageSrc}
-                    alt='تصویر پشت چک صیادی'
-                    onOpen={openImageModal}
-                  />
-                </div>
-              )}
-              {promissoryImageSrc && (
-                <div className='flex items-center justify-between'>
-                  <span className='font-medium'>تصویر سفته:</span>
-                  <PreviewThumb src={promissoryImageSrc} alt='تصویر سفته' onOpen={openImageModal} />
-                </div>
-              )}
-              {salaryDeductionImageSrc && (
-                <div className='flex items-center justify-between'>
-                  <span className='font-medium'>تصویر گواهی کسر از حقوق:</span>
-                  <PreviewThumb
-                    src={salaryDeductionImageSrc}
-                    alt='تصویر گواهی کسر از حقوق'
-                    onOpen={openImageModal}
-                  />
-                </div>
+              {hasCreditInfoContent ? (
+                <>
+                  {requestData?.chequeSayadId && (
+                    <div className='flex justify-between'>
+                      <span className='font-medium'>شناسه صیاد چک:</span>
+                      <span>{requestData.chequeSayadId}</span>
+                    </div>
+                  )}
+                  {chequeImageSrc && (
+                    <div className='flex items-center justify-between'>
+                      <span className='font-medium'>تصویر چک صیادی:</span>
+                      <PreviewThumb
+                        src={chequeImageSrc}
+                        alt='تصویر چک صیادی'
+                        onOpen={openImageModal}
+                      />
+                    </div>
+                  )}
+                  {chequeBackImageSrc && (
+                    <div className='flex items-center justify-between'>
+                      <span className='font-medium'>تصویر پشت چک صیادی:</span>
+                      <PreviewThumb
+                        src={chequeBackImageSrc}
+                        alt='تصویر پشت چک صیادی'
+                        onOpen={openImageModal}
+                      />
+                    </div>
+                  )}
+                  {promissoryImageSrc && (
+                    <div className='flex items-center justify-between'>
+                      <span className='font-medium'>تصویر سفته:</span>
+                      <PreviewThumb
+                        src={promissoryImageSrc}
+                        alt='تصویر سفته'
+                        onOpen={openImageModal}
+                      />
+                    </div>
+                  )}
+                  {salaryDeductionImageSrc && (
+                    <div className='flex items-center justify-between'>
+                      <span className='font-medium'>تصویر گواهی کسر از حقوق:</span>
+                      <PreviewThumb
+                        src={salaryDeductionImageSrc}
+                        alt='تصویر گواهی کسر از حقوق'
+                        onOpen={openImageModal}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className='text-sm text-muted-foreground'>اطلاعاتی برای نمایش وجود ندارد</p>
               )}
             </CardContent>
           </Card>
@@ -367,7 +393,9 @@ export function AcceptByUser({
                 <div className='flex justify-between'>
                   <span className='font-medium'>درصد سود:</span>
                   <span>
-                    {requestData?.planPercentage ? `${requestData.planPercentage}%` : 'نامشخص'}
+                    {requestData?.planDuringBankFee && requestData?.planDuringSystemFee
+                      ? `${requestData?.planDuringBankFee + requestData?.planDuringSystemFee}%`
+                      : 'نامشخص'}
                   </span>
                 </div>
                 <div className='flex justify-between'>

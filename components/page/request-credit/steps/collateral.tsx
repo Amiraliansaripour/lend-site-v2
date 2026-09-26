@@ -30,14 +30,7 @@ export function Collateral({
   isReadOnly = false,
   previewData,
 }: CollateralProps) {
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(
-    previewData?.chequeId ||
-      previewData?.chequeSayadId ||
-      previewData?.chequeAttachmentFilePath ||
-      previewData?.chequeAttachmentBackFilePath
-      ? 'check'
-      : null,
-  );
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   const handleMethodSelect = (method: string) => {
     if (isReadOnly) return;

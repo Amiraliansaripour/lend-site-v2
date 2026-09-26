@@ -93,7 +93,7 @@ export default function CallBackPage() {
               <div className='space-y-2 max-w-md'>
                 <h2 className='text-xl font-semibold text-red-700'>پرداخت ناموفق بود</h2>
                 <p className='text-sm text-muted-foreground leading-7'>
-                  متأسفانه پرداخت شما انجام نشد. مبلغ کسرشده تا ۷۳ ساعت دیگر به حساب شما بازگشت داده
+                  متأسفانه پرداخت شما انجام نشد. مبلغ کسرشده تا 72 ساعت دیگر به حساب شما بازگشت داده
                   می‌شود.
                 </p>
               </div>
