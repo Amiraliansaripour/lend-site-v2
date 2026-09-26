@@ -3,9 +3,15 @@
 import { useEffect, useState, useMemo, useRef, startTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
-import { ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { calculateLoanSummary } from '@/utils/loan-calculator';
+import {
+  calculateLoanSummary,
+  CREDIT_AMOUNT_STEP,
+  clampAmountToStep,
+  filterPlansByAmount,
+  getPlansAmountBounds,
+} from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
 import { type PlanDetail } from '@/api/plan';
 import { getFinancierPlansQueryOptions } from '@/queries/plan';
@@ -30,23 +36,48 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
   const router = useRouter();
   const { brandName, getImageUrl } = useSiteTemplate();
   const logoUrl = getImageUrl('logo');
-  const financiers = useMemo(() => {
-    return financierPlansData?.plans || [];
+
+  const allPlans = useMemo(() => {
+    return (financierPlansData?.plans || []).filter(p => p.isActive);
   }, [financierPlansData?.plans]);
 
-  // Initialize with first plan when data loads
+  const { min: sliderMin, max: sliderMax } = useMemo(
+    () => getPlansAmountBounds(allPlans),
+    [allPlans],
+  );
+
+  const availablePlans = useMemo(() => filterPlansByAmount(allPlans, value), [allPlans, value]);
+
+  // Initialize amount + plan when data loads
   useEffect(() => {
-    if (financiers.length > 0 && !isInitializedRef.current) {
-      const firstPlan = financiers[financiers.length - 1];
+    if (allPlans.length > 0 && !isInitializedRef.current) {
+      const firstPlan = allPlans[allPlans.length - 1];
+      const initialAmount = clampAmountToStep(firstPlan.minAmount, sliderMin, sliderMax);
 
       isInitializedRef.current = true;
 
       startTransition(() => {
-        setSelectedPlan(firstPlan);
-        setValue(firstPlan.minAmount);
+        setValue(initialAmount);
+        const matching = filterPlansByAmount(allPlans, initialAmount);
+        setSelectedPlan(matching.find(p => p.id === firstPlan.id) ?? matching[0] ?? firstPlan);
       });
     }
-  }, [financiers]);
+  }, [allPlans, sliderMin, sliderMax]);
+
+  // Keep selected plan inside the filtered set as amount changes
+  useEffect(() => {
+    if (!isInitializedRef.current || allPlans.length === 0) return;
+
+    if (availablePlans.length === 0) {
+      if (selectedPlan) setSelectedPlan(null);
+      return;
+    }
+
+    const stillValid = selectedPlan && availablePlans.some(p => p.id === selectedPlan.id);
+    if (!stillValid) {
+      setSelectedPlan(availablePlans[0]);
+    }
+  }, [availablePlans, selectedPlan, allPlans.length]);
 
   const loanCalculation = useMemo(() => {
     if (!selectedPlan || !value) {
@@ -55,14 +86,22 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
     return calculateLoanSummary(value, selectedPlan);
   }, [selectedPlan, value]);
 
+  const setAmount = (next: number) => {
+    setValue(clampAmountToStep(next, sliderMin, sliderMax));
+  };
+
   const handleSliderChange = (values: number[]) => {
-    setValue(values[0]);
+    setAmount(values[0]);
   };
 
   const handlePlanClick = (plan: PlanDetail) => {
     setSelectedPlan(plan);
-    setValue(plan.minAmount);
   };
+
+  const prevAmount = value - CREDIT_AMOUNT_STEP;
+  const nextAmount = value + CREDIT_AMOUNT_STEP;
+  const canDecrease = prevAmount >= sliderMin;
+  const canIncrease = nextAmount <= sliderMax;
 
   const hasExternalLink = Boolean(selectedPlan?.hasLink && selectedPlan?.link);
 
@@ -95,62 +134,78 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
   const totalInterest = loanCalculation?.totalInterest ?? 0;
   const totalRecived = loanCalculation?.netReceived ?? 0;
 
-  const minAmount = selectedPlan ? selectedPlan.minAmount : 0;
-  const maxAmount = selectedPlan ? selectedPlan.maxAmount : 0;
-
-  const sliderPercentage =
-    maxAmount > minAmount ? ((value - minAmount) / (maxAmount - minAmount)) * 100 : 0;
-
   return (
     <div className='flex flex-col lg:flex-row gap-6 lg:gap-10 px-4 sm:px-6 md:px-8 lg:px-10 xl:pl-20 xl:pr-10 mb-10 border-t border-gray-100 justify-center'>
-      {/* Controls: plans (+ amount slider for normal plans) */}
+      {/* Controls: amount slider + filtered plans */}
       <div className='w-full lg:w-3/5 pt-8 lg:pt-12'>
-        <div className='font-bold text-lg sm:text-xl mb-3 sm:mb-5'>نمایشگر اقساط</div>
+        <div className='font-bold text-lg sm:text-xl mb-3 sm:mb-5'>محاسبه‌گر اقساط</div>
         <div className='text-base sm:text-lg text-[#454545] mb-8 sm:mb-12 lg:mb-[75px]'>
           {hasExternalLink
             ? 'این طرح از طریق لینک اختصاصی ادامه پیدا می‌کند؛ مبلغ و اقساط در این صفحه نمایش داده نمی‌شود.'
-            : 'لطفا مبلغ درخواستی و مدت بازپرداخت را انتخاب کنید.'}
+            : 'مبلغ اعتبار درخواستی خود را مشخص کنید'}
         </div>
 
-        {/* Amount Selector — hidden for linked plans */}
-        {selectedPlan && !hasExternalLink && (
-          <div
-            key={selectedPlan.id}
-            className='pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-pink-light p-3 sm:p-4 rounded-lg border border-[#F5F0FF]'
-          >
-            <div className='mb-8 sm:mb-10 lg:mb-12 text-light-text text-sm sm:text-base'>
-              مبلغ مورد نظر
-            </div>
-            <div className='flex flex-col'>
-              <div className='relative mb-8'>
-                <div
-                  className='absolute transform -translate-x-1/2 -translate-y-full'
-                  style={{
-                    left: `calc(${sliderPercentage}%)`,
-                    top: '-32px',
-                  }}
+        {/* Amount Selector — always shown; plans filter by range */}
+        {allPlans.length > 0 && (
+          <div className='pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-pink-light p-3 sm:p-4 rounded-lg border border-[#F5F0FF]'>
+            <div className='flex flex-col gap-6' dir='ltr'>
+              <div className='flex items-center justify-between gap-2 sm:gap-4'>
+                <button
+                  type='button'
+                  disabled={!canDecrease}
+                  onClick={() => setAmount(prevAmount)}
+                  className={cn(
+                    'flex items-center gap-1 text-xs sm:text-sm text-light-text shrink-0 transition-opacity',
+                    !canDecrease && 'opacity-40 pointer-events-none',
+                  )}
+                  aria-label='کاهش مبلغ'
                 >
+                  <ChevronLeft className='size-4' />
+                  <span className='hidden sm:inline' dir='rtl'>
+                    {formatNumber(Math.max(prevAmount, sliderMin).toString())} ریال
+                  </span>
+                </button>
+
+                <div className='text-center min-w-0'>
                   <div
-                    className={cn(
-                      'text-[#3F455D] bg-white px-3 py-1 rounded-lg text-xs sm:text-sm font-bold relative shadow-sm border border-gray-200',
-                    )}
+                    className='text-xl sm:text-2xl lg:text-3xl font-bold text-[#3F455D] truncate'
+                    dir='rtl'
                   >
                     {formatNumber(value.toString())}
                   </div>
+                  <div className='text-xs sm:text-sm text-light-text mt-0.5' dir='rtl'>
+                    ریال
+                  </div>
                 </div>
+
+                <button
+                  type='button'
+                  disabled={!canIncrease}
+                  onClick={() => setAmount(nextAmount)}
+                  className={cn(
+                    'flex items-center gap-1 text-xs sm:text-sm text-light-text shrink-0 transition-opacity',
+                    !canIncrease && 'opacity-40 pointer-events-none',
+                  )}
+                  aria-label='افزایش مبلغ'
+                >
+                  <span className='hidden sm:inline' dir='rtl'>
+                    {formatNumber(Math.min(nextAmount, sliderMax).toString())} ریال
+                  </span>
+                  <ChevronRight className='size-4' />
+                </button>
               </div>
+
               <Slider
-                dir='ltr'
-                min={selectedPlan.minAmount}
-                max={selectedPlan.maxAmount}
-                step={10000000}
+                min={sliderMin}
+                max={sliderMax}
+                step={CREDIT_AMOUNT_STEP}
                 value={[value]}
                 onValueChange={handleSliderChange}
                 className='w-full'
               />
-              <div className='text-sm sm:text-base lg:text-lg text-purple-darker flex justify-between w-full pt-2'>
-                <div>{formatNumber(selectedPlan.maxAmount.toString())}</div>
-                <div>{formatNumber(selectedPlan.minAmount.toString())}</div>
+              <div className='text-sm sm:text-base lg:text-lg text-purple-darker flex justify-between w-full'>
+                <div dir='rtl'>{formatNumber(sliderMin.toString())} ریال</div>
+                <div dir='rtl'>{formatNumber(sliderMax.toString())} ریال</div>
               </div>
             </div>
           </div>
@@ -159,15 +214,19 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
         <div
           className={cn(
             'pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-pink-light p-3 sm:p-4 rounded-lg border border-[#F5F0FF]',
-            !hasExternalLink && 'mt-4 sm:mt-6 lg:mt-9',
+            allPlans.length > 0 && 'mt-4 sm:mt-6 lg:mt-9',
           )}
         >
           <div className='text-light-text text-xs sm:text-sm mb-3'>طرح ها</div>
           <div className='flex flex-wrap gap-2'>
-            {financiers.map(item => {
-              const isLinked = Boolean(item.hasLink && item.link);
-              return (
-                item.isActive && (
+            {availablePlans.length === 0 ? (
+              <p className='text-sm text-muted-foreground'>
+                طرحی برای این مبلغ موجود نیست. مبلغ را تغییر دهید.
+              </p>
+            ) : (
+              availablePlans.map(item => {
+                const isLinked = Boolean(item.hasLink && item.link);
+                return (
                   <button
                     key={item.id}
                     className={cn(
@@ -181,9 +240,9 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
                     {item?.name}
                     {isLinked && <ExternalLink className='size-3 opacity-70' aria-hidden />}
                   </button>
-                )
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       </div>
@@ -234,6 +293,7 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
               <button
                 className='w-full bg-secondary-green text-white h-12 sm:h-14 rounded text-sm sm:text-base font-medium transition-colors bg-primary hover:bg-green-600'
                 onClick={handleRequestCredit}
+                disabled={!selectedPlan}
               >
                 درخواست اعتبار
               </button>

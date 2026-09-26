@@ -1,5 +1,39 @@
 import type { PlanData, LoanCalculation } from '@/types/request-credit';
 
+/** Slider / nudge step for requested credit amount (Rial). */
+export const CREDIT_AMOUNT_STEP = 100_000_000;
+
+type AmountBounded = { minAmount: number; maxAmount: number };
+
+/** Overall slider bounds from all plans (min of mins, max of maxes). */
+export function getPlansAmountBounds(plans: AmountBounded[]): { min: number; max: number } {
+  if (!plans.length) return { min: 0, max: 0 };
+  return {
+    min: Math.min(...plans.map(p => p.minAmount)),
+    max: Math.max(...plans.map(p => p.maxAmount)),
+  };
+}
+
+/** Plans whose [minAmount, maxAmount] includes the selected credit amount. */
+export function filterPlansByAmount<T extends AmountBounded>(plans: T[], amount: number): T[] {
+  return plans.filter(p => amount >= p.minAmount && amount <= p.maxAmount);
+}
+
+/** Clamp and snap an amount to the nearest step within [min, max]. */
+export function clampAmountToStep(
+  amount: number,
+  min: number,
+  max: number,
+  step: number = CREDIT_AMOUNT_STEP,
+): number {
+  if (!Number.isFinite(amount) || !Number.isFinite(min) || !Number.isFinite(max)) return min;
+  if (max <= min) return min;
+  const clamped = Math.min(max, Math.max(min, amount));
+  if (!step || step <= 0) return clamped;
+  const snapped = min + Math.round((clamped - min) / step) * step;
+  return Math.min(max, Math.max(min, snapped));
+}
+
 export function calculateLoanDetails(planData: PlanData, creditAmount: number): LoanCalculation {
   if (!planData || !creditAmount) {
     return {

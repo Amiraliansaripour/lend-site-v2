@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from '@/i18n/navigation';
-import { ExternalLink, HelpCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,7 +11,13 @@ import { getFinancierPlans, getPlan, type PlanDetail } from '@/api/plan';
 import { createRequest, ExistingRequestError } from '@/api/facility';
 import { type Request } from '@/api/request';
 import { toast } from 'sonner';
-import { calculateLoanSummary } from '@/utils/loan-calculator';
+import {
+  calculateLoanSummary,
+  CREDIT_AMOUNT_STEP,
+  clampAmountToStep,
+  filterPlansByAmount,
+  getPlansAmountBounds,
+} from '@/utils/loan-calculator';
 import { formatNumber } from '@/utils/format';
 import { getUserId } from '@/lib/auth/client/user-info';
 import { CreditModal } from '@/components/page/landing/credit-modal';
@@ -56,20 +62,46 @@ export function LoanCalc({
     return financierData?.plans.filter(p => p.isActive) || [];
   }, [financierData]);
 
+  const { min: sliderMin, max: sliderMax } = useMemo(
+    () => getPlansAmountBounds(activePlans),
+    [activePlans],
+  );
+
+  const creditAmount = useMemo(() => {
+    const raw =
+      creditAmountOverride ??
+      initialCreditAmount ??
+      (activePlans.length ? activePlans[activePlans.length - 1].minAmount : CREDIT_AMOUNT_STEP);
+    if (!sliderMin && !sliderMax) return raw;
+    return clampAmountToStep(raw, sliderMin, sliderMax);
+  }, [creditAmountOverride, initialCreditAmount, activePlans, sliderMin, sliderMax]);
+
+  const availablePlans = useMemo(
+    () => filterPlansByAmount(activePlans, creditAmount),
+    [activePlans, creditAmount],
+  );
+
   const selectedPlan = useMemo(() => {
     if (userSelectedPlan) {
-      return activePlans.find(plan => plan.id === userSelectedPlan.id) ?? userSelectedPlan;
+      const stillAvailable = availablePlans.find(plan => plan.id === userSelectedPlan.id);
+      if (stillAvailable) return stillAvailable;
     }
     if (initialPlanId) {
-      const matchedPlan = activePlans.find(plan => plan.id === initialPlanId);
+      const matchedPlan = availablePlans.find(plan => plan.id === initialPlanId);
       if (matchedPlan) return matchedPlan;
     }
-    if (activePlans.length === 0) return null;
-    return activePlans[activePlans.length - 1];
-  }, [userSelectedPlan, activePlans, initialPlanId]);
+    if (availablePlans.length === 0) return null;
+    return availablePlans[0];
+  }, [userSelectedPlan, availablePlans, initialPlanId]);
 
-  const creditAmount =
-    creditAmountOverride ?? initialCreditAmount ?? selectedPlan?.minAmount ?? 30000000;
+  // If current selection falls out of range, clear override so we pick from availablePlans
+  useEffect(() => {
+    if (!userSelectedPlan) return;
+    const stillValid = availablePlans.some(p => p.id === userSelectedPlan.id);
+    if (!stillValid) {
+      setUserSelectedPlan(availablePlans[0] ?? null);
+    }
+  }, [availablePlans, userSelectedPlan]);
 
   const { data: planDetails } = useQuery({
     queryKey: ['plan-detail', selectedPlan?.id],
@@ -123,10 +155,18 @@ export function LoanCalc({
     return calculateLoanSummary(creditAmount, plan);
   }, [planDetails, selectedPlan, creditAmount]);
 
+  const setAmount = (next: number) => {
+    setCreditAmountOverride(clampAmountToStep(next, sliderMin, sliderMax));
+  };
+
   const handlePlanSelect = (plan: PlanDetail) => {
     setUserSelectedPlan(plan);
-    setCreditAmountOverride(plan.minAmount);
   };
+
+  const prevAmount = creditAmount - CREDIT_AMOUNT_STEP;
+  const nextAmount = creditAmount + CREDIT_AMOUNT_STEP;
+  const canDecrease = prevAmount >= sliderMin;
+  const canIncrease = nextAmount <= sliderMax;
 
   const handleSubmit = () => {
     if (!selectedPlan) {
@@ -202,45 +242,76 @@ export function LoanCalc({
     );
   }
 
-  const minValue = selectedPlan?.minAmount || 20000000;
-  const maxValue = selectedPlan?.maxAmount || 200000000;
-
   return (
     <div className='w-full max-w-6xl mx-auto'>
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
         <div className='space-y-6'>
           <div>
-            <h2 className='text-xl font-bold mb-2'>نمایشگر اقساط</h2>
+            <h2 className='text-xl font-bold mb-2'>محاسبه‌گر اقساط</h2>
             <p className='text-muted-foreground'>
               {hasExternalLink
                 ? 'این طرح از طریق لینک اختصاصی ادامه پیدا می‌کند؛ مبلغ و اقساط در این صفحه نمایش داده نمی‌شود.'
-                : 'لطفا مبلغ درخواستی و مدت بازپرداخت را انتخاب کنید.'}
+                : 'مبلغ اعتبار درخواستی خود را مشخص کنید'}
             </p>
           </div>
 
-          {!hasExternalLink && (
+          {activePlans.length > 0 && (
             <div className='bg-accent/50 rounded-lg p-6 space-y-6'>
-              <div>
-                <label className='text-sm text-muted-foreground mb-4 block'>مبلغ مورد نظر</label>
-                <div className='space-y-4'>
-                  <div className='text-center'>
-                    <span className='text-2xl font-bold text-primary'>
-                      {formatNumber(creditAmount)} ریال
+              <div className='flex flex-col gap-6' dir='ltr'>
+                <div className='flex items-center justify-between gap-2 sm:gap-4'>
+                  <button
+                    type='button'
+                    disabled={!canDecrease}
+                    onClick={() => setAmount(prevAmount)}
+                    className={cn(
+                      'flex items-center gap-1 text-xs sm:text-sm text-muted-foreground shrink-0 transition-opacity',
+                      !canDecrease && 'opacity-40 pointer-events-none',
+                    )}
+                    aria-label='کاهش مبلغ'
+                  >
+                    <ChevronLeft className='size-4' />
+                    <span className='hidden sm:inline' dir='rtl'>
+                      {formatNumber(Math.max(prevAmount, sliderMin))} ریال
                     </span>
+                  </button>
+
+                  <div className='text-center min-w-0'>
+                    <div className='text-2xl font-bold text-primary truncate' dir='rtl'>
+                      {formatNumber(creditAmount)}
+                    </div>
+                    <div className='text-xs text-muted-foreground mt-0.5' dir='rtl'>
+                      ریال
+                    </div>
                   </div>
-                  <Slider
-                    dir='ltr'
-                    value={[creditAmount]}
-                    onValueChange={value => setCreditAmountOverride(value[0])}
-                    min={minValue}
-                    max={maxValue}
-                    step={1000000}
-                    className='w-full'
-                  />
-                  <div className='flex justify-between text-sm text-muted-foreground'>
-                    <span>{formatNumber(maxValue)}</span>
-                    <span>{formatNumber(minValue)}</span>
-                  </div>
+
+                  <button
+                    type='button'
+                    disabled={!canIncrease}
+                    onClick={() => setAmount(nextAmount)}
+                    className={cn(
+                      'flex items-center gap-1 text-xs sm:text-sm text-muted-foreground shrink-0 transition-opacity',
+                      !canIncrease && 'opacity-40 pointer-events-none',
+                    )}
+                    aria-label='افزایش مبلغ'
+                  >
+                    <span className='hidden sm:inline' dir='rtl'>
+                      {formatNumber(Math.min(nextAmount, sliderMax))} ریال
+                    </span>
+                    <ChevronRight className='size-4' />
+                  </button>
+                </div>
+
+                <Slider
+                  value={[creditAmount]}
+                  onValueChange={vals => setAmount(vals[0])}
+                  min={sliderMin}
+                  max={sliderMax}
+                  step={CREDIT_AMOUNT_STEP}
+                  className='w-full'
+                />
+                <div className='flex justify-between text-sm text-muted-foreground'>
+                  <span dir='rtl'>{formatNumber(sliderMin)} ریال</span>
+                  <span dir='rtl'>{formatNumber(sliderMax)} ریال</span>
                 </div>
               </div>
             </div>
@@ -249,21 +320,27 @@ export function LoanCalc({
           <div className='bg-accent/50 rounded-lg p-6'>
             <label className='text-sm text-muted-foreground mb-3 block'>طرح ها</label>
             <div className='flex flex-wrap gap-2'>
-              {activePlans.map(plan => {
-                const isLinked = Boolean(plan.hasLink && plan.link);
-                return (
-                  <Button
-                    key={plan.id}
-                    variant={selectedPlan?.id === plan.id ? 'default' : 'outline'}
-                    size='sm'
-                    onClick={() => handlePlanSelect(plan)}
-                    className={cn(isLinked && 'gap-1.5')}
-                  >
-                    {plan.name}
-                    {isLinked && <ExternalLink className='size-3 opacity-70' aria-hidden />}
-                  </Button>
-                );
-              })}
+              {availablePlans.length === 0 ? (
+                <p className='text-sm text-muted-foreground'>
+                  طرحی برای این مبلغ موجود نیست. مبلغ را تغییر دهید.
+                </p>
+              ) : (
+                availablePlans.map(plan => {
+                  const isLinked = Boolean(plan.hasLink && plan.link);
+                  return (
+                    <Button
+                      key={plan.id}
+                      variant={selectedPlan?.id === plan.id ? 'default' : 'outline'}
+                      size='sm'
+                      onClick={() => handlePlanSelect(plan)}
+                      className={cn(isLinked && 'gap-1.5')}
+                    >
+                      {plan.name}
+                      {isLinked && <ExternalLink className='size-3 opacity-70' aria-hidden />}
+                    </Button>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

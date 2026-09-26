@@ -1,14 +1,35 @@
-import { useEffect, useState, useRef } from 'react'; // Removed 'use' as it's not a React hook
+import { useEffect, useState, useRef, useMemo } from 'react'; // Removed 'use' as it's not a React hook
 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { convertRialToToman } from '../../utils/RialToToman';
 import axiosInstance from '../../api/axiosInstance';
 import { PriceDisplayWithOutLabel } from '../../utils/formatTomanReadable';
 import NavigationButtons from '../buttons/NavigationButton';
 import Button from '../newui/common/Button';
 import cn from '../../utils/cn';
 import CreditModal from '../HOME/CreditModal';
+
+const CREDIT_AMOUNT_STEP = 100_000_000;
+
+const getPlansAmountBounds = plans => {
+  if (!plans?.length) return { min: 0, max: 0 };
+  return {
+    min: Math.min(...plans.map(p => p.minAmount)),
+    max: Math.max(...plans.map(p => p.maxAmount)),
+  };
+};
+
+const filterPlansByAmount = (plans, amount) =>
+  (plans || []).filter(p => amount >= p.minAmount && amount <= p.maxAmount);
+
+const clampAmountToStep = (amount, min, max, step = CREDIT_AMOUNT_STEP) => {
+  if (!Number.isFinite(amount) || !Number.isFinite(min) || !Number.isFinite(max)) return min;
+  if (max <= min) return min;
+  const clamped = Math.min(max, Math.max(min, amount));
+  if (!step || step <= 0) return clamped;
+  const snapped = min + Math.round((clamped - min) / step) * step;
+  return Math.min(max, Math.max(min, snapped));
+};
 // Enhanced loan calculation based on backend C# logic
 const calculateLoanDetails = (planData, creditAmount) => {
   if (!planData || !creditAmount) return null;
@@ -101,7 +122,7 @@ const LoanCalc = ({ onNext, setRequestId, user, requestId, isEditMode }) => {
   const [searchParams] = useSearchParams();
   const id = searchParams.get('id');
   const navigate = useNavigate();
-  const [financiers, setFinanciers] = useState([{ name: '...بارگذاری ', disable: true }]);
+  const [financiers, setFinanciers] = useState([]);
 
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedPlanDetails, setSelectedPlanDetails] = useState(null); // New state for detailed plan data
@@ -118,6 +139,43 @@ const LoanCalc = ({ onNext, setRequestId, user, requestId, isEditMode }) => {
 
   const financierSelectRef = useRef(null);
 
+  const activePlans = useMemo(
+    () => (financiers || []).filter(p => p.isActive && !p.disable),
+    [financiers],
+  );
+
+  const { min: sliderMin, max: sliderMax } = useMemo(
+    () => getPlansAmountBounds(activePlans),
+    [activePlans],
+  );
+
+  const availablePlans = useMemo(
+    () => filterPlansByAmount(activePlans, value),
+    [activePlans, value],
+  );
+
+  const setAmount = next => {
+    setValue(clampAmountToStep(next, sliderMin || 0, sliderMax || next, CREDIT_AMOUNT_STEP));
+  };
+
+  const loadPlanDetails = async plan => {
+    if (!plan?.id) return;
+    try {
+      const planDetailsResponse = await axiosInstance.get(`/api/v1/Plan/Get/${plan.id}`);
+
+      if (planDetailsResponse?.data?.isSuccess) {
+        const planDetails = planDetailsResponse.data.data;
+        setSelectedPlanDetails(planDetails);
+        setPlanGuarantees(planDetails?.guarantees);
+      }
+    } catch (planError) {
+      console.error('Error fetching plan details:', planError);
+      axiosInstance
+        .get(`/api/v1/Plan/Get/${plan.id}`)
+        .then(res => setPlanGuarantees(res?.data?.data?.guarantees));
+    }
+  };
+
   const getFinancier = async () => {
     try {
       const response = await axiosInstance.get(`/api/v1/Financier/GetPlanForLend`);
@@ -125,33 +183,18 @@ const LoanCalc = ({ onNext, setRequestId, user, requestId, isEditMode }) => {
       setFinanciers(fetchedPlans);
 
       if (fetchedPlans.length > 0) {
-        const firstPlan = fetchedPlans[fetchedPlans.length - 1];
-        setSelectedPlan(firstPlan);
-        setPlanId(firstPlan?.id);
+        const active = fetchedPlans.filter(p => p.isActive);
+        const bounds = getPlansAmountBounds(active);
+        const firstPlan = active[active.length - 1] || fetchedPlans[fetchedPlans.length - 1];
+        const initialAmount = clampAmountToStep(firstPlan?.minAmount, bounds.min, bounds.max);
+        const matching = filterPlansByAmount(active, initialAmount);
+        const planToSelect = matching.find(p => p.id === firstPlan?.id) ?? matching[0] ?? firstPlan;
 
-        setDuration(firstPlan?.period);
-        setValue(firstPlan?.minAmount);
-        // Fetch detailed plan data for calculation
-        try {
-          const planDetailsResponse = await axiosInstance.get(`/api/v1/Plan/Get/${firstPlan?.id}`);
-
-          if (planDetailsResponse?.data?.isSuccess) {
-            const planDetails = planDetailsResponse.data.data;
-            setSelectedPlanDetails(planDetails);
-            setPlanGuarantees(planDetails?.guarantees);
-
-            // Calculate loan details with the new plan
-            const calculation = calculateLoanDetails(planDetails, value);
-
-            setLoanCalculation(calculation);
-          }
-        } catch (planError) {
-          console.error('Error fetching plan details:', planError);
-          // Fallback to old guarantees method
-          axiosInstance
-            .get(`/api/v1/Plan/Get/${firstPlan?.id}`)
-            .then(res => setPlanGuarantees(res?.data?.data?.guarantees));
-        }
+        setSelectedPlan(planToSelect);
+        setPlanId(planToSelect?.id);
+        setDuration(planToSelect?.period);
+        setValue(initialAmount);
+        await loadPlanDetails(planToSelect);
       }
     } catch (err) {
       if (err.response?.status === 401) {
@@ -166,6 +209,28 @@ const LoanCalc = ({ onNext, setRequestId, user, requestId, isEditMode }) => {
   useEffect(() => {
     getFinancier();
   }, []);
+
+  // Keep selected plan inside the filtered set as amount changes
+  useEffect(() => {
+    if (!activePlans.length) return;
+
+    if (availablePlans.length === 0) {
+      if (selectedPlan) {
+        setSelectedPlan(null);
+        setPlanId(undefined);
+      }
+      return;
+    }
+
+    const stillValid = selectedPlan && availablePlans.some(p => p.id === selectedPlan.id);
+    if (!stillValid) {
+      const nextPlan = availablePlans[0];
+      setSelectedPlan(nextPlan);
+      setPlanId(nextPlan?.id);
+      setDuration(nextPlan?.period);
+      loadPlanDetails(nextPlan);
+    }
+  }, [availablePlans, selectedPlan, activePlans.length]);
 
   // Recalculate when value or selected plan details change
   useEffect(() => {
@@ -207,11 +272,11 @@ const LoanCalc = ({ onNext, setRequestId, user, requestId, isEditMode }) => {
   const totalRecived = loanCalculation ? loanCalculation.receivedAmount : installmentAmount;
 
   const handleChange = event => {
-    setValue(Number(event.target.value));
+    setAmount(Number(event.target.value));
   };
 
-  // When user clicks on a plan button
-  const handlePlanClick = async (plan, index) => {
+  // When user clicks on a plan button — keep amount; only switch plan
+  const handlePlanClick = async plan => {
     try {
       const response = await axiosInstance.get(`/api/v1/Plan/Get/${plan?.id}`);
 
@@ -224,8 +289,6 @@ const LoanCalc = ({ onNext, setRequestId, user, requestId, isEditMode }) => {
         setPlanId(plan?.id);
 
         setDuration(plan?.period);
-        setValue(planDetails?.minAmount);
-        // Calculate loan details with the new plan will be handled by useEffect
       }
     } catch (error) {
       console.error('Error fetching plan details:', error);
@@ -298,69 +361,84 @@ const LoanCalc = ({ onNext, setRequestId, user, requestId, isEditMode }) => {
         <div className='flex flex-col lg:flex-row gap-6 lg:gap-10  justify-center'>
           {/* Left Section - Calculator Controls */}
           <div className='w-full lg:w-3/5 pt-8 lg:pt-12'>
-            <div className='font-bold text-lg sm:text-xl mb-3 sm:mb-5'>نمایشگر اقساط</div>
+            <div className='font-bold text-lg sm:text-xl mb-3 sm:mb-5'>محاسبه‌گر اقساط</div>
             <div className='text-base sm:text-lg text-[#454545] mb-8 sm:mb-12 lg:mb-[75px]'>
-              {' '}
-              لطفا مبلغ درخواستی و مدت بازپرداخت را انتخاب کنید.
+              مبلغ اعتبار درخواستی خود را مشخص کنید
             </div>
 
             {/* Amount Selector */}
             <div className='pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-pink-light p-3 sm:p-4 rounded-lg border border-[#F5F0FF]'>
-              <div className='mb-8 sm:mb-10 lg:mb-12 text-light-text text-sm sm:text-base'>
-                مبلغ مورد نظر
-              </div>
-              <div className='flex flex-col'>
-                <div className='relative mb-2'>
-                  <div
-                    className='absolute transform -translate-x-1/2 -translate-y-full'
-                    style={{
-                      left: `calc(${((value - (selectedPlan ? convertRialToToman(selectedPlan?.minAmount.toString()) : 20000000)) / ((selectedPlan ? convertRialToToman(selectedPlan?.maxAmount.toString()) : 200000000) - (selectedPlan ? convertRialToToman(selectedPlan?.minAmount.toString()) : 20000000))) * 100}% + 15px)`,
-                      top: '-10px',
-                    }}
+              <div className='flex flex-col gap-6' dir='ltr'>
+                <div className='flex items-center justify-between gap-2 sm:gap-4'>
+                  <button
+                    type='button'
+                    disabled={value - CREDIT_AMOUNT_STEP < sliderMin}
+                    onClick={() => setAmount(value - CREDIT_AMOUNT_STEP)}
+                    className={cn(
+                      'flex items-center gap-1 text-xs sm:text-sm text-light-text shrink-0 transition-opacity',
+                      value - CREDIT_AMOUNT_STEP < sliderMin && 'opacity-40 pointer-events-none',
+                    )}
                   >
+                    <span aria-hidden>{'<'}</span>
+                    <span className='hidden sm:inline' dir='rtl'>
+                      {PriceDisplayWithOutLabel(Math.max(value - CREDIT_AMOUNT_STEP, sliderMin))}{' '}
+                      ریال
+                    </span>
+                  </button>
+
+                  <div className='text-center min-w-0'>
                     <div
-                      className={cn(
-                        'text-[#3F455D]  sm:pl-3 py-1 rounded-lg text-xs sm:text-sm font-bold relative',
-                      )}
+                      className='text-xl sm:text-2xl lg:text-3xl font-bold text-[#3F455D] truncate'
+                      dir='rtl'
                     >
                       {PriceDisplayWithOutLabel(value)}
                     </div>
+                    <div className='text-xs sm:text-sm text-light-text mt-0.5' dir='rtl'>
+                      ریال
+                    </div>
                   </div>
+
+                  <button
+                    type='button'
+                    disabled={value + CREDIT_AMOUNT_STEP > sliderMax}
+                    onClick={() => setAmount(value + CREDIT_AMOUNT_STEP)}
+                    className={cn(
+                      'flex items-center gap-1 text-xs sm:text-sm text-light-text shrink-0 transition-opacity',
+                      value + CREDIT_AMOUNT_STEP > sliderMax && 'opacity-40 pointer-events-none',
+                    )}
+                  >
+                    <span className='hidden sm:inline' dir='rtl'>
+                      {PriceDisplayWithOutLabel(Math.min(value + CREDIT_AMOUNT_STEP, sliderMax))}{' '}
+                      ریال
+                    </span>
+                    <span aria-hidden>{'>'}</span>
+                  </button>
                 </div>
+
                 <input
-                  dir='ltr'
                   id='range-slider'
                   type='range'
-                  min={
-                    selectedPlan
-                      ? convertRialToToman(selectedPlan?.minAmount.toString())
-                      : '20000000'
-                  }
-                  max={
-                    selectedPlan
-                      ? convertRialToToman(selectedPlan?.maxAmount.toString())
-                      : '200000000'
-                  }
-                  step='10000000'
+                  min={sliderMin || 0}
+                  max={sliderMax || CREDIT_AMOUNT_STEP}
+                  step={CREDIT_AMOUNT_STEP}
                   value={value}
                   onChange={handleChange}
                   className='w-full h-2 bg-gray-400 rounded-lg appearance-none cursor-pointer focus:outline-none self-center slider-purple'
                   style={{
-                    background: `linear-gradient(to right, #7929CF 0%, #7929CF ${((value - (selectedPlan ? convertRialToToman(selectedPlan?.minAmount.toString()) : 20000000)) / ((selectedPlan ? convertRialToToman(selectedPlan?.maxAmount.toString()) : 200000000) - (selectedPlan ? convertRialToToman(selectedPlan?.minAmount.toString()) : 20000000))) * 100}%, #d1d5db ${((value - (selectedPlan ? convertRialToToman(selectedPlan?.minAmount.toString()) : 20000000)) / ((selectedPlan ? convertRialToToman(selectedPlan?.maxAmount.toString()) : 200000000) - (selectedPlan ? convertRialToToman(selectedPlan?.minAmount.toString()) : 20000000))) * 100}%, #d1d5db 100%)`,
+                    background: `linear-gradient(to right, #7929CF 0%, #7929CF ${
+                      sliderMax > sliderMin
+                        ? ((value - sliderMin) / (sliderMax - sliderMin)) * 100
+                        : 0
+                    }%, #d1d5db ${
+                      sliderMax > sliderMin
+                        ? ((value - sliderMin) / (sliderMax - sliderMin)) * 100
+                        : 0
+                    }%, #d1d5db 100%)`,
                   }}
                 />
-                <div className='text-sm sm:text-base lg:text-lg text-purple-darker flex justify-between w-full pt-2'>
-                  <div>
-                    {' '}
-                    {selectedPlan
-                      ? PriceDisplayWithOutLabel(selectedPlan?.maxAmount)
-                      : PriceDisplayWithOutLabel(200000000)}
-                  </div>
-                  <div>
-                    {selectedPlan
-                      ? PriceDisplayWithOutLabel(selectedPlan?.minAmount)
-                      : PriceDisplayWithOutLabel(200000000)}
-                  </div>
+                <div className='text-sm sm:text-base lg:text-lg text-purple-darker flex justify-between w-full'>
+                  <div dir='rtl'>{PriceDisplayWithOutLabel(sliderMin)} ریال</div>
+                  <div dir='rtl'>{PriceDisplayWithOutLabel(sliderMax)} ریال</div>
                 </div>
               </div>
             </div>
@@ -368,22 +446,22 @@ const LoanCalc = ({ onNext, setRequestId, user, requestId, isEditMode }) => {
             <div className='pr-4 sm:pr-6 md:pr-8 lg:pr-11 bg-pink-light p-3 sm:p-4 rounded-lg border border-[#F5F0FF] mt-4 sm:mt-6 lg:mt-9'>
               <div className='text-light-text text-xs sm:text-sm mb-3'>طرح ها</div>
               <div className='flex flex-wrap gap-2'>
-                {financiers.map(item => {
-                  return (
-                    <>
-                      {item.isActive && (
-                        <Button
-                          className='text-xs px-2 py-2 flex-shrink-0'
-                          onClick={() => handlePlanClick(item)}
-                          active={item?.id === selectedPlan?.id}
-                          key={item?.name}
-                        >
-                          {item?.name}
-                        </Button>
-                      )}
-                    </>
-                  );
-                })}
+                {availablePlans.length === 0 ? (
+                  <p className='text-sm text-[#454545]'>
+                    طرحی برای این مبلغ موجود نیست. مبلغ را تغییر دهید.
+                  </p>
+                ) : (
+                  availablePlans.map(item => (
+                    <Button
+                      className='text-xs px-2 py-2 flex-shrink-0'
+                      onClick={() => handlePlanClick(item)}
+                      active={item?.id === selectedPlan?.id}
+                      key={item?.id || item?.name}
+                    >
+                      {item?.name}
+                    </Button>
+                  ))
+                )}
               </div>
             </div>
           </div>
