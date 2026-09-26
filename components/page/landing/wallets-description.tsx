@@ -1,114 +1,109 @@
 'use client';
 
-import Image from 'next/image';
-
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { CreditCard, Wallet } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { dirFor } from '@/i18n/routing';
-
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { GlassPanel } from '@/components/page/landing/glass-panel';
+import { Reveal } from '@/components/page/landing/reveal';
+import { SectionHeading } from '@/components/page/landing/section-heading';
 import { useSiteTemplate } from '@/providers/site-template';
 
 type PageParams = Awaited<PageProps<'/[locale]'>['params']>;
 
-const BACK_CARD =
-  '-rotate-z-10 sm:-rotate-z-20 -translate-y-5 scale-90 -translate-x-24 z-0 opacity-75';
-
 export function WalletsDescription() {
   const { locale } = useParams<PageParams>();
   const dir = dirFor(locale);
-  const { getImageUrl } = useSiteTemplate();
-  const creditCardUrl = getImageUrl('creditCard');
-  const cashCardUrl = getImageUrl('cashCard');
-
+  const { withBrand, brandName } = useSiteTemplate();
   const [tab, setTab] = useState('credit');
-  const index = tab === 'credit' ? 0 : 1;
 
   return (
-    <section className='container grid lg:grid-cols-2 gap-x-4 px-0 overflow-hidden'>
-      <Tabs dir={dir} value={tab} onValueChange={setTab} className='h-full justfiy-between'>
-        <TabsList>
-          <TabsTrigger value='credit'>کیف پول اعتباری</TabsTrigger>
-          <TabsTrigger value='cash'>کیف پول نقدی</TabsTrigger>
-        </TabsList>
+    <section className='mx-auto max-w-6xl px-4 md:px-6 lg:px-10'>
+      <Reveal>
+        <SectionHeading
+          align='start'
+          eyebrow='کیف پول'
+          title={withBrand('دو مسیر برای هزینه کردن در کارالند')}
+          description='اعتباری برای اقساط بلندمدت، یا نقدی برای خرید با تخفیف آنی.'
+          className='mb-8'
+        />
+      </Reveal>
 
-        <TabsContent value='credit' className='mt-6'>
-          <p className='leading-7'>
-            این سرویس برای کسانی مناسب است که می‌خواهند هزینه خرید خود را در آینده و به صورت اقساطی
-            پرداخت کنند. با استفاده از این کیف پول می‌توانید نسبت به دریافت اعتبار بانکی اقدام
-            نمایید و پس از خرید از فروشگاه‌های طرف قرارداد، اقساط تسهیلات خود را به صورت ماهیانه و
-            در بلندمدت پرداخت کنید.
-          </p>
-        </TabsContent>
+      <Reveal delayMs={80}>
+        <div className='grid items-stretch gap-6 lg:grid-cols-2'>
+          <GlassPanel className='p-5 sm:p-6'>
+            <Tabs dir={dir} value={tab} onValueChange={setTab}>
+              <TabsList className='h-11 w-full rounded-2xl border border-navy/10 bg-navy/5 p-1 dark:border-white/10 dark:bg-white/5'>
+                <TabsTrigger
+                  value='credit'
+                  className='rounded-xl text-navy data-[state=active]:bg-gold data-[state=active]:text-navy dark:text-white/70'
+                >
+                  کیف پول اعتباری
+                </TabsTrigger>
+                <TabsTrigger
+                  value='cash'
+                  className='rounded-xl text-navy data-[state=active]:bg-gold data-[state=active]:text-navy dark:text-white/70'
+                >
+                  کیف پول نقدی
+                </TabsTrigger>
+              </TabsList>
 
-        <TabsContent value='cash' className='mt-6'>
-          <p className='leading-7'>
-            این سرویس برای کسانی مناسب است که می‌خواهند در هنگام خرید نقدی تخفیف بگیرند. با شارژ
-            نقدی این کیف پول به هر میزان، همان لحظه ۳ درصد به موجودی کیف پول شما اضافه می‌شود و
-            می‌توانید از تمامی فروشگاه‌های طرف قرارداد خرید کنید.
-          </p>
-        </TabsContent>
+              <TabsContent value='credit' className='mt-6'>
+                <p className='leading-8 text-navy/65 text-pretty dark:text-white/65'>
+                  مناسب کسانی که می‌خواهند هزینه خرید را به‌صورت اقساطی پرداخت کنند. پس از دریافت
+                  اعتبار بانکی و خرید از فروشگاه‌های طرف قرارداد، اقساط را ماهانه تسویه کنید.
+                </p>
+              </TabsContent>
 
-        <TabsList asChild>
-          <div className='self-end mt-12'>
-            <TabsTrigger asChild value='credit'>
-              <button type='button' className='border rounded-full p-2'>
-                <ArrowRight className='w-4' />
-              </button>
-            </TabsTrigger>
-            <TabsTrigger asChild value='cash'>
-              <button type='button' className='border rounded-full p-2'>
-                <ArrowLeft className='w-4' />
-              </button>
-            </TabsTrigger>
+              <TabsContent value='cash' className='mt-6'>
+                <p className='leading-8 text-navy/65 text-pretty dark:text-white/65'>
+                  مناسب خرید نقدی با تخفیف. با شارژ نقدی کیف پول، همان لحظه ۳٪ به موجودی اضافه
+                  می‌شود و می‌توانید از تمامی فروشگاه‌های طرف قرارداد خرید کنید.
+                </p>
+              </TabsContent>
+            </Tabs>
+          </GlassPanel>
+
+          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2'>
+            <button
+              type='button'
+              onClick={() => setTab('credit')}
+              className={cn(
+                'rounded-[1.75rem] p-5 text-right transition-all duration-300',
+                tab === 'credit'
+                  ? 'bg-linear-to-br from-gold via-[#f0c961] to-[#e0b84a] text-navy shadow-lg shadow-gold/20'
+                  : 'border border-navy/10 bg-navy/5 text-navy/70 hover:bg-navy/10 dark:border-white/15 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10',
+              )}
+            >
+              <CreditCard className='mb-8 size-8 stroke-[1.5]' />
+              <p className='text-sm opacity-70'>کیف پول</p>
+              <p className='mt-1 text-xl font-bold'>اعتباری</p>
+              <p className='mt-6 text-xs font-medium tracking-wide opacity-60'>
+                {brandName.toUpperCase()}
+              </p>
+            </button>
+
+            <button
+              type='button'
+              onClick={() => setTab('cash')}
+              className={cn(
+                'rounded-[1.75rem] p-5 text-right transition-all duration-300',
+                tab === 'cash'
+                  ? 'bg-linear-to-br from-gold via-[#f0c961] to-[#e0b84a] text-navy shadow-lg shadow-gold/20'
+                  : 'border border-navy/10 bg-navy/5 text-navy/70 hover:bg-navy/10 dark:border-white/15 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10',
+              )}
+            >
+              <Wallet className='mb-8 size-8 stroke-[1.5]' />
+              <p className='text-sm opacity-70'>کیف پول</p>
+              <p className='mt-1 text-xl font-bold'>نقدی</p>
+              <p className='mt-6 text-xs font-medium tracking-wide opacity-60'>+۳٪ شارژ</p>
+            </button>
           </div>
-        </TabsList>
-      </Tabs>
-
-      <section className='flex items-center justify-center lg:pl-40 mt-16'>
-        <section className='stack -mr-34 md:-mr-45 lg:mr-0'>
-          <div
-            onClick={() => setTab('credit')}
-            className={cn(
-              'w-46 lg:w-60 origin-bottom-left transition-all duration-500 cursor-pointer',
-              index === 0 ? 'z-10' : BACK_CARD,
-            )}
-          >
-            {creditCardUrl ? (
-              <Image
-                alt='credit card'
-                width={200}
-                height={400}
-                src={creditCardUrl}
-                unoptimized
-                className='size-full object-cover select-none pointer-events-none'
-              />
-            ) : null}
-          </div>
-          <div
-            onClick={() => setTab('cash')}
-            className={cn(
-              'w-46 lg:w-60 origin-bottom-left transition-all duration-500 cursor-pointer',
-              index === 1 ? 'z-10' : BACK_CARD,
-            )}
-          >
-            {cashCardUrl ? (
-              <Image
-                alt='cash card'
-                width={200}
-                height={400}
-                src={cashCardUrl}
-                unoptimized
-                className='size-full object-cover select-none pointer-events-none'
-              />
-            ) : null}
-          </div>
-        </section>
-      </section>
+        </div>
+      </Reveal>
     </section>
   );
 }

@@ -42,7 +42,7 @@ const STEPS = [
 export default async function IndexPage() {
   return (
     <div className='space-y-32'>
-      <Banner imageKey='merchantBanner' mobileImageKey='merchantBanner_Res'>
+      <Banner variant='image' imageKey='merchantBanner' mobileImageKey='merchantBanner_Res'>
         <section className='container relative text-white'>
           <div className='absolute inset-x-4 bottom-82'>
             <hgroup className='space-y-4'>

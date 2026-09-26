@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { X, Menu, User, LogIn } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
@@ -29,20 +30,29 @@ const WITH_INVERTED_HEADERS = new Set<Href>(['/login']);
 
 export function Header() {
   const pathname = usePathname() as Href;
+  const { resolvedTheme } = useTheme();
   const inverted = WITH_INVERTED_HEADERS.has(pathname);
   const transparent = !inverted;
+  const isDark = resolvedTheme === 'dark';
+  const lightSurface = transparent && !isDark;
   const { brandName, getImageUrl } = useSiteTemplate();
-  const logoUrl = getImageUrl(inverted ? 'darkLogo' : 'lightLogo') || getImageUrl('logo');
+  const logoUrl =
+    getImageUrl(inverted || lightSurface ? 'darkLogo' : 'lightLogo') || getImageUrl('logo');
 
   const [visible, setVisible] = useState<boolean>(true);
   const [hasScrolled, setHasScrolled] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const deltaYRef = useRef<number>(0);
   const scrollYRef = useRef<number>(0);
 
   const userInfo = getUserInfo();
   const isAuthenticated = !!userInfo;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -80,43 +90,49 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const inkOnLight = mounted && lightSurface;
+
   return (
     <>
       <header
         className={cn(
-          'h-[58px] md:h-[78px] w-full flex justify-between items-center px-4 md:px-6 lg:px-10 sticky top-0 inset-x-0 z-10 transition-[color,background-color,translate]',
-          inverted ? 'bg-muted text-brand font-medium' : 'bg-transparent text-white absolute',
-          !inverted && hasScrolled && 'bg-brand',
+          'sticky inset-x-0 top-0 z-10 flex h-[58px] w-full items-center justify-between px-4 transition-[color,background-color,translate,backdrop-filter] md:h-[78px] md:px-6 lg:px-10',
+          inverted && 'bg-muted font-medium text-brand',
+          transparent && 'absolute',
+          transparent && (inkOnLight ? 'text-navy' : 'text-white'),
+          !inverted &&
+            hasScrolled &&
+            (inkOnLight
+              ? 'border-b border-navy/10 bg-[#f7f6f3]/90 backdrop-blur-xl'
+              : 'border-b border-white/10 bg-navy/90 backdrop-blur-xl'),
           !visible && '-translate-y-full',
         )}
       >
-        <div className='w-full h-full flex justify-between items-center relative'>
-          {/* Mobile Menu Button */}
+        <div className='relative flex h-full w-full items-center justify-between'>
           <button
-            className='lg:hidden p-2 text-gray-600 hover:text-black transition-all duration-200 !z-50'
+            className='z-50 p-2 transition-all duration-200 hover:opacity-80 lg:hidden'
             onClick={toggleMenu}
           >
-            <div className='relative w-6 h-6 flex items-center justify-center'>
+            <div className='relative flex size-6 items-center justify-center'>
               <Menu
                 size={20}
                 className={cn(
                   'absolute transition-all duration-300',
-                  isMenuOpen ? 'opacity-0 rotate-180 scale-75' : 'opacity-100 rotate-0 scale-100',
-                  transparent && 'text-white',
+                  isMenuOpen ? 'scale-75 rotate-180 opacity-0' : 'scale-100 rotate-0 opacity-100',
+                  inkOnLight ? 'text-navy' : 'text-white',
                   !transparent && 'text-black dark:text-foreground',
                 )}
               />
               <X
                 size={20}
                 className={cn(
-                  'absolute transition-all duration-300 text-black dark:text-foreground',
-                  isMenuOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-75',
+                  'absolute text-navy transition-all duration-300 dark:text-foreground',
+                  isMenuOpen ? 'scale-100 rotate-0 opacity-100' : 'scale-75 -rotate-180 opacity-0',
                 )}
               />
             </div>
           </button>
 
-          {/* Logo */}
           <Link href='/' className='h-6 flex-shrink-0 lg:order-first'>
             {logoUrl ? (
               <Image
@@ -131,30 +147,25 @@ export function Header() {
             ) : null}
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className='hidden lg:flex gap-5'>
+          <nav className='hidden gap-5 lg:flex'>
             {NAVBAR.map(item => (
-              <NavLink key={item.href} {...item} transparent={transparent} />
+              <NavLink key={item.href} {...item} transparent={transparent} lightInk={inkOnLight} />
             ))}
           </nav>
 
-          {/* Desktop Auth Buttons */}
-          <div className='hidden lg:flex items-center gap-3'>
+          <div className='hidden items-center gap-3 lg:flex'>
             <ThemeToggle
               className={cn(
                 transparent &&
-                  'border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white',
+                  (inkOnLight
+                    ? 'border-navy/20 bg-navy/5 text-navy hover:bg-navy/10 hover:text-navy'
+                    : 'border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white'),
               )}
             />
             {!isAuthenticated ? (
               <Link
                 href='/login'
-                className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
-                  transparent
-                    ? 'text-white border-white hover:bg-white/10'
-                    : 'text-black border-black hover:bg-black/10 dark:text-foreground dark:border-border dark:hover:bg-muted',
-                )}
+                className='inline-flex items-center gap-2 rounded-2xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy transition-all hover:bg-gold/90'
               >
                 <User size={18} />
                 <span>ورود / ثبت نام</span>
@@ -163,10 +174,12 @@ export function Header() {
               <Link
                 href='/wallets'
                 className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2 border-2 rounded-lg transition-all',
+                  'inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all',
                   inverted
-                    ? 'text-black border-black hover:bg-white/10 dark:text-foreground dark:border-border'
-                    : 'text-white border-white hover:bg-white/10',
+                    ? 'bg-navy text-gold hover:bg-navy/90'
+                    : inkOnLight
+                      ? 'bg-navy text-gold hover:bg-navy/90'
+                      : 'bg-gold/15 text-gold ring-1 ring-gold/35 hover:bg-gold/25',
                 )}
               >
                 <User size={18} />
@@ -175,21 +188,19 @@ export function Header() {
             )}
           </div>
 
-          {/* Mobile actions */}
           <div className='flex items-center gap-1 lg:hidden'>
             <ThemeToggle
               compact
               className={cn(
                 transparent &&
-                  'border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white',
+                  (inkOnLight
+                    ? 'border-navy/20 bg-navy/5 text-navy hover:bg-navy/10 hover:text-navy'
+                    : 'border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white'),
               )}
             />
             {!isAuthenticated ? (
               <Link
-                className={cn(
-                  'p-2',
-                  transparent ? 'text-white' : 'text-black dark:text-foreground',
-                )}
+                className={cn('p-2', inkOnLight ? 'text-navy' : 'text-white')}
                 href='/login'
                 aria-label='ورود / ثبت نام'
               >
@@ -197,10 +208,7 @@ export function Header() {
               </Link>
             ) : (
               <Link
-                className={cn(
-                  'p-2',
-                  transparent ? 'text-white' : 'text-black dark:text-foreground',
-                )}
+                className={cn('p-2', inkOnLight ? 'text-navy' : 'text-white')}
                 href='/wallets'
                 aria-label='پروفایل'
               >
@@ -211,11 +219,10 @@ export function Header() {
         </div>
       </header>
 
-      {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className='fixed inset-0 bg-black/50 z-40 lg:hidden' onClick={closeMenu}>
+        <div className='fixed inset-0 z-40 bg-black/50 lg:hidden' onClick={closeMenu}>
           <div
-            className='fixed top-[58px] md:top-[78px] left-0 right-0 bg-white shadow-lg z-50 dark:bg-card dark:border-b dark:border-border'
+            className='fixed top-[58px] right-0 left-0 z-50 bg-white shadow-lg md:top-[78px] dark:border-b dark:border-border dark:bg-card'
             onClick={e => e.stopPropagation()}
           >
             <nav className='flex flex-col'>
@@ -225,10 +232,10 @@ export function Header() {
                   href={item.href}
                   onClick={closeMenu}
                   className={cn(
-                    'px-6 py-4 border-b border-gray-200 transition-all',
+                    'border-b border-gray-200 px-6 py-4 transition-all dark:border-border',
                     pathname === item.href
-                      ? 'text-brand font-medium bg-gray-50'
-                      : 'text-gray-700 hover:bg-gray-50',
+                      ? 'bg-gold/15 font-medium text-navy'
+                      : 'text-navy/80 hover:bg-navy/5 dark:text-foreground',
                   )}
                 >
                   {item.title}
@@ -242,9 +249,9 @@ export function Header() {
   );
 }
 
-type NavLinkProps = NavItem & { transparent: boolean };
+type NavLinkProps = NavItem & { transparent: boolean; lightInk: boolean };
 
-function NavLink({ title, href, transparent }: NavLinkProps) {
+function NavLink({ title, href, transparent, lightInk }: NavLinkProps) {
   const pathname = usePathname();
   const isActive = href === pathname;
 
@@ -253,14 +260,18 @@ function NavLink({ title, href, transparent }: NavLinkProps) {
       href={href}
       className={cn(
         'border-b-2 transition-all hover:font-medium',
-        isActive ? 'font-medium border-current' : 'border-transparent hover:border-current',
+        isActive ? 'border-current font-medium' : 'border-transparent hover:border-current',
         transparent
-          ? isActive
-            ? 'text-white'
-            : 'text-gray-300 hover:text-white'
+          ? lightInk
+            ? isActive
+              ? 'text-navy'
+              : 'text-navy/60 hover:text-navy'
+            : isActive
+              ? 'text-gold'
+              : 'text-white/70 hover:text-gold'
           : isActive
-            ? 'text-brand'
-            : 'text-gray-600 hover:text-brand',
+            ? 'text-gold'
+            : 'text-gray-600 hover:text-navy dark:text-foreground dark:hover:text-gold',
       )}
     >
       {title}
