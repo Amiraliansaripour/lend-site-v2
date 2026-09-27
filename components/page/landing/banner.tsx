@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 
-import { HeroSlider } from '@/components/page/landing/hero-slider';
+import { HeroSection } from '@/components/page/landing/hero-section';
 import { useSiteTemplate, type SiteTemplateImageKey } from '@/providers/site-template';
 import { cn } from '@/lib/utils';
 
@@ -62,7 +62,7 @@ export function Banner({
 
   return (
     <>
-      <HeroSlider className={className} />
+      <HeroSection className={className} />
       {children}
     </>
   );

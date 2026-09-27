@@ -2,9 +2,8 @@
 
 import { FileUp, BadgeCheck, Send, WalletCards } from 'lucide-react';
 
-import { GlassPanel } from '@/components/page/landing/glass-panel';
+import { Accent, SectionHeading } from '@/components/page/landing/section-heading';
 import { Reveal } from '@/components/page/landing/reveal';
-import { SectionHeading } from '@/components/page/landing/section-heading';
 import { useSiteTemplate } from '@/providers/site-template';
 
 const STEPS = [
@@ -37,33 +36,34 @@ export function LoanRequestSteps() {
     <section className='mx-auto max-w-6xl px-4 md:px-6 lg:px-10'>
       <Reveal>
         <SectionHeading
-          eyebrow='فرآیند'
-          title={withBrand('مسیر دریافت اعتبار در کارالند')}
-          description='چهار ایستگاه شفاف تا فعال‌شدن اعتبار خرید—بدون مراجعه حضوری.'
+          title={
+            <>
+              مسیر دریافت <Accent>اعتبار</Accent>
+            </>
+          }
+          description={withBrand(
+            'چهار ایستگاه شفاف تا فعال‌شدن اعتبار خرید در کارالند—بدون مراجعه حضوری.',
+          )}
         />
       </Reveal>
 
-      <div className='relative grid gap-4 lg:grid-cols-4'>
-        <div
-          className='pointer-events-none absolute top-16 right-8 left-8 hidden h-px bg-linear-to-l from-transparent via-gold/50 to-transparent lg:block'
-          aria-hidden
-        />
+      <div className='relative grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
         {STEPS.map(({ title, description, icon: Icon }, index) => (
-          <Reveal key={title} delayMs={index * 80}>
-            <GlassPanel className='relative h-full overflow-hidden p-5 transition-transform duration-300 hover:-translate-y-1'>
+          <Reveal key={title} delayMs={index * 70}>
+            <article className='relative h-full rounded-xl border border-navy/10 bg-white p-5 transition-colors hover:border-navy/20 dark:border-white/10 dark:bg-white/[0.04]'>
               <div className='mb-6 flex items-center justify-between'>
-                <span className='flex size-12 items-center justify-center rounded-2xl bg-gold text-navy'>
-                  <Icon className='size-5 stroke-[1.5]' />
+                <span className='flex size-11 items-center justify-center rounded-full bg-gold/15 text-navy dark:text-gold'>
+                  <Icon className='size-5' strokeWidth={1.5} />
                 </span>
-                <span className='text-3xl font-bold tabular-nums text-navy/15 dark:text-gold/35'>
+                <span className='text-3xl font-bold tabular-nums text-navy/10 dark:text-white/15'>
                   {String(index + 1).padStart(2, '0')}
                 </span>
               </div>
               <h3 className='text-lg font-semibold text-navy dark:text-white'>{title}</h3>
-              <p className='mt-2 text-sm leading-7 text-navy/60 dark:text-white/60'>
+              <p className='mt-2 text-sm leading-7 text-navy/55 dark:text-white/55'>
                 {description}
               </p>
-            </GlassPanel>
+            </article>
           </Reveal>
         ))}
       </div>

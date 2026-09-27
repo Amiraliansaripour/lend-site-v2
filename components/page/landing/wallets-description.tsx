@@ -1,106 +1,133 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
-import { CreditCard, Wallet } from 'lucide-react';
+import { CreditCard, Headphones, Wallet } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
-import { dirFor } from '@/i18n/routing';
-import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
-import { GlassPanel } from '@/components/page/landing/glass-panel';
+import { Accent, SectionHeading } from '@/components/page/landing/section-heading';
 import { Reveal } from '@/components/page/landing/reveal';
-import { SectionHeading } from '@/components/page/landing/section-heading';
 import { useSiteTemplate } from '@/providers/site-template';
+import { cn } from '@/lib/utils';
 
-type PageParams = Awaited<PageProps<'/[locale]'>['params']>;
+const TABS = [
+  { id: 'credit', label: 'کیف پول اعتباری', icon: CreditCard },
+  { id: 'cash', label: 'کیف پول نقدی', icon: Wallet },
+  { id: 'support', label: 'پشتیبانی', icon: Headphones },
+] as const;
 
+type TabId = (typeof TABS)[number]['id'];
+
+const FEATURES: Record<TabId, { title: string; description: string }[]> = {
+  credit: [
+    {
+      title: 'خرید اقساطی',
+      description:
+        'پس از دریافت اعتبار بانکی، از فروشگاه‌های طرف قرارداد خرید کنید و اقساط را ماهانه تسویه نمایید.',
+    },
+    {
+      title: 'سقف شفاف',
+      description: 'میزان اعتبار و شرایط بازپرداخت را قبل از ثبت درخواست ببینید و انتخاب کنید.',
+    },
+    {
+      title: 'بدون ضامن',
+      description: 'تنها با چک صیادی مسیر اعتبار را شروع کنید—بدون ضامن و بدون مراجعه حضوری.',
+    },
+    {
+      title: 'کیف پول یکپارچه',
+      description:
+        'اعتبار در کیف پول شما شارژ می‌شود و خرید آنلاین یا حضوری از شبکه فروشگاهی ممکن است.',
+    },
+  ],
+  cash: [
+    {
+      title: 'شارژ با پاداش',
+      description: 'با شارژ نقدی کیف پول، همان لحظه ۳٪ به موجودی اضافه می‌شود.',
+    },
+    {
+      title: 'خرید آنی',
+      description: 'مناسب کسانی که می‌خواهند نقدی بخرند و از تخفیف آنی بهره‌مند شوند.',
+    },
+    {
+      title: 'شبکه فروشگاهی',
+      description: 'از تمامی فروشگاه‌های طرف قرارداد با موجودی نقدی خرید کنید.',
+    },
+    {
+      title: 'مدیریت ساده',
+      description: 'موجودی، تراکنش‌ها و وضعیت کیف پول را در یک داشبورد ببینید.',
+    },
+  ],
+  support: [
+    {
+      title: 'راهنمای گام‌به‌گام',
+      description: 'از ثبت درخواست تا شارژ اعتبار، مسیر را با راهنما و پشتیبانی طی کنید.',
+    },
+    {
+      title: 'پاسخگویی شفاف',
+      description: 'سوالات متداول و تیم پشتیبانی برای روشن‌شدن هر ابهام در مسیر اعتبار.',
+    },
+    {
+      title: 'پیگیری وضعیت',
+      description: 'وضعیت درخواست، مدارک و اعتبار خود را در پنل کاربری دنبال کنید.',
+    },
+    {
+      title: 'امنیت اطلاعات',
+      description: 'فرآیندها مطابق مقررات بانکی و حریم خصوصی طراحی شده‌اند.',
+    },
+  ],
+};
+
+/** YourBank OurFeatures: sidebar tabs + feature cards grid. */
 export function WalletsDescription() {
-  const { locale } = useParams<PageParams>();
-  const dir = dirFor(locale);
-  const { withBrand, brandName } = useSiteTemplate();
-  const [tab, setTab] = useState('credit');
+  const { withBrand } = useSiteTemplate();
+  const [tab, setTab] = useState<TabId>('credit');
 
   return (
     <section className='mx-auto max-w-6xl px-4 md:px-6 lg:px-10'>
       <Reveal>
         <SectionHeading
-          align='start'
-          eyebrow='کیف پول'
-          title={withBrand('دو مسیر برای هزینه کردن در کارالند')}
-          description='اعتباری برای اقساط بلندمدت، یا نقدی برای خرید با تخفیف آنی.'
-          className='mb-8'
+          title={
+            <>
+              ویژگی‌های <Accent>ما</Accent>
+            </>
+          }
+          description={withBrand(
+            'ابزارهایی که تجربه اعتبار و خرید در کارالند را ساده، شفاف و قابل کنترل می‌کنند.',
+          )}
         />
       </Reveal>
 
       <Reveal delayMs={80}>
-        <div className='grid items-stretch gap-6 lg:grid-cols-2'>
-          <GlassPanel className='p-5 sm:p-6'>
-            <Tabs dir={dir} value={tab} onValueChange={setTab}>
-              <TabsList className='h-11 w-full rounded-2xl border border-navy/10 bg-navy/5 p-1 dark:border-white/10 dark:bg-white/5'>
-                <TabsTrigger
-                  value='credit'
-                  className='rounded-xl text-navy data-[state=active]:bg-gold data-[state=active]:text-navy dark:text-white/70'
-                >
-                  کیف پول اعتباری
-                </TabsTrigger>
-                <TabsTrigger
-                  value='cash'
-                  className='rounded-xl text-navy data-[state=active]:bg-gold data-[state=active]:text-navy dark:text-white/70'
-                >
-                  کیف پول نقدی
-                </TabsTrigger>
-              </TabsList>
+        <div className='flex flex-col gap-4 lg:flex-row'>
+          <div className='flex h-min w-full gap-2 overflow-x-auto rounded-xl border border-navy/10 bg-navy/[0.03] p-3 lg:max-w-fit lg:flex-col dark:border-white/10 dark:bg-white/[0.03]'>
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type='button'
+                onClick={() => setTab(id)}
+                className={cn(
+                  'inline-flex shrink-0 items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors lg:w-full',
+                  tab === id
+                    ? 'border-navy/15 bg-white text-brand shadow-sm dark:border-white/15 dark:bg-white/10 dark:text-gold'
+                    : 'border-transparent text-navy/60 hover:bg-white/60 dark:text-white/55 dark:hover:bg-white/5',
+                )}
+              >
+                <Icon className='size-4' strokeWidth={1.5} />
+                {label}
+              </button>
+            ))}
+          </div>
 
-              <TabsContent value='credit' className='mt-6'>
-                <p className='leading-8 text-navy/65 text-pretty dark:text-white/65'>
-                  مناسب کسانی که می‌خواهند هزینه خرید را به‌صورت اقساطی پرداخت کنند. پس از دریافت
-                  اعتبار بانکی و خرید از فروشگاه‌های طرف قرارداد، اقساط را ماهانه تسویه کنید.
-                </p>
-              </TabsContent>
-
-              <TabsContent value='cash' className='mt-6'>
-                <p className='leading-8 text-navy/65 text-pretty dark:text-white/65'>
-                  مناسب خرید نقدی با تخفیف. با شارژ نقدی کیف پول، همان لحظه ۳٪ به موجودی اضافه
-                  می‌شود و می‌توانید از تمامی فروشگاه‌های طرف قرارداد خرید کنید.
-                </p>
-              </TabsContent>
-            </Tabs>
-          </GlassPanel>
-
-          <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2'>
-            <button
-              type='button'
-              onClick={() => setTab('credit')}
-              className={cn(
-                'rounded-[1.75rem] p-5 text-right transition-all duration-300',
-                tab === 'credit'
-                  ? 'bg-linear-to-br from-gold via-[#f0c961] to-[#e0b84a] text-navy shadow-lg shadow-gold/20'
-                  : 'border border-navy/10 bg-navy/5 text-navy/70 hover:bg-navy/10 dark:border-white/15 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10',
-              )}
-            >
-              <CreditCard className='mb-8 size-8 stroke-[1.5]' />
-              <p className='text-sm opacity-70'>کیف پول</p>
-              <p className='mt-1 text-xl font-bold'>اعتباری</p>
-              <p className='mt-6 text-xs font-medium tracking-wide opacity-60'>
-                {brandName.toUpperCase()}
-              </p>
-            </button>
-
-            <button
-              type='button'
-              onClick={() => setTab('cash')}
-              className={cn(
-                'rounded-[1.75rem] p-5 text-right transition-all duration-300',
-                tab === 'cash'
-                  ? 'bg-linear-to-br from-gold via-[#f0c961] to-[#e0b84a] text-navy shadow-lg shadow-gold/20'
-                  : 'border border-navy/10 bg-navy/5 text-navy/70 hover:bg-navy/10 dark:border-white/15 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10',
-              )}
-            >
-              <Wallet className='mb-8 size-8 stroke-[1.5]' />
-              <p className='text-sm opacity-70'>کیف پول</p>
-              <p className='mt-1 text-xl font-bold'>نقدی</p>
-              <p className='mt-6 text-xs font-medium tracking-wide opacity-60'>+۳٪ شارژ</p>
-            </button>
+          <div className='grid w-full gap-3 sm:grid-cols-2'>
+            {FEATURES[tab].map(feature => (
+              <article
+                key={feature.title}
+                className='group relative rounded-xl border border-navy/10 bg-white p-6 transition-colors hover:border-navy/20 dark:border-white/10 dark:bg-white/[0.04]'
+              >
+                <h3 className='mb-4 pe-6 text-lg font-semibold text-navy dark:text-white'>
+                  {feature.title}
+                </h3>
+                <p className='leading-7 text-navy/55 dark:text-white/55'>{feature.description}</p>
+              </article>
+            ))}
           </div>
         </div>
       </Reveal>

@@ -6,7 +6,7 @@ import { ArrowLeft, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlassPanel } from '@/components/page/landing/glass-panel';
 import { Reveal } from '@/components/page/landing/reveal';
-import { SectionHeading } from '@/components/page/landing/section-heading';
+import { Accent, SectionHeading } from '@/components/page/landing/section-heading';
 import { Link } from '@/i18n/navigation';
 import { getShopImageUrl } from '@/lib/shop-utils';
 import { useShopsFullPagination } from '@/queries/shop';
@@ -41,8 +41,11 @@ export function ShopsPreview() {
     <section className='mx-auto max-w-6xl px-4 md:px-6 lg:px-10'>
       <Reveal>
         <SectionHeading
-          eyebrow='خرید'
-          title='فروشگاه‌های طرف قرارداد'
+          title={
+            <>
+              فروشگاه‌های <Accent>طرف قرارداد</Accent>
+            </>
+          }
           description={withBrand('فروشگاه‌های منتخب را ببینید و مستقیم وارد صفحه هر فروشگاه شوید.')}
         />
       </Reveal>
@@ -52,7 +55,7 @@ export function ShopsPreview() {
           ? Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={index}
-                className='h-64 animate-pulse rounded-[2rem] border border-navy/10 bg-navy/5 dark:border-white/10 dark:bg-white/5'
+                className='h-56 animate-pulse rounded-xl border border-navy/10 bg-navy/5 dark:border-white/10 dark:bg-white/5'
               />
             ))
           : shops.map((shop, index) => {
@@ -60,7 +63,7 @@ export function ShopsPreview() {
               return (
                 <Reveal key={shop.id} delayMs={index * 50}>
                   <Link href={`/shops/${shop.id}`} className='block h-full'>
-                    <GlassPanel className='group h-full overflow-hidden p-0 transition-all duration-300 hover:-translate-y-1 hover:border-gold/45'>
+                    <GlassPanel className='group h-full overflow-hidden p-0 transition-colors hover:border-navy/25 dark:hover:border-white/25'>
                       <div className='relative aspect-[16/10] overflow-hidden bg-navy/5 dark:bg-white/5'>
                         {photo ? (
                           <Image
@@ -69,19 +72,15 @@ export function ShopsPreview() {
                             width={640}
                             height={400}
                             unoptimized
-                            className='size-full object-cover transition-transform duration-500 group-hover:scale-105'
+                            className='size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]'
                           />
                         ) : (
-                          <div className='flex size-full items-center justify-center bg-linear-to-br from-gold/30 via-gold/10 to-transparent'>
-                            <span className='flex size-16 items-center justify-center rounded-2xl bg-gold text-xl font-bold text-navy'>
+                          <div className='flex size-full items-center justify-center bg-navy/[0.04]'>
+                            <span className='flex size-14 items-center justify-center rounded-full bg-gold text-lg font-bold text-navy'>
                               {shopInitials(shop.name)}
                             </span>
                           </div>
                         )}
-                        <div className='absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-navy/55 to-transparent dark:from-navy/70' />
-                        <span className='absolute top-3 right-3 rounded-full border border-gold/30 bg-navy/70 px-2.5 py-1 text-[11px] text-gold backdrop-blur-sm'>
-                          فروشگاه
-                        </span>
                       </div>
                       <div className='flex items-end justify-between gap-3 p-4'>
                         <div className='min-w-0'>
@@ -112,7 +111,7 @@ export function ShopsPreview() {
         <Button
           asChild
           size='lg'
-          className='rounded-2xl bg-gold px-6 font-semibold text-navy hover:bg-gold/90'
+          className='rounded-full bg-gold px-7 font-semibold text-navy hover:bg-gold/90'
         >
           <Link href='/shops'>
             همه فروشگاه‌ها

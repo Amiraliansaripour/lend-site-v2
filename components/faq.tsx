@@ -80,22 +80,19 @@ export function Faq({ className, variant = 'default' }: FaqProps) {
     <section className={cn('faq relative', landing && 'landing-faq', className)}>
       <div className='mb-8 flex flex-col items-start gap-5 md:mb-10'>
         <div className='text-right'>
-          <p
-            className={cn(
-              'mb-2 text-[11px] tracking-[0.28em]',
-              landing ? 'text-navy/50 dark:text-gold' : 'text-muted-foreground',
-            )}
-          >
-            FAQ
-          </p>
           <h2
             className={cn(
-              'text-2xl font-bold md:text-3xl',
+              'text-3xl font-semibold md:text-4xl',
               landing ? 'text-navy dark:text-white' : 'text-foreground',
             )}
           >
-            سوالات متداول
+            سوالات <span className={landing ? 'text-brand dark:text-gold' : ''}>متداول</span>
           </h2>
+          {landing ? (
+            <p className='mt-4 max-w-2xl leading-8 text-navy/55 dark:text-white/55'>
+              {withBrand('پاسخ پرسش‌های رایج درباره اعتبار، اقساط و خرید از فروشگاه‌های کارالند.')}
+            </p>
+          ) : null}
         </div>
 
         {categories.length > 0 && (

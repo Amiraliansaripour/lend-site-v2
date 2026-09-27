@@ -105,7 +105,7 @@ export function Header() {
             {!isAuthenticated ? (
               <Link
                 href='/login'
-                className='inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-gray-500 transition-all hover:bg-brand/90 border-2 border-gray-400'
+                className='inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2 text-sm font-semibold text-navy transition-colors hover:bg-gold/90'
               >
                 <User size={16} />
                 <span>ورود</span>
@@ -113,7 +113,7 @@ export function Header() {
             ) : (
               <Link
                 href='/wallets'
-                className='inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-gray-500 transition-all hover:bg-brand/90 border-2 border-gray-400'
+                className='inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2 text-sm font-semibold text-navy transition-colors hover:bg-gold/90'
               >
                 <User size={16} />
                 <span>پروفایل</span>
@@ -128,7 +128,7 @@ export function Header() {
             />
             {!isAuthenticated ? (
               <Link
-                className='inline-flex size-9 items-center justify-center rounded-full bg-gray-400 text-gray-500'
+                className='inline-flex size-9 items-center justify-center rounded-full bg-gold text-navy'
                 href='/login'
                 aria-label='ورود'
               >
@@ -136,7 +136,7 @@ export function Header() {
               </Link>
             ) : (
               <Link
-                className='inline-flex size-9 items-center justify-center rounded-full bg-gray-400 text-gray-500'
+                className='inline-flex size-9 items-center justify-center rounded-full bg-gold text-navy'
                 href='/wallets'
                 aria-label='پروفایل'
               >
@@ -162,7 +162,7 @@ export function Header() {
                   className={cn(
                     'border-b border-border/60 px-5 py-3.5 text-sm transition-all last:border-b-0 dark:border-border',
                     pathname === item.href
-                      ? 'bg-brand/10 font-semibold text-brand'
+                      ? 'bg-gold/20 font-semibold text-navy dark:bg-gold/15 dark:text-gold'
                       : 'text-navy/80 hover:bg-muted/60 dark:text-foreground',
                   )}
                 >
@@ -194,7 +194,7 @@ function NavLink({ title, href }: NavItem) {
       {title}
       <span
         className={cn(
-          'absolute inset-x-2.5 -bottom-0.5 h-0.5 rounded-full bg-brand transition-opacity xl:inset-x-3',
+          'absolute inset-x-2.5 -bottom-0.5 h-0.5 rounded-full bg-gold transition-opacity xl:inset-x-3',
           isActive ? 'opacity-100' : 'opacity-0',
         )}
         aria-hidden

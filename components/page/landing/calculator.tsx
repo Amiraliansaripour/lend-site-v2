@@ -21,7 +21,7 @@ import { CreditModal } from '@/components/page/landing/credit-modal';
 import { ExternalLinkPlanPanel } from '@/components/external-link-plan-panel';
 import { GlassPanel } from '@/components/page/landing/glass-panel';
 import { Reveal } from '@/components/page/landing/reveal';
-import { SectionHeading } from '@/components/page/landing/section-heading';
+import { Accent, SectionHeading } from '@/components/page/landing/section-heading';
 import { toast } from 'sonner';
 import { useRouter } from '@/i18n/navigation';
 import { useSiteTemplate } from '@/providers/site-template';
@@ -145,8 +145,11 @@ export function Calculator({ onRequestCredit }: CalculatorProps) {
     <section id='calculator' className='scroll-mt-28 mx-auto max-w-6xl px-4 md:px-6 lg:px-10'>
       <Reveal>
         <SectionHeading
-          eyebrow='محاسبه‌گر'
-          title='محاسبه‌گر اقساط'
+          title={
+            <>
+              محاسبه‌گر <Accent>اقساط</Accent>
+            </>
+          }
           description={
             hasExternalLink
               ? 'این طرح از طریق لینک اختصاصی ادامه پیدا می‌کند؛ مبلغ و اقساط در این صفحه نمایش داده نمی‌شود.'
