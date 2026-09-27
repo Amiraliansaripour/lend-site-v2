@@ -14,7 +14,7 @@ import { SectionHeading } from '@/components/page/landing/section-heading';
 
 export default function IndexPage() {
   return (
-    <div className='landing-shell -mt-[58px] md:-mt-[78px]'>
+    <div className='landing-shell'>
       <div
         className='landing-shell-glow pointer-events-none absolute inset-x-0 top-0 h-[70vh]'
         aria-hidden

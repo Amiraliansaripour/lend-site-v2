@@ -603,24 +603,29 @@ html body {
   position: relative;
   color: var(--navy);
   background:
-    radial-gradient(ellipse 80% 45% at 12% -8%, rgba(245, 210, 119, 0.28), transparent 55%),
-    radial-gradient(ellipse 55% 35% at 92% 8%, rgba(245, 210, 119, 0.14), transparent 50%), #f7f6f3;
+    radial-gradient(ellipse 70% 50% at 8% 0%, rgba(147, 197, 253, 0.45), transparent 55%),
+    radial-gradient(ellipse 60% 45% at 95% 5%, rgba(196, 181, 253, 0.35), transparent 50%),
+    linear-gradient(180deg, #eef4ff 0%, #f5f3ff 28%, #f7f6f3 70%);
 }
 
 .dark .landing-shell {
   color: #fff;
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(245, 210, 119, 0.16), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(245, 210, 119, 0.08), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(77, 155, 255, 0.18), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(167, 139, 250, 0.12), transparent 50%),
     var(--navy);
 }
 
 .landing-shell-glow {
-  background: radial-gradient(ellipse at top, rgba(245, 210, 119, 0.22), transparent 60%);
+  background:
+    radial-gradient(ellipse 55% 40% at 20% 10%, rgba(147, 197, 253, 0.35), transparent 65%),
+    radial-gradient(ellipse 50% 35% at 80% 0%, rgba(196, 181, 253, 0.28), transparent 60%);
 }
 
 .dark .landing-shell-glow {
-  background: radial-gradient(ellipse at top, rgba(245, 210, 119, 0.14), transparent 60%);
+  background:
+    radial-gradient(ellipse at top, rgba(77, 155, 255, 0.16), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 5%, rgba(167, 139, 250, 0.1), transparent 55%);
 }
 
 .landing-credit-card {

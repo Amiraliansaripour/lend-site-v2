@@ -178,7 +178,7 @@ export function HeroSlider({ className }: { className?: string }) {
   return (
     <section
       className={cn(
-        'relative isolate overflow-hidden px-4 pb-16 pt-36 md:px-6 md:pt-44 md:pb-20 lg:px-10',
+        'relative isolate overflow-hidden px-4 pb-16 pt-28 md:px-6 md:pt-32 md:pb-20 lg:px-10',
         className,
       )}
       onMouseEnter={() => setPaused(true)}

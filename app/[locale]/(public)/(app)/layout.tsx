@@ -3,9 +3,9 @@ import { Footer } from '@/components/footer';
 
 export default function AppLayout({ children }: LayoutProps<'/[locale]'>) {
   return (
-    <div className='grid grid-rows-[1fr_auto] min-h-dvh'>
+    <div className='grid min-h-dvh grid-rows-[1fr_auto]'>
       <Header />
-      <main className=''>{children}</main>
+      <main>{children}</main>
       <Footer />
     </div>
   );
