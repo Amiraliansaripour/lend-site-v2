@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 
 import { useRouter } from '@/i18n/navigation';
+import { logout } from '@/lib/auth/client';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
 
 export function AuthListener() {
@@ -10,6 +11,7 @@ export function AuthListener() {
 
   useEffect(() => {
     const handleLogout = () => {
+      logout();
       router.push('/login');
     };
 
@@ -18,7 +20,7 @@ export function AuthListener() {
     return () => {
       window.removeEventListener(AUTH_LOGOUT_EVENT.type, handleLogout);
     };
-  }, []);
+  }, [router]);
 
   return null;
 }
