@@ -14,6 +14,7 @@ import type { WalletTransaction } from '@/api/wallet';
 
 type WalletTransactionsTableProps = {
   transactions: WalletTransaction[];
+  walletLabel?: string;
 };
 
 const getTransactionTypeLabel = (value: number): string => {
@@ -54,7 +55,10 @@ const getTransactionTypeColor = (value: number): string => {
   }
 };
 
-export function WalletTransactionsTable({ transactions }: WalletTransactionsTableProps) {
+export function WalletTransactionsTable({
+  transactions,
+  walletLabel,
+}: WalletTransactionsTableProps) {
   const columns = useMemo<ColumnDef<WalletTransaction>[]>(
     () => [
       {
@@ -149,8 +153,13 @@ export function WalletTransactionsTable({ transactions }: WalletTransactionsTabl
   });
 
   return (
-    <div className='mt-10 md:mt-20'>
-      <div className='mb-5 font-bold text-base lg:text-xl pr-2'>لیست تراکنش‌ها</div>
+    <div>
+      <div className='mb-4 flex flex-wrap items-baseline justify-between gap-2'>
+        <h3 className='text-base font-bold text-gray-900 lg:text-lg'>لیست تراکنش‌ها</h3>
+        {walletLabel ? (
+          <span className='text-xs text-gray-500 lg:text-sm'>نمایش تراکنش‌های {walletLabel}</span>
+        ) : null}
+      </div>
       <DataTable table={table}>
         <DataTableToolbar table={table} />
       </DataTable>

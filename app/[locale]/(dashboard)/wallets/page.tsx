@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 
 import { Breadcrumbs, PageContainer } from '@/components/page-container';
 import { PageContent } from '@/components/page-content';
-import { WalletsPage, WalletsPageSkeleton, WalletActivitySummary } from '@/components/page/wallets';
+import { WalletsPage, WalletsPageSkeleton } from '@/components/page/wallets';
 import { useWalletInfo, useWalletTransactions } from '@/queries/wallet';
 import { useUserWithStore } from '@/queries/users';
 import { getUserId } from '@/lib/auth/client/user-info';
@@ -26,10 +26,10 @@ function WalletsContent() {
   if (!userId) {
     return (
       <div className='w-full pt-10'>
-        <div className='bg-white rounded-xl shadow-md p-12 text-center'>
+        <div className='rounded-xl bg-white p-12 text-center shadow-md'>
           <div className='flex flex-col items-center gap-4'>
             <svg
-              className='w-20 h-20 text-gray-300'
+              className='h-20 w-20 text-gray-300'
               fill='none'
               stroke='currentColor'
               viewBox='0 0 24 24'
@@ -41,8 +41,8 @@ function WalletsContent() {
                 d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
               />
             </svg>
-            <p className='text-xl text-gray-600 font-medium'>لطفاً وارد حساب کاربری خود شوید</p>
-            <p className='text-gray-500 text-sm'>برای مشاهده کیف پول خود ابتدا وارد شوید</p>
+            <p className='text-xl font-medium text-gray-600'>لطفاً وارد حساب کاربری خود شوید</p>
+            <p className='text-sm text-gray-500'>برای مشاهده کیف پول خود ابتدا وارد شوید</p>
           </div>
         </div>
       </div>
@@ -70,10 +70,6 @@ export default function WalletPageRoute() {
         <Suspense fallback={<WalletsPageSkeleton />}>
           <WalletsContent />
         </Suspense>
-      </PageContent>
-
-      <PageContent title='خلاصه فعالیت'>
-        <WalletActivitySummary />
       </PageContent>
     </PageContainer>
   );
