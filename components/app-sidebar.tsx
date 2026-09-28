@@ -29,7 +29,7 @@ import { useUnreadMessageCount } from '@/queries/message';
 const items = [
   { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet, badgeKey: null },
   // { title: 'سبد خرید', url: '/cart', icon: ShoppingBasket, badgeKey: null },
-  { title: 'درخواست های من', url: '/requests', icon: FileText, badgeKey: null },
+  { title: 'درخواست اعتبار', url: '/requests', icon: FileText, badgeKey: null },
   { title: 'اقساط من', url: '/installments', icon: CalendarClock, badgeKey: null },
   { title: 'اطلاعات من', url: '/profile', icon: User, badgeKey: null },
   // { title: 'کارت‌ها
