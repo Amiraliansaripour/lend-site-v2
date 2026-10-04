@@ -58,7 +58,7 @@ export function WalletsPage({
         onWalletUpdate={onWalletUpdate}
       />
 
-      <div className='rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:p-6'>
+      <div className='rounded-xl border border-border bg-card p-4 shadow-sm lg:p-6'>
         <WalletTransactionsTable
           transactions={filteredTransactions}
           walletLabel={activeTab === 'credit' ? 'کیف پول اعتباری' : 'کیف پول نقدی'}
@@ -73,11 +73,11 @@ export function WalletsPageSkeleton() {
     <div className='space-y-5'>
       <WalletOverviewSkeleton />
 
-      <div className='rounded-xl border border-gray-100 bg-white p-4 shadow-sm lg:p-6'>
-        <div className='mb-4 h-6 w-40 animate-pulse rounded bg-gray-200' />
-        <div className='space-y-3 rounded-md border p-4'>
+      <div className='rounded-xl border border-border bg-card p-4 shadow-sm lg:p-6'>
+        <div className='mb-4 h-6 w-40 animate-pulse rounded bg-muted' />
+        <div className='space-y-3 rounded-md border border-border p-4'>
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className='h-12 animate-pulse rounded bg-gray-100' />
+            <div key={i} className='h-12 animate-pulse rounded bg-muted/70' />
           ))}
         </div>
       </div>

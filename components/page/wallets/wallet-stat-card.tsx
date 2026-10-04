@@ -24,20 +24,20 @@ const STAT_CONFIG: Record<
   initial: {
     title: 'موجودی اولیه',
     icon: Wallet,
-    bgColor: 'bg-blue-50',
-    iconColor: 'text-blue-600',
+    bgColor: 'bg-primary/10',
+    iconColor: 'text-primary',
   },
   spent: {
     title: 'مجموع برداشت',
     icon: TrendingDown,
-    bgColor: 'bg-red-50',
-    iconColor: 'text-red-600',
+    bgColor: 'bg-red-50 dark:bg-red-500/15',
+    iconColor: 'text-red-600 dark:text-red-400',
   },
   remaining: {
     title: 'مانده',
     icon: TrendingUp,
-    bgColor: 'bg-green-50',
-    iconColor: 'text-green-600',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-500/15',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
   },
 };
 
@@ -47,20 +47,20 @@ export function WalletStatCard({ type, amount }: WalletStatCardProps) {
   const formattedAmount = normalizeToPersianDigits(formatNumber(amount, { int: true }));
 
   return (
-    <div className='rounded-xl border border-gray-200 min-w-full lg:min-w-64 min-h-[110px] lg:min-h-40 p-4 lg:p-6 shadow-sm bg-white'>
-      <div className='flex flex-col h-full'>
-        <div className='pb-2 lg:pb-3 flex justify-end'>
+    <div className='min-h-[110px] min-w-full rounded-xl border border-border bg-card p-4 shadow-sm lg:min-h-40 lg:min-w-64 lg:p-6'>
+      <div className='flex h-full flex-col'>
+        <div className='flex justify-end pb-2 lg:pb-3'>
           <div
             className={cn(
-              'w-9 lg:w-11 h-9 lg:h-11 rounded-full flex items-center justify-center',
+              'flex h-9 w-9 items-center justify-center rounded-full lg:h-11 lg:w-11',
               config.bgColor,
             )}
           >
-            <Icon className={cn('w-5 lg:w-6 h-5 lg:h-6', config.iconColor)} />
+            <Icon className={cn('h-5 w-5 lg:h-6 lg:w-6', config.iconColor)} />
           </div>
         </div>
-        <div className='text-gray-600 pb-1.5 text-xs lg:text-base'>{config.title}</div>
-        <div className='font-bold text-xs lg:text-base text-gray-900'>{formattedAmount} ریال</div>
+        <div className='pb-1.5 text-xs text-muted-foreground lg:text-base'>{config.title}</div>
+        <div className='text-xs font-bold text-foreground lg:text-base'>{formattedAmount} ریال</div>
       </div>
     </div>
   );

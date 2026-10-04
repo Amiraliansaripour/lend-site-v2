@@ -21,10 +21,11 @@ import {
   SidebarMenuButton,
   SidebarGroupContent,
 } from '@/components/ui/sidebar';
-import Link from 'next/link';
+import { Link, usePathname } from '@/i18n/navigation';
 import { AUTH_LOGOUT_EVENT } from '@/lib/auth/events';
 import { useSiteTemplate } from '@/providers/site-template';
 import { useUnreadMessageCount } from '@/queries/message';
+import { cn } from '@/lib/utils';
 
 const items = [
   { title: 'کیف پول‌های من', url: '/wallets', icon: Wallet, badgeKey: null },
@@ -40,6 +41,7 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const pathname = usePathname();
   const { brandName, getImageUrl } = useSiteTemplate();
   const logoUrl = getImageUrl('logo');
   const { data: unreadCount = 0 } = useUnreadMessageCount();
@@ -50,25 +52,33 @@ export function AppSidebar() {
         <SidebarGroup>
           <Link
             href='/'
-            className='flex justify-center items-center mb-3 border-b border-gray-200 w-full py-4 dark:border-border'
+            className='relative mb-3 flex w-full items-center justify-center border-b border-sidebar-border py-4 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-gradient-to-l before:from-transparent before:via-primary/35 before:to-transparent'
           >
-            {logoUrl ? <img src={logoUrl} alt={brandName} className='w-44 mx-auto' /> : null}
+            {logoUrl ? <img src={logoUrl} alt={brandName} className='mx-auto w-44' /> : null}
           </Link>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map(item => {
                 const badge = item.badgeKey === 'messages' ? unreadCount : 0;
+                const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`);
 
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link href={item.url} className='flex items-center justify-between w-full'>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className={cn(
+                        isActive &&
+                          'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary data-[active=true]:bg-primary/10 data-[active=true]:text-primary',
+                      )}
+                    >
+                      <Link href={item.url} className='flex w-full items-center justify-between'>
                         <span className='flex items-center gap-2'>
                           <item.icon />
                           <span>{item.title}</span>
                         </span>
                         {badge > 0 && (
-                          <span className='inline-flex items-center justify-center size-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold'>
+                          <span className='inline-flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground'>
                             {badge}
                           </span>
                         )}

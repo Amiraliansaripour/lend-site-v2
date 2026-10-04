@@ -19,18 +19,18 @@ export function WalletInfoBar() {
   });
 
   return (
-    <div className='hidden md:flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6'>
+    <div className='mb-6 hidden items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm md:flex'>
       <div className='flex items-center gap-3'>
-        <div className='text-gray-600'>
+        <div className='text-primary/70'>
           <User size={24} />
         </div>
-        <div className='font-medium text-gray-800'>{normalizeToPersianDigits(replaceMobile)}</div>
+        <div className='font-medium text-foreground'>{normalizeToPersianDigits(replaceMobile)}</div>
       </div>
       <div className='flex items-center gap-3'>
-        <div className='text-gray-600'>
+        <div className='text-primary/70'>
           <Calendar size={24} />
         </div>
-        <div className='font-medium text-gray-800'>{currentDate}</div>
+        <div className='font-medium text-foreground'>{currentDate}</div>
       </div>
     </div>
   );

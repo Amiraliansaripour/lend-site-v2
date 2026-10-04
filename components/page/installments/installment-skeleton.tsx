@@ -1,11 +1,11 @@
 export function InstallmentCardSkeleton() {
   return (
     <div className='mt-8 animate-pulse'>
-      <div className='bg-gray-300 p-6 rounded-t-xl h-32' />
-      <div className='bg-white p-6 rounded-b-xl border-t border-gray-100'>
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+      <div className='h-32 rounded-t-xl bg-primary/10 p-6' />
+      <div className='rounded-b-xl border border-t-0 border-border bg-card p-6'>
+        <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
           {[1, 2, 3].map(i => (
-            <div key={i} className='bg-gray-100 p-5 rounded-xl h-32' />
+            <div key={i} className='h-32 rounded-xl bg-muted p-5' />
           ))}
         </div>
       </div>

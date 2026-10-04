@@ -8,7 +8,7 @@ import { DirectionProvider } from '@radix-ui/react-direction';
 export function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   return (
     <DirectionProvider dir='rtl'>
-      <SidebarProvider>
+      <SidebarProvider className='dashboard-shell'>
         <AppSidebar />
 
         <SidebarInset className='min-w-0'>

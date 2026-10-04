@@ -79,16 +79,16 @@ export function InstallmentCard({ loan }: InstallmentCardProps) {
     <Accordion type='single' collapsible className='w-full'>
       <AccordionItem
         value={`loan-${loan.id}`}
-        className='border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow'
+        className='overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md'
       >
         {/* Header Section as Accordion Trigger */}
         <AccordionTrigger className='hover:no-underline p-0 pl-3 [&[data-state=open]>div]:rounded-b-none [&>svg]:my-auto '>
-          <div className='w-full bg-gray-50 border-b border-gray-200 p-4 md:p-6' dir='rtl'>
+          <div className='w-full border-b border-border bg-muted/50 p-4 md:p-6' dir='rtl'>
             <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
               <div className='flex items-center gap-3'>
-                <div className='p-2 bg-brand rounded-lg'>
+                <div className='rounded-lg bg-primary/10 p-2'>
                   <svg
-                    className='w-5 h-5 text-white'
+                    className='h-5 w-5 text-primary'
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -102,19 +102,19 @@ export function InstallmentCard({ loan }: InstallmentCardProps) {
                   </svg>
                 </div>
                 <div className='text-right'>
-                  <p className='text-xs text-gray-600'>شماره درخواست</p>
-                  <p className='text-sm md:text-base font-bold text-gray-800'>
+                  <p className='text-xs text-muted-foreground'>شماره درخواست</p>
+                  <p className='text-sm font-bold text-foreground md:text-base'>
                     {loan.requestRequestNumber}
                   </p>
                 </div>
               </div>
 
               <div className='flex items-center gap-2'>
-                <div className='bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm'>
-                  <span className='text-xs text-gray-600'>پرداخت شده: </span>
-                  <span className='text-sm font-bold text-brand'>{paidCount}</span>
-                  <span className='text-xs text-gray-500'> از </span>
-                  <span className='text-sm font-bold text-gray-700'>{totalCount}</span>
+                <div className='rounded-lg border border-border bg-card px-3 py-1.5 shadow-sm'>
+                  <span className='text-xs text-muted-foreground'>پرداخت شده: </span>
+                  <span className='text-sm font-bold text-primary'>{paidCount}</span>
+                  <span className='text-xs text-muted-foreground'> از </span>
+                  <span className='text-sm font-bold text-foreground'>{totalCount}</span>
                 </div>
               </div>
             </div>
@@ -123,37 +123,37 @@ export function InstallmentCard({ loan }: InstallmentCardProps) {
 
         <AccordionContent className='p-0'>
           {/* Stats Grid */}
-          <div className='p-4 md:p-6 bg-white border-b border-gray-100' dir='rtl'>
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4'>
+          <div className='border-b border-border bg-card p-4 md:p-6' dir='rtl'>
+            <div className='grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4'>
               {/* Credit Amount */}
-              <div className='bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200'>
-                <div className='flex items-center gap-2 mb-1'>
-                  <DollarSign className='w-4 h-4 text-emerald-600' />
-                  <h3 className='text-xs text-gray-600'>مبلغ اعتبار</h3>
+              <div className='rounded-lg border border-border bg-muted/40 p-3 md:p-4'>
+                <div className='mb-1 flex items-center gap-2'>
+                  <DollarSign className='h-4 w-4 text-emerald-600' />
+                  <h3 className='text-xs text-muted-foreground'>مبلغ اعتبار</h3>
                 </div>
-                <p className='text-sm md:text-base font-bold text-gray-900'>
+                <p className='text-sm font-bold text-foreground md:text-base'>
                   {formatPrice(loan.amount)} ریال
                 </p>
               </div>
 
               {/* Last Payment */}
-              <div className='bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200'>
-                <div className='flex items-center gap-2 mb-1'>
-                  <Calendar className='w-4 h-4 text-blue-600' />
-                  <h3 className='text-xs text-gray-600'>تاریخ آخرین قسط</h3>
+              <div className='rounded-lg border border-border bg-muted/40 p-3 md:p-4'>
+                <div className='mb-1 flex items-center gap-2'>
+                  <Calendar className='h-4 w-4 text-primary' />
+                  <h3 className='text-xs text-muted-foreground'>تاریخ آخرین قسط</h3>
                 </div>
-                <p className='text-sm md:text-base font-semibold text-gray-900'>
+                <p className='text-sm font-semibold text-foreground md:text-base'>
                   {formatDate(loan.lastInstallmentDate || '')}
                 </p>
               </div>
 
               {/* Next Payment */}
-              <div className='bg-gray-50 p-3 md:p-4 rounded-lg border border-gray-200'>
-                <div className='flex items-center gap-2 mb-1'>
-                  <Clock className='w-4 h-4 text-red-600' />
-                  <h3 className='text-xs text-gray-600'>نزدیک‌ترین قسط</h3>
+              <div className='rounded-lg border border-border bg-muted/40 p-3 md:p-4'>
+                <div className='mb-1 flex items-center gap-2'>
+                  <Clock className='h-4 w-4 text-red-600' />
+                  <h3 className='text-xs text-muted-foreground'>نزدیک‌ترین قسط</h3>
                 </div>
-                <p className='text-sm md:text-base font-semibold text-gray-900'>
+                <p className='text-sm font-semibold text-foreground md:text-base'>
                   {formatDate(loan.nearInstallmentDate)}
                 </p>
               </div>
@@ -161,27 +161,27 @@ export function InstallmentCard({ loan }: InstallmentCardProps) {
           </div>
 
           {/* Installments Accordion */}
-          <div className='p-4 md:p-6 bg-white' dir='rtl'>
-            <h3 className='text-sm font-semibold text-gray-700 mb-3'>جزئیات اقساط</h3>
+          <div className='bg-card p-4 md:p-6' dir='rtl'>
+            <h3 className='mb-3 text-sm font-semibold text-foreground'>جزئیات اقساط</h3>
             <Accordion type='single' collapsible className='w-full space-y-3'>
               {loan.loanDetails.map((installment, idx) => (
                 <AccordionItem
                   key={installment.id}
                   value={`installment-${installment.id}`}
                   className={cn(
-                    'border rounded-lg overflow-hidden',
+                    'overflow-hidden rounded-lg border',
                     installment.loanDetailStatus === 1
-                      ? 'border-green-300 bg-green-50'
-                      : 'bg-gray-100',
+                      ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10'
+                      : 'border-border bg-muted/50',
                   )}
                 >
-                  <AccordionTrigger className='px-3 md:px-4 py-3 hover:no-underline'>
-                    <div className='flex items-center gap-3 flex-1'>
+                  <AccordionTrigger className='px-3 py-3 hover:no-underline md:px-4'>
+                    <div className='flex flex-1 items-center gap-3'>
                       {/* Number Badge */}
                       <div
                         className={cn(
-                          'flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white flex-shrink-0',
-                          installment.loanDetailStatus === 1 ? 'bg-green-600' : 'bg-yellow-400',
+                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white',
+                          installment.loanDetailStatus === 1 ? 'bg-emerald-600' : 'bg-primary/70',
                         )}
                       >
                         {idx + 1}
@@ -189,26 +189,26 @@ export function InstallmentCard({ loan }: InstallmentCardProps) {
 
                       {/* Title & Status */}
                       <div className='flex-1 text-right'>
-                        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2'>
-                          <span className='text-sm md:text-base font-semibold text-gray-800'>
+                        <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                          <span className='text-sm font-semibold text-foreground md:text-base'>
                             قسط شماره {idx + 1}
                           </span>
                           <div
                             className={cn(
-                              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold',
+                              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
                               installment.loanDetailStatus === 1
-                                ? 'bg-green-100 text-green-700 border border-green-200'
-                                : 'bg-orange-100 text-orange-700 border border-orange-200',
+                                ? 'border border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                : 'border border-orange-200 bg-orange-100 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-300',
                             )}
                           >
                             {installment.loanDetailStatus === 1 ? (
                               <>
-                                <Check className='w-3 h-3' />
+                                <Check className='h-3 w-3' />
                                 پرداخت شده
                               </>
                             ) : (
                               <>
-                                <X className='w-3 h-3' />
+                                <X className='h-3 w-3' />
                                 پرداخت نشده
                               </>
                             )}
@@ -217,29 +217,29 @@ export function InstallmentCard({ loan }: InstallmentCardProps) {
                       </div>
                     </div>
                   </AccordionTrigger>{' '}
-                  <AccordionContent className='px-3 md:px-4 pb-3'>
-                    <div className='bg-white rounded-lg p-3 md:p-4 border border-gray-200'>
-                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4'>
+                  <AccordionContent className='px-3 pb-3 md:px-4'>
+                    <div className='rounded-lg border border-border bg-card p-3 md:p-4'>
+                      <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4'>
                         {/* Amount */}
                         <div className='space-y-1'>
-                          <p className='text-xs text-gray-600'>مبلغ قسط</p>
-                          <p className='text-sm md:text-base font-bold text-gray-900'>
+                          <p className='text-xs text-muted-foreground'>مبلغ قسط</p>
+                          <p className='text-sm font-bold text-foreground md:text-base'>
                             {formatPrice(installment.amount)} ریال
                           </p>
                         </div>
 
                         {/* Due Date */}
                         <div className='space-y-1'>
-                          <p className='text-xs text-gray-600'>تاریخ سررسید</p>
-                          <p className='text-sm md:text-base font-semibold text-gray-800'>
+                          <p className='text-xs text-muted-foreground'>تاریخ سررسید</p>
+                          <p className='text-sm font-semibold text-foreground md:text-base'>
                             {formatDate(installment.dueDate)}
                           </p>
                         </div>
 
                         {/* Payment Date */}
                         <div className='space-y-1'>
-                          <p className='text-xs text-gray-600'>تاریخ پرداخت</p>
-                          <p className='text-sm md:text-base font-semibold text-gray-800'>
+                          <p className='text-xs text-muted-foreground'>تاریخ پرداخت</p>
+                          <p className='text-sm font-semibold text-foreground md:text-base'>
                             {formatDate(installment.payedAt || '')}
                           </p>
                         </div>

@@ -186,6 +186,28 @@ html body {
   --landing-glass-border: color-mix(in lab, white 15%, transparent);
   --landing-glass-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
+
+/**
+ * Dashboard shell — brand as interactive accent without painting the chrome.
+ * Scoped so landing/marketing keeps light-mode near-black primary.
+ */
+.dashboard-shell {
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --ring: color-mix(in oklab, var(--brand) 45%, oklch(0.708 0 0));
+  --sidebar-ring: color-mix(in oklab, var(--brand) 45%, oklch(0.708 0 0));
+  --sidebar-accent: color-mix(in oklab, var(--brand) 9%, var(--sidebar));
+  --sidebar-accent-foreground: var(--brand);
+}
+
+.dark .dashboard-shell {
+  --ring: color-mix(in oklab, var(--brand) 55%, transparent);
+  --sidebar-ring: color-mix(in oklab, var(--brand) 55%, transparent);
+  --sidebar-accent: color-mix(in oklab, var(--brand) 14%, var(--sidebar));
+  --sidebar-accent-foreground: var(--brand);
+}
 /* * customization */
 
 @layer base {

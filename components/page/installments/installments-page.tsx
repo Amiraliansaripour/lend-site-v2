@@ -14,7 +14,7 @@ export function InstallmentsPage({ loans, isLoading }: InstallmentsPageProps) {
     return (
       <div className='w-full pt-10'>
         <div className='mb-10'>
-          <h1 className='text-2xl font-bold text-right text-gray-800'>اقساط من</h1>
+          <h1 className='text-right text-2xl font-bold text-foreground'>اقساط من</h1>
         </div>
         <InstallmentsListSkeleton />
       </div>
@@ -24,11 +24,11 @@ export function InstallmentsPage({ loans, isLoading }: InstallmentsPageProps) {
   if (!loans || loans.length === 0) {
     return (
       <div className='w-full pt-10'>
-        <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center'>
+        <div className='rounded-xl border border-border bg-card p-12 text-center shadow-sm'>
           <div className='flex flex-col items-center gap-4'>
-            <div className='p-4 bg-gray-100 rounded-full'>
+            <div className='rounded-full bg-primary/10 p-4'>
               <svg
-                className='w-16 h-16 text-gray-400'
+                className='h-16 w-16 text-primary/60'
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'
@@ -41,8 +41,8 @@ export function InstallmentsPage({ loans, isLoading }: InstallmentsPageProps) {
                 />
               </svg>
             </div>
-            <p className='text-xl text-gray-700 font-semibold'>درخواست تایید شده‌ای وجود ندارد</p>
-            <p className='text-gray-500 text-sm max-w-md'>
+            <p className='text-xl font-semibold text-foreground'>درخواست تایید شده‌ای وجود ندارد</p>
+            <p className='max-w-md text-sm text-muted-foreground'>
               پس از تایید درخواست وام شما، اقساط در اینجا نمایش داده می‌شود
             </p>
           </div>
@@ -52,11 +52,11 @@ export function InstallmentsPage({ loans, isLoading }: InstallmentsPageProps) {
   }
 
   return (
-    <div className='w-full '>
+    <div className='w-full'>
       <div className='mb-10 flex items-center justify-between'>
-        <div></div>
-        <div className='text-sm text-gray-600'>
-          تعداد: <span className='font-semibold'>{loans.length}</span> اعتبار
+        <div />
+        <div className='text-sm text-muted-foreground'>
+          تعداد: <span className='font-semibold text-foreground'>{loans.length}</span> اعتبار
         </div>
       </div>
 

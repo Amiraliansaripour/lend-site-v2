@@ -155,9 +155,11 @@ export function WalletTransactionsTable({
   return (
     <div>
       <div className='mb-4 flex flex-wrap items-baseline justify-between gap-2'>
-        <h3 className='text-base font-bold text-gray-900 lg:text-lg'>لیست تراکنش‌ها</h3>
+        <h3 className='text-base font-bold text-foreground lg:text-lg'>لیست تراکنش‌ها</h3>
         {walletLabel ? (
-          <span className='text-xs text-gray-500 lg:text-sm'>نمایش تراکنش‌های {walletLabel}</span>
+          <span className='text-xs text-muted-foreground lg:text-sm'>
+            نمایش تراکنش‌های {walletLabel}
+          </span>
         ) : null}
       </div>
       <DataTable table={table}>
