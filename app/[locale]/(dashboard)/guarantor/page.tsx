@@ -10,9 +10,7 @@ export default function GuarantorPage() {
   return (
     <PageContainer breadcrumbs={breadcrumbs}>
       <PageContent title='ضمانت'>
-        <div className='rounded-2xl bg-card p-6 shadow-lg'>
-          <GuarantorHubPage />
-        </div>
+        <GuarantorHubPage />
       </PageContent>
     </PageContainer>
   );
