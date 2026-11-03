@@ -3,14 +3,23 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { ChequeRegistration } from './cheque-registration';
+import { GuarantorSection, ensureRequiredGuarantorsApproved } from './guarantor-section';
+import { useRequestGuarantors } from '@/queries/guarantor';
+import { useChangeRequestState } from '@/mutations/request';
 import type { RequestPreviewData } from '@/api/request';
 
 interface CollateralProps {
   requestId: string;
   guarantees?: string[];
   guaranteedAmount?: number;
+  guarantorCount?: number;
+  /** Plan ChequeCount — number of Sayad cheque slots */
+  chequeCount?: number;
+  borrowerNationalCode?: string | null;
+  planNote?: string | null;
   onNext?: () => void;
   onBack?: () => void;
   onCancel?: () => void;
@@ -23,6 +32,10 @@ export function Collateral({
   requestId,
   guarantees = [],
   guaranteedAmount,
+  guarantorCount = 0,
+  chequeCount = 0,
+  borrowerNationalCode,
+  planNote,
   onNext,
   onBack,
   onCancel,
@@ -31,103 +44,200 @@ export function Collateral({
   previewData,
 }: CollateralProps) {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [isValidatingGuarantors, setIsValidatingGuarantors] = useState(false);
+  const { data: guarantors = [], refetch: refetchGuarantors } = useRequestGuarantors(
+    guarantorCount > 0 ? requestId : '',
+  );
+  const changeRequestStateMutation = useChangeRequestState();
+
+  const hasCollateralUpload = guarantees.length > 0;
+  const guarantorsOnly = guarantorCount > 0 && !hasCollateralUpload;
 
   const handleMethodSelect = (method: string) => {
     if (isReadOnly) return;
     setSelectedMethod(method);
   };
 
+  const validateGuarantors = async () => {
+    if (guarantorCount <= 0) return true;
+    setIsValidatingGuarantors(true);
+    try {
+      const result = await refetchGuarantors();
+      const list = result.data ?? guarantors;
+      return ensureRequiredGuarantorsApproved(list, guarantorCount);
+    } finally {
+      setIsValidatingGuarantors(false);
+    }
+  };
+
+  const handleChequeNext = async () => {
+    const ok = await validateGuarantors();
+    if (!ok) return;
+    onNext?.();
+  };
+
+  const handleGuarantorsOnlyNext = async () => {
+    if (isReadOnly) {
+      onNext?.();
+      return;
+    }
+
+    const ok = await validateGuarantors();
+    if (!ok) return;
+
+    changeRequestStateMutation.mutate(
+      { id: requestId, requestState: 7 },
+      {
+        onSuccess: () => {
+          toast.success('ضامن‌ها با موفقیت ثبت شد');
+          onNext?.();
+        },
+        onError: () => toast.error('خطا در تغییر وضعیت درخواست'),
+      },
+    );
+  };
+
   if (selectedMethod === 'check') {
     return (
-      <ChequeRegistration
-        requestId={requestId}
-        guarantees={guarantees}
-        guaranteedAmount={guaranteedAmount}
-        onNext={onNext ? () => onNext() : undefined}
-        onBack={() => setSelectedMethod(null)}
-        onCancel={onCancel}
-        isEditMode={isEditMode}
-        isReadOnly={isReadOnly}
-        previewData={previewData}
-      />
+      <div className='space-y-6'>
+        {guarantorCount > 0 ? (
+          <GuarantorSection
+            requestId={requestId}
+            guarantorCount={guarantorCount}
+            borrowerNationalCode={borrowerNationalCode}
+            isReadOnly={isReadOnly}
+            planNote={planNote}
+          />
+        ) : null}
+        <ChequeRegistration
+          requestId={requestId}
+          guarantees={guarantees}
+          guaranteedAmount={guaranteedAmount}
+          chequeCount={chequeCount}
+          onNext={onNext ? () => void handleChequeNext() : undefined}
+          onBack={() => setSelectedMethod(null)}
+          onCancel={onCancel}
+          isEditMode={isEditMode}
+          isReadOnly={isReadOnly}
+          previewData={previewData}
+        />
+      </div>
     );
   }
 
   return (
     <div className='space-y-6'>
-      <Card>
-        <CardHeader>
-          <CardTitle>انتخاب روش وثیقه‌گذاری</CardTitle>
-          <CardDescription>
-            <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
-              <p className='font-semibold text-center'>
-                توجه: زمان بررسی درخواست از ساعت ۸ صبح تا ۴ بعدازظهر می‌باشد.
-              </p>
-            </div>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className='space-y-6'>
-            <div className='flex flex-col md:flex-row justify-center items-center gap-6'>
-              <button
-                onClick={() => handleMethodSelect('check')}
-                type='button'
-                className='flex flex-col items-center justify-center p-8 border-2 border-transparent hover:border-primary transition-all rounded-lg shadow-md w-full md:w-1/2 bg-gradient-to-br from-green-50 to-green-100 text-center cursor-pointer group'
-              >
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  strokeWidth={1.5}
-                  stroke='currentColor'
-                  className='w-10 h-10 text-primary mb-4 group-hover:scale-110 transition-transform'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    d='M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3h7.5m-7.5-6h7.5m-3 6l3-3m0 0l3 3m-6-9h.008v.008H12v-.008ZM12 15h.008v.008H12v-.008Z'
-                  />
-                </svg>
-                <span className='text-xl font-bold text-gray-800 mb-2 group-hover:text-primary transition-colors'>
-                  بارگذاری وثیقه
-                </span>
+      {guarantorCount > 0 ? (
+        <GuarantorSection
+          requestId={requestId}
+          guarantorCount={guarantorCount}
+          borrowerNationalCode={borrowerNationalCode}
+          isReadOnly={isReadOnly}
+          planNote={planNote}
+        />
+      ) : null}
 
-                {guarantees.length > 0 && (
-                  <div className='text-sm text-gray-600 mb-2'>
-                    <p>وثیقه های مورد نیاز</p>
-                    {guarantees.map((item, index) => (
-                      <span key={item}>
-                        {item}
-                        {index !== guarantees.length - 1 && <span className='px-1'> و </span>}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className='flex items-center text-primary text-sm opacity-0 group-hover:opacity-100 transition-opacity'>
-                  <CheckCircle2 className='w-4 h-4 mr-1' />
-                  <span>برای انتخاب کلیک کنید</span>
-                </div>
-              </button>
-            </div>
-
-            {(onBack || onCancel) && (
-              <div className='flex justify-center gap-4 pt-6'>
-                {onBack && (
-                  <Button type='button' variant='outline' size='lg' onClick={onBack}>
-                    بازگشت
-                  </Button>
-                )}
-                {onCancel && (
-                  <Button type='button' variant='outline' size='lg' onClick={onCancel}>
-                    انصراف
-                  </Button>
-                )}
+      {hasCollateralUpload ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>انتخاب روش وثیقه‌گذاری</CardTitle>
+            <CardDescription>
+              <div className='mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg'>
+                <p className='font-semibold text-center'>
+                  توجه: زمان بررسی درخواست از ساعت ۸ صبح تا ۴ بعدازظهر می‌باشد.
+                </p>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className='space-y-6'>
+              <div className='flex flex-col md:flex-row justify-center items-center gap-6'>
+                <button
+                  onClick={() => handleMethodSelect('check')}
+                  type='button'
+                  className='flex flex-col items-center justify-center p-8 border-2 border-transparent hover:border-primary transition-all rounded-lg shadow-md w-full md:w-1/2 bg-gradient-to-br from-green-50 to-green-100 text-center cursor-pointer group'
+                >
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    strokeWidth={1.5}
+                    stroke='currentColor'
+                    className='w-10 h-10 text-primary mb-4 group-hover:scale-110 transition-transform'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3h7.5m-7.5-6h7.5m-3 6l3-3m0 0l3 3m-6-9h.008v.008H12v-.008ZM12 15h.008v.008H12v-.008Z'
+                    />
+                  </svg>
+                  <span className='text-xl font-bold text-gray-800 mb-2 group-hover:text-primary transition-colors'>
+                    بارگذاری وثیقه
+                  </span>
+
+                  {guarantees.length > 0 && (
+                    <div className='text-sm text-gray-600 mb-2'>
+                      <p>وثیقه های مورد نیاز</p>
+                      {guarantees.map((item, index) => (
+                        <span key={item}>
+                          {item}
+                          {index !== guarantees.length - 1 && <span className='px-1'> و </span>}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className='flex items-center text-primary text-sm opacity-0 group-hover:opacity-100 transition-opacity'>
+                    <CheckCircle2 className='w-4 h-4 mr-1' />
+                    <span>برای انتخاب کلیک کنید</span>
+                  </div>
+                </button>
+              </div>
+
+              {(onBack || onCancel) && (
+                <div className='flex justify-center gap-4 pt-6'>
+                  {onBack && (
+                    <Button type='button' variant='outline' size='lg' onClick={onBack}>
+                      بازگشت
+                    </Button>
+                  )}
+                  {onCancel && (
+                    <Button type='button' variant='outline' size='lg' onClick={onCancel}>
+                      انصراف
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className='flex flex-wrap justify-center gap-3'>
+          {onBack ? (
+            <Button type='button' variant='outline' size='lg' onClick={onBack}>
+              بازگشت
+            </Button>
+          ) : null}
+          {onCancel ? (
+            <Button type='button' variant='outline' size='lg' onClick={onCancel}>
+              انصراف
+            </Button>
+          ) : null}
+          {guarantorsOnly && onNext ? (
+            <Button
+              type='button'
+              size='lg'
+              onClick={() => void handleGuarantorsOnlyNext()}
+              disabled={isValidatingGuarantors || changeRequestStateMutation.isPending}
+            >
+              {(isValidatingGuarantors || changeRequestStateMutation.isPending) && (
+                <Loader2 className='size-4 animate-spin ml-1' />
+              )}
+              {isReadOnly ? 'مشاهده مرحله بعد' : 'مرحله بعد'}
+            </Button>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

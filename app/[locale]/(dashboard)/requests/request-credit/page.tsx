@@ -13,6 +13,7 @@ import {
   IncomeInformation,
   ProformaInvoice,
   Collateral,
+  RequestDocuments,
   AcceptByUser,
 } from '@/components/page/request-credit';
 import { RequestSummaryBar } from '@/components/page/request-credit/request-summary-bar';
@@ -81,6 +82,19 @@ export default function RequestCreditPage() {
     requestData?.planIsIncomeRequired ?? previewData?.planIsIncomeRequired;
   const planIsValidateRequired =
     requestData?.planIsValidateRequired ?? previewData?.planIsValidateRequired;
+  const planIsDocumentRequired =
+    planData?.isDocumentRequired ??
+    requestData?.planIsDocumentRequired ??
+    previewData?.planIsDocumentRequired ??
+    false;
+  const planGuarantorCount =
+    planData?.guarantorCount ??
+    requestData?.planGuarantorCount ??
+    previewData?.planGuarantorCount ??
+    0;
+  const planChequeCount =
+    planData?.chequeCount ?? requestData?.planChequeCount ?? previewData?.planChequeCount ?? 0;
+  const planNote = planData?.planNote ?? requestData?.planNote ?? previewData?.planNote ?? null;
 
   const refreshPreview = useCallback(async () => {
     if (!id) return;
@@ -95,6 +109,7 @@ export default function RequestCreditPage() {
     { label: 'اطلاعات درآمدی', key: 5 },
     { label: 'پیش فاکتور', key: 6 },
     { label: 'ضمانت', key: 7 },
+    { label: 'مدارک', key: 9 },
     { label: 'تایید کلی اطلاعات', key: 8 },
   ];
 
@@ -120,48 +135,69 @@ export default function RequestCreditPage() {
 
   useEffect(() => {
     const stepSource = requestData ?? previewData;
-    if (stepSource && !isStepsLoaded) {
-      let normalizedStep: number;
-      const state = stepSource.requestState;
+    if (!stepSource) return;
 
-      if (state >= 11 && state <= 18) {
-        normalizedStep = state - 10 + (editMode ? 0 : 1);
-      } else if (state >= 1 && state <= 8) {
-        normalizedStep = state + (editMode ? 0 : 1);
-      } else if (state >= 21 && state <= 28) {
-        normalizedStep = state - 20 + (editMode ? 0 : 1);
-      } else {
-        normalizedStep = 1;
-      }
+    let filteredSteps = [...allSteps];
 
-      let filteredSteps = [...allSteps];
-
-      if (planIsInvoiceRequired === false) {
-        filteredSteps = filteredSteps.filter(step => step.key !== 6);
-      }
-      if (planIsGuaranteeRequired === false) {
-        filteredSteps = filteredSteps.filter(step => step.key !== 7);
-      }
-      if (planIsIncomeRequired === false) {
-        filteredSteps = filteredSteps.filter(step => step.key !== 5);
-      }
-      if (planIsValidateRequired === false) {
-        filteredSteps = filteredSteps.filter(step => step.key !== 4);
-        filteredSteps = filteredSteps.filter(step => step.key !== 3);
-      }
-      setStepsToShow(filteredSteps);
-      setCurrentStep(prev => (prev > 1 ? Math.max(prev, normalizedStep) : normalizedStep));
-      setIsStepsLoaded(true);
+    if (planIsInvoiceRequired === false) {
+      filteredSteps = filteredSteps.filter(step => step.key !== 6);
     }
+    // Guarantee step stays when plan requires collateral OR guarantors
+    if (planIsGuaranteeRequired === false && planGuarantorCount <= 0) {
+      filteredSteps = filteredSteps.filter(step => step.key !== 7);
+    }
+    // Dynamic documents step (user panel) when plan.IsDocumentRequired
+    if (!planIsDocumentRequired) {
+      filteredSteps = filteredSteps.filter(step => step.key !== 9);
+    }
+    if (planIsIncomeRequired === false) {
+      filteredSteps = filteredSteps.filter(step => step.key !== 5);
+    }
+    if (planIsValidateRequired === false) {
+      filteredSteps = filteredSteps.filter(step => step.key !== 4);
+      filteredSteps = filteredSteps.filter(step => step.key !== 3);
+    }
+
+    setStepsToShow(filteredSteps);
+
+    // Only seed current step once per request — still re-filter when plan flags arrive later
+    if (isStepsLoaded) return;
+
+    let normalizedStep: number;
+    const state = stepSource.requestState;
+
+    if (state >= 11 && state <= 18) {
+      normalizedStep = state - 10 + (editMode ? 0 : 1);
+    } else if (state >= 1 && state <= 8) {
+      normalizedStep = state + (editMode ? 0 : 1);
+    } else if (state >= 21 && state <= 28) {
+      normalizedStep = state - 20 + (editMode ? 0 : 1);
+    } else {
+      normalizedStep = 1;
+    }
+
+    // After guarantee completion (state 7), open documents before final accept when required
+    if (state === 7 && !editMode && planIsDocumentRequired) {
+      const hasDocumentsStep = filteredSteps.some(step => step.key === 9);
+      if (hasDocumentsStep) {
+        normalizedStep = 9;
+      }
+    }
+
+    setCurrentStep(prev => (prev > 1 ? Math.max(prev, normalizedStep) : normalizedStep));
+    setIsStepsLoaded(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     requestData,
     previewData,
     editMode,
+    isStepsLoaded,
     planIsInvoiceRequired,
     planIsGuaranteeRequired,
     planIsIncomeRequired,
     planIsValidateRequired,
+    planIsDocumentRequired,
+    planGuarantorCount,
   ]);
 
   useEffect(() => {
@@ -205,12 +241,14 @@ export default function RequestCreditPage() {
       if (currentIndex !== -1 && currentIndex < stepsToShow.length - 1) {
         return stepsToShow[currentIndex + 1].key;
       }
+      if (prev === 7 && stepsToShow.some(step => step.key === 9)) return 9;
+      if (prev === 9) return 8;
       if (prev < 8) return prev + 1;
       return prev;
     });
 
     const currentIndex = stepsToShow.findIndex(step => step.key === currentStep);
-    if (currentIndex !== -1 && currentIndex >= stepsToShow.length - 1 && currentStep >= 8) {
+    if (currentIndex !== -1 && currentIndex >= stepsToShow.length - 1 && currentStep === 8) {
       router.push('/requests');
       return;
     }
@@ -517,12 +555,30 @@ export default function RequestCreditPage() {
                     planData?.documentAmount ??
                     0
                   }
+                  guarantorCount={planGuarantorCount}
+                  chequeCount={planChequeCount}
+                  borrowerNationalCode={user?.nationalCode || previewData?.userNationalCode || null}
+                  planNote={planNote}
                   onNext={() => handleNext()}
                   onBack={backHandler}
                   onCancel={cancelHandler}
                   isEditMode={isEditMode}
                   isReadOnly={isReadOnly}
                   previewData={previewData}
+                />
+              </div>
+            )}
+
+            {isStepsLoaded && stepsToShow.find(step => step.key === 9) && currentStep === 9 && (
+              <div key='step9'>
+                <RequestDocuments
+                  requestId={id || ''}
+                  planNote={planNote}
+                  onNext={() => handleNext()}
+                  onBack={backHandler}
+                  onCancel={cancelHandler}
+                  isEditMode={isEditMode}
+                  isReadOnly={isReadOnly}
                 />
               </div>
             )}

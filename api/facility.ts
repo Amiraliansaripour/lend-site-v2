@@ -216,6 +216,69 @@ export async function optOutRequest(requestId: string) {
   return data;
 }
 
+/** POST /UserFacility/SayadInquiry — استعلام چک صیادی (فینوتک) */
+export type SayadInquiryPayload = {
+  sayadId: string;
+};
+
+export type SayadInquiryData = {
+  success?: boolean;
+  sayadId?: string;
+  trackId?: string;
+  responseCode?: string;
+  status?: string;
+  name?: string;
+  iban?: string;
+  serialNo?: string;
+  seriesNo?: string;
+  branchCode?: string;
+  issuedDate?: string;
+  expirationDate?: string | null;
+  mediaType?: string;
+  mediaTypeDescription?: string;
+  returnedCheques?: unknown;
+  message?: string;
+  error?: string;
+};
+
+export type SayadInquiryResult =
+  | { ok: true; data: SayadInquiryData; message?: string }
+  | { ok: false; message: string; data?: SayadInquiryData };
+
+export async function sayadInquiry(sayadId: string): Promise<SayadInquiryResult> {
+  const { data, resp } = await api.post<SayadInquiryPayload, APIResult<SayadInquiryData>>(
+    '/UserFacility/SayadInquiry',
+    { sayadId },
+    { suppressErrorToast: true },
+  );
+
+  const payload = data?.data;
+  const success =
+    data?.isSuccess === true &&
+    payload != null &&
+    payload.success !== false &&
+    payload.status !== 'FAILED' &&
+    (payload.success === true || payload.status === 'DONE' || !payload.error);
+
+  if (success) {
+    return {
+      ok: true,
+      data: payload ?? {},
+      message: data?.message || payload?.message || 'استعلام با موفقیت انجام شد',
+    };
+  }
+
+  return {
+    ok: false,
+    message:
+      data?.message ||
+      payload?.message ||
+      payload?.error ||
+      (!resp.ok ? `استعلام ناموفق (${resp.status})` : 'استعلام چک صیادی ناموفق بود'),
+    data: payload,
+  };
+}
+
 export async function uploadAttachment(formData: FormData) {
   const baseURL = BASE_URLS.DEFAULT || '';
   const token = accessToken.get();

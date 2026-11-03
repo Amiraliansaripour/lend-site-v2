@@ -7,6 +7,8 @@ export { SalaryInfo } from './steps/salary-info';
 export { IncomeInformation } from './steps/income-information';
 export { Collateral } from './steps/collateral';
 export { ChequeRegistration } from './steps/cheque-registration';
+export { GuarantorSection } from './steps/guarantor-section';
+export { RequestDocuments } from './steps/request-documents';
 export { ProformaInvoice } from './steps/proforma-invoice';
 export { AcceptByUser } from './steps/accept-by-user';
 export { RequestSummaryBar } from './request-summary-bar';

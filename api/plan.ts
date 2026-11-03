@@ -29,6 +29,14 @@ export type PlanDetail = {
   score?: number;
   hasLink?: boolean;
   link?: string;
+  /** Number of cheques required by plan */
+  chequeCount?: number;
+  /** Number of guarantors required by plan */
+  guarantorCount?: number;
+  /** Optional plan note shown to the user */
+  planNote?: string | null;
+  /** Whether dynamic plan documents must be submitted */
+  isDocumentRequired?: boolean;
 };
 
 export type FinancierPlansResponse = {

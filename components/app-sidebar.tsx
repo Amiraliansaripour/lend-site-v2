@@ -9,6 +9,7 @@ import {
   CalendarClock,
   CircleQuestionMark,
   LogOut,
+  ShieldCheck,
 } from 'lucide-react';
 
 import {
@@ -33,6 +34,7 @@ const items = [
   { title: 'درخواست اعتبار', url: '/requests', icon: FileText, badgeKey: null },
   { title: 'اقساط من', url: '/installments', icon: CalendarClock, badgeKey: null },
   { title: 'اطلاعات من', url: '/profile', icon: User, badgeKey: null },
+  { title: 'ضمانت', url: '/guarantor', icon: ShieldCheck, badgeKey: null },
   // { title: 'کارت‌ها
   // ی بانکی', url: '/cards', icon: CreditCard, badgeKey: null },
   { title: 'راهنما و پشتیبانی', url: '/help', icon: CircleQuestionMark, badgeKey: null },

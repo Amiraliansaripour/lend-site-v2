@@ -78,6 +78,10 @@ export type RequestWithPlanData = Request & {
   planIsGuaranteeRequired: boolean;
   planIsIncomeRequired: boolean;
   planIsValidateRequired: boolean;
+  planIsDocumentRequired?: boolean;
+  planGuarantorCount?: number;
+  planChequeCount?: number;
+  planNote?: string | null;
 };
 
 export const getRequestWithPlanData = async (requestId: string) => {
@@ -191,6 +195,12 @@ export const getPaymentToken = async (data: GetPaymentTokenData) => {
 };
 
 // * Register cheque
+export type RegisterChequeItem = {
+  sayadId: string;
+  attachmentId: string;
+  attachmentBackId: string;
+};
+
 export type RegisterChequeData = {
   sayadId: string | null;
   requestId: string;
@@ -198,6 +208,8 @@ export type RegisterChequeData = {
   attachmentBackId: string | null;
   attachmentPromissoryId: string | null;
   attachmentDeductionSalaryId: string | null;
+  /** Multi-cheque payload when plan ChequeCount > 1 */
+  cheques?: RegisterChequeItem[];
 };
 
 export const registerCheque = async (data: RegisterChequeData) => {
@@ -285,6 +297,10 @@ export type RequestPreviewData = {
   planIsIncomeRequired: boolean;
   planIsValidateRequired: boolean;
   planIsInvoiceRequired: boolean;
+  planIsDocumentRequired?: boolean;
+  planGuarantorCount?: number;
+  planChequeCount?: number;
+  planNote?: string | null;
   planScore: string | null;
   invoiceId: string | null;
   invoiceAttachmentFilePath: string | null;
